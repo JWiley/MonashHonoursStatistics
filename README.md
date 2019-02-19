@@ -27,7 +27,7 @@ variables to suit your specific analytic needs.
 
 This GitHub repository has a number of resources for the unit.
 
-First, go to the link to learn how to [Install R](https://github.com/JWiley/MonashHonoursStatistics/master/RSetup.md).
+First, go to the link to learn how to [Install R](RSetup.md).
 
 <!-- ## Welcome to GitHub Pages -->
 
