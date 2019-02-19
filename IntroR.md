@@ -1,6 +1,6 @@
 # [Home](README.md)
 
-# Install `R`
+# 1. Install `R`
 
 The first step for this unit is getting `R` installed and setup on
 your computer. `R` is primarily a language. To have a nicer way to
@@ -25,7 +25,7 @@ place.
 3.  Follow [this guide](https://www.datacamp.com/community/tutorials/installing-R-windows-mac-ubuntu)
 
 
-# Try `R`
+# 2. Try `R`
 
 To make sure that `R` and RStudio are installed and working correctly,
 follow these steps:
@@ -46,7 +46,7 @@ follow these steps:
 
 If everything worked, `R` should return the answer, 4.
 
-# Learn about RStudio
+# 3. Learn about RStudio
 
 To find out a bit more about RStudio, you can watch this <5 minute
 [video](https://www.youtube.com/watch?v=V_NoBcxpYC8).
@@ -54,3 +54,23 @@ To find out a bit more about RStudio, you can watch this <5 minute
 If you want something for future reference on RStudio,
 try this 
 [cheat sheet](https://github.com/rstudio/cheatsheets/raw/master/rstudio-ide.pdf).
+
+# 4. Learn about `R`
+
+To begin learning `R` we are going to be using the online platform,
+DataCamp. Follow the instructions on Moodle for getting your account
+setup. Then head over to [DataCamp](https://www.datacamp.com/), sign
+in with your Monash account, and go to "My Class". Note the first 1-2
+weeks will be fairly instense as to follow the class, you need to get
+up to a basic ability to read and follow `R` code. The "due dates" in
+DataCamp are not part of your grades, but they are *strongly*
+recommended so that you can take best advantage of the rest of the
+unit.
+
+In particular, **before the first class on Wednesday, 6 March** please
+try your best to complete the course *Introduction to R*. After
+lecture 1, there is another large chunk of DataCamp assignments on
+importing data into `R` and Intermediate `R` use that are 
+**due before Wednesday, 13 March**. Once you've gotten through all of
+these, you will have a solid foundation and the rest of the unit will
+be easier to follow. Also, no other weeks have so many assignments.
