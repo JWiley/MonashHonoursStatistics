@@ -31,43 +31,25 @@ This GitHub repository has a number of resources for the unit.
     learning a few basics. Please see the page 
 	[Intro to R](IntroR.md).
 	
-2.  Week 2, we will XXX.
-	
+2.  Week 2, we will learn about linear mixed effects models (LMMs; Part 1). TBD
 
-<!-- ## Welcome to GitHub Pages -->
+3.  Week 3, we will learn about linear mixed effects models (LMMs; Part 2). TBD
 
-<!-- You can use the [editor on GitHub](https://github.com/JWiley/MonashDoctoralStatistics/edit/master/README.md) to maintain and preview the content for your website in Markdown files. -->
+4.  Week 4, we will learn about interactions and moderation. TBD
 
-<!-- Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files. -->
+5.  Week 5, we will learn about model selection and comparison. TBD
 
-<!-- ### Markdown -->
+6.  Week 6, we will learn about generalized linear mixed effects
+    models (GLMMs). TBD
 
-<!-- Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for -->
+7.  Week 7, we will learn about working with data. TBD
 
-<!-- ```markdown -->
-<!-- Syntax highlighted code block -->
+8.  Week 8, we will learn about merging and reshaping data. TBD
 
-<!-- # Header 1 -->
-<!-- ## Header 2 -->
-<!-- ### Header 3 -->
+9.  Week 9, we will learn about data cleaning and repeated measures data. TBD
 
-<!-- - Bulleted -->
-<!-- - List -->
+10.  Week 10, we will learn about multiple imputation for missing data. TBD
 
-<!-- 1. Numbered -->
-<!-- 2. List -->
+11.  Week 11, we will learn about graphs and data visualization (Part 1). TBD
 
-<!-- **Bold** and _Italic_ and `Code` text -->
-
-<!-- [Link](url) and ![Image](src) -->
-<!-- ``` -->
-
-<!-- For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/). -->
-
-<!-- ### Jekyll Themes -->
-
-<!-- Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/JWiley/MonashDoctoralStatistics/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file. -->
-
-<!-- ### Support or Contact -->
-
-<!-- Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out. -->
+12.  Week 12, we will learn about graphs and data visualization (Part 2). TBD

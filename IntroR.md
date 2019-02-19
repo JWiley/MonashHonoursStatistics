@@ -7,7 +7,9 @@ your computer. `R` is primarily a language. To have a nicer way to
 interact with and use `R` we will use RStudio. RStudio is known as an
 *I*ntegrated *D*evelopment *E*nvironment or IDE. It is a program that
 helps to keep your code, output, graphs, and files all together in one
-place.
+place. *Please follow these steps on your own laptop/computer* so that
+you can work on the unit and later in your honours, on your thesis,
+from anywhere and do not depend on lab computers.
 
 ## Windows OS
 
@@ -44,7 +46,88 @@ follow these steps:
 
 ```
 
-If everything worked, `R` should return the answer, 4.
+If everything worked, `R` should return the answer, 4. If not, double
+check the installation steps. If you are stuck, post on the Moodle
+Discussion Forum promptly so we can help you figure things out.
+
+Assuming everything is working, try to run this code at the console to
+install a few packages we will be using this semester. 
+`R` may generate a lot of output and strange code. Most of that is
+OK. However, you should keep notes on any **Error** messages (just copy
+and paste from the console) and raise these on the class discussion
+boards if you are stuck. Note that you will not be using any of these
+right now. Just try to run it so everything is installed and ready to
+go. Posting problems and errors to the discussion forum also will help
+us troubleshoot so that in later weeks when we present analyses, you
+have a fully functioning `R` on your system.
+
+```r 
+
+## some general language features, used in other packages
+install.packages("rlang", dependencies = TRUE)
+
+## reshape data (for longitudinal datasets)
+install.packages("reshape2", dependencies = TRUE) 
+
+## general data management
+install.packages("data.table", dependencies = TRUE) 
+
+## work with longitudinal data
+install.packages("zoo", dependencies = TRUE) 
+
+## work with date/time data
+install.packages("chron", dependencies = TRUE) 
+
+## read text files into R
+install.packages("readr", dependencies = TRUE) 
+
+## read Excel files into R
+install.packages("readxl", dependencies = TRUE)
+
+## read SPSS, STATA, and SAS files into R
+install.packages("haven", dependencies = TRUE) 
+
+## mixed effects models
+install.packages("lme4", dependencies = TRUE) 
+
+## beautiful graphs in R
+install.packages("ggplot2", dependencies = TRUE) 
+
+## create panels of plots in R
+install.packages("cowplot", dependencies = TRUE) 
+
+## beautiful colours for plots in R
+install.packages("viridis", dependencies = TRUE) 
+
+## visreg app helps visualize regression models easily
+install.packages("visreg", dependencies = TRUE)
+
+## multiple imputation
+install.packages("mice", dependencies = TRUE) 
+
+
+## load the packages (basically open/run the apps)
+library(reshape2)
+library(data.table)
+library(zoo)
+library(chron)
+library(readr)
+library(readxl)
+library(haven)
+library(lme4)
+library(ggplot2)
+library(cowplot)
+library(viridis)
+library(visreg)
+library(mice)
+
+```
+
+Note that generally any text entered at the
+console is assumed to be a command to `R`. The exception is that text
+following a hashtag, #, is treated as a comment, not a command. This
+is a helpful way to document code, so you know what the purpose of a
+particular piece of code is.
 
 # 3. Learn about RStudio
 
@@ -74,3 +157,19 @@ importing data into `R` and Intermediate `R` use that are
 **due before Wednesday, 13 March**. Once you've gotten through all of
 these, you will have a solid foundation and the rest of the unit will
 be easier to follow. Also, no other weeks have so many assignments.
+
+# 5. Summary and Checklist
+
+This module covers installing and setting up `R` and RStudio. You have
+a functioning version of `R` on your own computer. Before the first
+lecture, make sure you've done everything by going through this
+checklist.
+
+- [] `R` is installed
+- [] RStudio is installed and you can open and use it to add numbers
+- [] Packages have been installed and/or you have posted
+  problems/errors to the discussion board
+- [] You have watched/read the basics about RStudio
+- [] You are registered and can access DataCamp and/or have posted to
+  the discussion board so we can make sure you have access to DataCamp
+- [] You have completed the "Introduction to R" section on DataCamp
