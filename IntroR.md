@@ -165,11 +165,11 @@ a functioning version of `R` on your own computer. Before the first
 lecture, make sure you've done everything by going through this
 checklist.
 
-- [] `R` is installed
-- [] RStudio is installed and you can open and use it to add numbers
-- [] Packages have been installed and/or you have posted
+- [ ] `R` is installed
+- [ ] RStudio is installed and you can open and use it to add numbers
+- [ ] Packages have been installed and/or you have posted
   problems/errors to the discussion board
-- [] You have watched/read the basics about RStudio
-- [] You are registered and can access DataCamp and/or have posted to
+- [ ] You have watched/read the basics about RStudio
+- [ ] You are registered and can access DataCamp and/or have posted to
   the discussion board so we can make sure you have access to DataCamp
-- [] You have completed the "Introduction to R" section on DataCamp
+- [ ] You have completed the "Introduction to R" section on DataCamp
