@@ -27,7 +27,12 @@ variables to suit your specific analytic needs.
 
 This GitHub repository has a number of resources for the unit.
 
-First, go to the link to learn how to [Install R](RSetup.md). 
+1.  Week 1, we will start by just getting `R` installed, setup, and
+    learning a few basics. Please see the page 
+	[Intro to R](IntroR.md).
+	
+2.  Week 2, we will XXX.
+	
 
 <!-- ## Welcome to GitHub Pages -->
 
