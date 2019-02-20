@@ -11,10 +11,16 @@ place. *Please follow these steps on your own laptop/computer* so that
 you can work on the unit and later in your honours, on your thesis,
 from anywhere and do not depend on lab computers.
 
+*Note, with many of the instructions, especially on a Mac, a lot of
+output code will be generated. You do not need to be able to read or
+understand this and it is normal.*
+
 ## Windows OS
 
 1.  Follow [this guide](https://www.datacamp.com/community/tutorials/installing-R-windows-mac-ubuntu)
 
+2.  Once you think you've followed all the installation steps, move on
+    to the next section to Try `R`.
 
 ## Mac OS
 
@@ -25,15 +31,25 @@ from anywhere and do not depend on lab computers.
     see [this video](https://www.youtube.com/watch?v=m9m6HozVjo8)
 	
 3.  Follow [this guide](https://www.datacamp.com/community/tutorials/installing-R-windows-mac-ubuntu)
+    *Note that at the terminal, if you are asked to enter a password,
+    type the password you use to login to your Mac and press
+    enter/return. When typing your password in the terminal, no
+    characters will appear, but it is still being entered.*
 
+4.  Once you think you've followed all the installation steps, move on
+    to the next section to Try `R`.
 
 # 2. Try `R`
 
 To make sure that `R` and RStudio are installed and working correctly,
 follow these steps:
 
-1.  Find and open RStudio on your computer.  There should be four
-    "windows".
+1.  Find and open RStudio on your computer.  *On Windows OS this
+    should be under all of your programs/applications (on Windows 10
+    open the start menu and search for RStudio).  On Mac OS you can
+    try spotlight search, but if it installed but does not show on
+    spotlight search, try looking in the launchpad.* Once you have
+    RStudio opened, there should be several "windows".
 	
 2.  Go to the window named "Console" and click at the prompt. The
     prompt is just this symbol: ">".
@@ -158,7 +174,16 @@ importing data into `R` and Intermediate `R` use that are
 these, you will have a solid foundation and the rest of the unit will
 be easier to follow. Also, no other weeks have so many assignments.
 
-# 5. Summary and Checklist
+# 5. Lecture 01 Worksheet
+
+In preparation for the first lecture, download 
+[Intro R Worksheet](IntroR_worksheet.R)
+to your laptop into a folder for the unit. Try opening RStudio and
+then going to File -> Open File -> and navigate to
+`IntroR_worksheet.R`. You should be able to open it and see the code
+in RStudio. No need to go through it yet. We will do that in class.
+
+# 6. Summary and Checklist
 
 This module covers installing and setting up `R` and RStudio. You have
 a functioning version of `R` on your own computer. Before the first
@@ -173,3 +198,5 @@ checklist.
 - [ ] You are registered and can access DataCamp and/or have posted to
   the discussion board so we can make sure you have access to DataCamp
 - [ ] You have completed the "Introduction to R" section on DataCamp
+- [ ] You bring your laptop and have the worksheet downloaded to your
+  laptop in preparation for Lecture 1.
