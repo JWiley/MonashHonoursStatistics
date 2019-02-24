@@ -73,7 +73,9 @@ OK. However, you should keep notes on any **Error** messages (just copy
 and paste from the console) and raise these on the class discussion
 boards if you are stuck. Note that you will not be using any of these
 right now. Just try to run it so everything is installed and ready to
-go. Posting problems and errors to the discussion forum also will help
+go. 
+
+Please Post problems and errors to the discussion forum also will help
 us troubleshoot so that in later weeks when we present analyses, you
 have a fully functioning `R` on your system.
 
