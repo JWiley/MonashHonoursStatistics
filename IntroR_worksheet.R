@@ -1,9 +1,13 @@
 #### 1. Basic R Use ####
 
 ## use R as a calculator
-3 + 4
+3 + 4 # addition
 
-2 * 6
+2 * 6 # multiplication
+
+4 / 2 # division
+
+2^3 # powers
 
 ## create a vector
 c(1, 5, 4)
@@ -46,7 +50,7 @@ y <- c(1, 3, NA, 7)
 
 ## calculate mean on y
 mean(y)
-
+d
 ## to all the descriptives, we need to tell R 
 ## to remove missing values first
 ## (na for not available; rm for remove)
@@ -103,4 +107,16 @@ d <- fread("https://raw.githubusercontent.com/JWiley/MonashHonoursStatistics/mas
 
 ## get a summary of the data
 summary(d)
+
+#### 5. Logical Operators ####
+
+## == : logical test if Depressed is equal to 1
+d$Depressed == 1
+
+## > : logical test whether zStress is greater than 0
+d$zStress > 0
+
+## | : logical "or"; test whether either condition is TRUE
+## depressed or high stress
+d$Depressed == 1 | d$zStress > 0
 
