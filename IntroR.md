@@ -36,7 +36,17 @@ understand this and it is normal.*
     enter/return. When typing your password in the terminal, no
     characters will appear, but it is still being entered.*
 
-4.  Once you think you've followed all the installation steps, move on
+4.  Install `openssl` which will allow `R` to securely download files
+    and packages from the internet.  Do this by opening the terminal
+    (you can search for "terminal" or look in the launchpad) and type
+    thise code once the terminal opens and press enter: 
+	`brew install openssl`
+	
+5.  Some graphics require a graphic interface and window system called
+    X11. To install this, go online [here](https://www.xquartz.org/), 
+	download and install the package.
+
+6.  Once you think you've followed all the installation steps, move on
     to the next section to Try `R`.
 
 # 2. Try `R`
