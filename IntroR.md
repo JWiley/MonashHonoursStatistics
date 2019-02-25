@@ -188,11 +188,13 @@ be easier to follow. Also, no other weeks have so many assignments.
 
 # 5. Lecture 01 Worksheet
 
-In preparation for the first lecture, download 
-[Intro R Worksheet](IntroR_worksheet.R)
+In preparation for the first lecture, download these two files: 
+[Intro R Worksheet](IntroR_worksheet.R) and
+[Example Excel Data](actigraph_scored_31.xlsx)
 to your laptop into a folder for the unit. Try opening RStudio and
-then going to File -> Open File -> and navigate to
-`IntroR_worksheet.R`. You should be able to open it and see the code
+then going to 
+`File -> Open File -> and navigate to IntroR_worksheet.R` 
+You should be able to open it and see the code
 in RStudio. No need to go through it yet. We will do that in class.
 
 # 6. Summary and Checklist

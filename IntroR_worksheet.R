@@ -1,4 +1,4 @@
-#### 1. Basic R Use ####
+#### 1. Basic R Use (Demonstration) ####
 
 ## use R as a calculator
 3 + 4 # addition
@@ -24,7 +24,7 @@ x
 ## the second argument is how many digits to use for rounding
 round(1.214294254, digits = 2)
 
-#### 2. Descriptive Statistics ####
+#### 2. Descriptive Statistics (Activity) ####
 
 ## calculate the mean
 ## note that we reuse the previously assigned variable, x
@@ -50,16 +50,21 @@ y <- c(1, 3, NA, 7)
 
 ## calculate mean on y
 mean(y)
-d
-## to all the descriptives, we need to tell R 
+
+## to all the descriptives, we need to tell R
 ## to remove missing values first
 ## (na for not available; rm for remove)
+## by adding an argument, na.rm = TRUE
 mean(y, na.rm = TRUE)
-sd(y, na.rm = TRUE)
-min(y, na.rm = TRUE)
-max(y, na.rm = TRUE)
 
-#### 3. Using a Dataset ####
+#### 2b. You Try It ####
+
+## find the mean of these numbers: 5, 3, 2, 9, 1
+
+## find the standard deviation of the variable "y"
+
+
+#### 3. Using a Dataset (Demonstration) ####
 
 ## R has a built in dataset called "mtcars"
 ## this dataset has variables about 32 different cars
@@ -67,7 +72,7 @@ max(y, na.rm = TRUE)
 ## view the dataset
 View(mtcars)
 
-## one the variables in the dataset is how many 
+## one the variables in the dataset is how many
 ## miles per gallon of petrol each car gets
 ## this variable is called "mpg"
 ## to access the variable from within the mtcars dataset
@@ -92,7 +97,7 @@ round(mtcars$mpg, digits = 0)
 summary(mtcars)
 
 
-#### 4. Loading Data ####
+#### 4. Loading Data (Demonstration) ####
 
 ## to start with, we will load a package for data management
 ## loading a package is like opening an app
@@ -108,15 +113,47 @@ d <- fread("https://raw.githubusercontent.com/JWiley/MonashHonoursStatistics/mas
 ## get a summary of the data
 summary(d)
 
-#### 5. Logical Operators ####
+## load package to read Excel files (.xls or .xlsx)
+## if not installed please uncomment and run code below
+# install.packages("readxl", dependencies = TRUE)
+library(readxl)
 
-## == : logical test if Depressed is equal to 1
+## make sure you saved this Excel data to your R project folder
+## names of all the Excel sheets
+excel_sheets("actigraph_scored_31.xlsx")
+
+## read in the "Sleep" sheet
+d.acti <- read_excel("actigraph_scored_31.xlsx", sheet = "Sleep")
+
+## view the variable names in the dataset
+names(d.acti)
+
+## calculate the mean sleep duration (total sleep time; TST)
+mean(d.acti$TST)
+
+
+#### 4b. You Try It ####
+
+## view the Sleep Efficiency (se) variable in d.acti
+## what is the second value?
+
+## what are the variable names in the "Summary" sheet?
+## the first variable is "ID"
+
+
+#### 5. Logical Operators (activity) ####
+
+## "==" : logical test if Depressed is equal to 1
 d$Depressed == 1
 
-## > : logical test whether zStress is greater than 0
+## ">" : logical test whether zStress is greater than 0
 d$zStress > 0
 
-## | : logical "or"; test whether either condition is TRUE
+## "|" : logical "or"; test whether either condition is TRUE
 ## depressed or high stress
-d$Depressed == 1 | d$zStress > 0
+d$Depressed == 1 | d$zStress > 1
+
+## "&" : logical "and"; test whether both conditions are TRUE
+## depressed and low stress
+d$Depressed == 1 & d$zStress < 1
 
