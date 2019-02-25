@@ -189,8 +189,10 @@ be easier to follow. Also, no other weeks have so many assignments.
 # 5. Lecture 01 Worksheet
 
 In preparation for the first lecture, download these two files: 
-[Intro R Worksheet](IntroR_worksheet.R) and
-[Example Excel Data](actigraph_scored_31.xlsx)
+
+- [Intro R Worksheet](IntroR_worksheet.R) and
+- [Example Excel Data](actigraph_scored_31.xlsx)
+
 to your laptop into a folder for the unit. Try opening RStudio and
 then going to 
 `File -> Open File -> and navigate to IntroR_worksheet.R` 
