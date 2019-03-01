@@ -110,6 +110,7 @@ library(data.table)
 ## read in a sample data set from the internet
 d <- fread("https://raw.githubusercontent.com/JWiley/MonashHonoursStatistics/master/IntroR_sample.csv")
 
+
 ## get a summary of the data
 summary(d)
 
@@ -157,3 +158,16 @@ d$Depressed == 1 | d$zStress > 1
 ## depressed and low stress
 d$Depressed == 1 & d$zStress < 1
 
+## we can use square brackets, [], to subset a variable or dataset
+## we can subset by number or by logical value.
+## here are all the values for zStress
+d$zStress
+
+## here is just the first and third value
+d$zStress[c(1, 3)]
+
+## here are just the values of zStress where Depressed == 1
+d$zStress[d$Depressed == 1]
+
+## here are just the values of zStress where zStress > 1
+d$zStress[d$zStress > 1]
