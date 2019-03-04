@@ -167,11 +167,18 @@ library(mice)
 
 ```
 
-Note that generally any text entered at the
+The package installation may generate a lot of output. Finally loading
+the packages (the `library()` code) will not do anything, although you
+may get some notes or messages. If you do not receive any errors or
+messages like 
+"Error in library(readr) : there is no package called 'readr'"
+That is considered a successful outcome of this step.
+
+_Note that generally any text entered at the
 console is assumed to be a command to `R`. The exception is that text
 following a hashtag, #, is treated as a comment, not a command. This
 is a helpful way to document code, so you know what the purpose of a
-particular piece of code is.
+particular piece of code is._
 
 # 3. Learn about RStudio
 
