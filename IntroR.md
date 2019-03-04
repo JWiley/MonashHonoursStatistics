@@ -39,13 +39,13 @@ understand this and it is normal.*
 4.  Install `openssl` which will allow `R` to securely download files
     and packages from the internet.  Do this by opening the terminal
     (you can search for "terminal" or look in the launchpad) and type
-    thise code once the terminal opens and press enter: 
+    this code once the terminal opens and press enter: 
 	`brew install openssl`
 
 5.  Install `libgit2` which is needed for one of our graphing
     packages. Do this by opening the terminal
     (you can search for "terminal" or look in the launchpad) and type
-    thise code once the terminal opens and press enter:
+    this code once the terminal opens and press enter:
 	`brew install libgit2`
 	
 6.  Some graphics require a graphic interface and window system called
