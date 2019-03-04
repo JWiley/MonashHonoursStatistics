@@ -41,16 +41,22 @@ understand this and it is normal.*
     (you can search for "terminal" or look in the launchpad) and type
     thise code once the terminal opens and press enter: 
 	`brew install openssl`
+
+5.  Install `libgit2` which is needed for one of our graphing
+    packages. Do this by opening the terminal
+    (you can search for "terminal" or look in the launchpad) and type
+    thise code once the terminal opens and press enter:
+	`brew install libgit2`
 	
-5.  Some graphics require a graphic interface and window system called
+6.  Some graphics require a graphic interface and window system called
     X11. To install this, go online [here](https://www.xquartz.org/), 
 	download and install the package.
 
-6.  Some people are reporting issues installing and finding R at this
+7.  Some people are reporting issues installing and finding R at this
     stage. If this is happening to you, after completing all the
     previous steps, you can try installing R from [here](https://cran.csiro.au/).
 
-7.  Once you think you've followed all the installation steps, move on
+8.  Once you think you've followed all the installation steps, move on
     to the next section to Try `R`.
 
 # 2. Try `R`
