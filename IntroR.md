@@ -35,7 +35,7 @@ understand this and it is normal.*
     type the password you use to login to your Mac and press
     enter/return. When typing your password in the terminal, no
     characters will appear, but it is still being entered.*
-
+	
 4.  Install `openssl` which will allow `R` to securely download files
     and packages from the internet.  Do this by opening the terminal
     (you can search for "terminal" or look in the launchpad) and type
@@ -46,7 +46,11 @@ understand this and it is normal.*
     X11. To install this, go online [here](https://www.xquartz.org/), 
 	download and install the package.
 
-6.  Once you think you've followed all the installation steps, move on
+6.  Some people are reporting issues installing and finding R at this
+    stage. If this is happening to you, after completing all the
+    previous steps, you can try installing R from [here](https://cran.csiro.au/).
+
+7.  Once you think you've followed all the installation steps, move on
     to the next section to Try `R`.
 
 # 2. Try `R`
@@ -72,9 +76,11 @@ follow these steps:
 
 ```
 
-If everything worked, `R` should return the answer, 4. If not, double
-check the installation steps. If you are stuck, post on the Moodle
-Discussion Forum promptly so we can help you figure things out.
+If everything worked, `R` should return the answer, "[1] 4". 
+_Note: the [1] just means that the answer, 4, is in position 1._
+If not, double check the installation steps. If you are stuck, post on
+the Moodle Discussion Forum promptly so we can help you figure things
+out. 
 
 Assuming everything is working, try to run this code at the console to
 install a few packages we will be using this semester. 
