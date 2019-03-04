@@ -89,6 +89,10 @@ Please Post problems and errors to the discussion forum also will help
 us troubleshoot so that in later weeks when we present analyses, you
 have a fully functioning `R` on your system.
 
+_Note: if you are having trouble with permissions this blog 
+[post may
+help](https://www.r-bloggers.com/escaping-the-macos-10-14-mojave-filesystem-sandbox-with-r-rstudio/)._
+
 ```r 
 
 ## some general language features, used in other packages
