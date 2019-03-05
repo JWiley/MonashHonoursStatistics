@@ -30,33 +30,37 @@ understand this and it is normal.*
 2.  Using the app store, install and open Xcode. If you need a guide,
     see [this video](https://www.youtube.com/watch?v=m9m6HozVjo8)
 	
-3.  Follow [this guide](https://www.datacamp.com/community/tutorials/installing-R-windows-mac-ubuntu)
+3.  Install tools for Mac OS `R` needs to build packages, by
+    downloading the package installer
+    [here](https://github.com/rmacoslib/r-macos-rtools)
+	
+4.  Follow [this guide](https://www.datacamp.com/community/tutorials/installing-R-windows-mac-ubuntu)
     *Note that at the terminal, if you are asked to enter a password,
     type the password you use to login to your Mac and press
     enter/return. When typing your password in the terminal, no
     characters will appear, but it is still being entered.*
 	
-4.  Install `openssl` which will allow `R` to securely download files
+5.  Install `openssl` which will allow `R` to securely download files
     and packages from the internet.  Do this by opening the terminal
     (you can search for "terminal" or look in the launchpad) and type
     this code once the terminal opens and press enter: 
 	`brew install openssl`
 
-5.  Install `libgit2` which is needed for one of our graphing
+6.  Install `libgit2` which is needed for one of our graphing
     packages. Do this by opening the terminal
     (you can search for "terminal" or look in the launchpad) and type
     this code once the terminal opens and press enter:
 	`brew install libgit2`
 	
-6.  Some graphics require a graphic interface and window system called
+7.  Some graphics require a graphic interface and window system called
     X11. To install this, go online [here](https://www.xquartz.org/), 
 	download and install the package.
 
-7.  Some people are reporting issues installing and finding R at this
+8.  Some people are reporting issues installing and finding R at this
     stage. If this is happening to you, after completing all the
     previous steps, you can try installing R from [here](https://cran.csiro.au/).
 
-8.  Once you think you've followed all the installation steps, move on
+9.  Once you think you've followed all the installation steps, move on
     to the next section to Try `R`.
 
 # 2. Try `R`
