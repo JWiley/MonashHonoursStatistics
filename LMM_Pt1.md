@@ -8,9 +8,6 @@ commands should work, but if not you can try installing them again.
 
 ```r 
 
-## some general language features, used in other packages
-install.packages("rlang", dependencies = TRUE)
-
 ## general data management
 install.packages("data.table", dependencies = TRUE) 
 
