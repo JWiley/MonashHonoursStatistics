@@ -31,7 +31,8 @@ This GitHub repository has a number of resources for the unit.
     learning a few basics. Please see the page 
 	[Intro to R](IntroR.md).
 	
-2.  Week 2, we will learn about linear mixed effects models (LMMs; Part 1). TBD
+2.  Week 2, we will learn about linear mixed effects models (LMMs;
+    Part 1). Please see the page [LMM Pt1](LMM_Pt1.md).
 
 3.  Week 3, we will learn about linear mixed effects models (LMMs; Part 2). TBD
 
