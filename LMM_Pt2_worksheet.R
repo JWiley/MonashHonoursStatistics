@@ -23,52 +23,9 @@ library(ggplot2)
 ## your project directory
 d <- readRDS("aces_daily_sim_processed.RDS")
 
-## see the dimenions of the data (rows   columns)
-## should be: 6927   56
-dim(d)
 
 ## see the names of the variables in the dataset
 names(d)
-
-
-## to visualize the multiple assessments per person
-## and the variation in means we will focus
-## one one variable, positive affect (PosAff) for just
-## four individuals (IDs 1, 2, 6, and 9)
-
-## first we subset the data to only rows
-## where UserID is in IDs 1, 2, 6 or 9
-## now that we use quotes around the IDs
-## because they are not stored as numbers but
-## as discrete categorical values (i.e., IDs are not
-## really a continuous "number", they represent discrete people).
-justfour <- d[UserID %in% c("1", "2", "6", "9")]
-
-## now we can plot it
-## (do not worry about understanding graphing, we will learn that later)
-## Note the warnings about non-finite values are because of some
-## missing data, you can ignore these safely, if you expect
-## some missing data (we do)
-ggplot(justfour, aes(UserID, PosAff)) +
-  geom_jitter() +
-  stat_summary(fun.data = mean_cl_normal,
-               colour = "blue", size = 1)
-
-
-
-## to visualize the differences in individual means
-## we first make a new dataset where we
-## calculate the mean positive affect *by* UserID
-individMeans <- d[, .(MeanPosAff = mean(PosAff, na.rm = TRUE)),
-                  by = UserID]
-
-## view the first few rows of this new individual mean dataset
-head(individMeans)
-
-## now plot a histogram of the individual means
-ggplot(individMeans, aes(MeanPosAff)) +
-  geom_histogram()
-
 
 
 #### 2. Comparing Models (Demonstration)  ####
