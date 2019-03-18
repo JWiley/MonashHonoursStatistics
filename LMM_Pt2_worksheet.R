@@ -28,187 +28,147 @@ d <- readRDS("aces_daily_sim_processed.RDS")
 names(d)
 
 
-#### 2. Comparing Models (Demonstration)  ####
+#### 2. Calculating Between & Within Effects (Demonstration)  ####
 
-## fit an intercept only linear model (regression)
-## and store the results in an object, m1lr
-m1lr <- lm(PosAff ~ 1, data = d)
+## examine the distribution of stress in two participants
+## you can see how the means seem to differ but also each participant
+## has variation within them in their level of stress
+ggplot(d[UserID %in% c(1, 2)], aes(STRESS, fill = UserID)) +
+  geom_density()
 
-## create a summary of our linear regression model
-summary(m1lr)
+## calculate the individual mean stress BY participant ID
+d[, MeanStress := mean(STRESS, na.rm = TRUE), by = UserID]
 
-## the intercept is the overall mean of positive affect
-## we can easily verify this
-mean(d$PosAff, na.rm = TRUE)
+## calculate the deviation stress scores
+## by taking the difference between observed stress scores and the
+## indidivudal means
+## note that we do not need to specify BY participant ID because the
+## individual means are already repeated on each row of the dataset
+d[, DeviationStress := STRESS - MeanStress]
 
-## the linear regression model does not allow any individual differences
+## now look at a few rows of the data to check what happened
+d[UserID == 1, .(UserID, STRESS, MeanStress, DeviationStress)]
 
-## now we will fit a *l*inear *m*ixed *e*ffects *r*egression
-## model (LMM) using the lmer() function
-## again we only have an intercept, but this time we include
-## the intercept as a fixed effect (which will capture the mean)
-## and as a random effect (which will capture the standard deviation)
-m1lmm <- lmer(PosAff ~ 1 + (1 | UserID), data = d)
-
-## generate a summary
-## NOTE: in class walk through interpretation of output
-summary(m1lmm)
-
-## this model shows the assumed normal distribution of the
-## individual means of positive affect are summarized by
-## M = 2.67866 and SD = 0.7930
+## look at the mean deviation stress (this should basically be 0)
+## representing that it is a within only variable
+## note that R may use scientific notation:
+## 1.4e4 = 1, then move decimal four spots to the right = 14000
+## 1.4e-4 = 1, then move decimal four spots to the left = .00014
+mean(d$DeviationStress, na.rm=TRUE)
 
 
-## we can compare these values to the values we would
-## obtain if we simply calculated and summarized the individual means
-## we can see the values are very close
-## because of some differences in the estimation, these will not always
-## match exactly, but they are typically close
-mean(individMeans$MeanPosAff, na.rm = TRUE)
-sd(individMeans$MeanPosAff, na.rm = TRUE)
+## now we can estimate LMMs
 
-## we also can use the variance (not standard deviation)
-## estimates from the random effects section to estimate
-## the intraclass correlation coefficient (ICC) for positive
-## affect to provide a descriptive statistic for how much
-## variance in positive affect occurs between people
-## relative to its total variance
+## first we only use STRESS, which combines both between & within effects
+summary(lmer(PosAff ~ STRESS + (1 | UserID), data = d))
 
-## ICC for positive affect
-.6289 / (.6289 + .5290)
+## next we use our new mean and deviation stress variables
+## to separate the between and within effects of stress
+summary(lmer(PosAff ~ MeanStress + DeviationStress +
+               (1 | UserID), data = d))
 
 
-## in this intercept only model, the fixed effects estimates
-## are similar between the linear regression and the LMMs
-
-## regression coefficients (fixed effects) from linear regression
-coef(m1lr)
-## fixed effects only from LMM
-fixef(m1lmm)
-
-## however, because the linear regression erroneously assumes that
-## all observations are independent, the standard error is biased
-## downwards resulting in biased, too narrow confidence intervals
-## here we just compare the 95% confidence interval for the fixed effect
-## intercept estimate, labelled "(Intercept)" from both models
-## note that it is wider (appropriately) in the LMM
-confint(m1lr)
-confint(m1lmm, oldNames = FALSE)
-
-
-#### 3. Run a LMM (You Try It)  ####
+#### 3. Calculating Between & Within Effects (You Try It) ####
 
 ## in pairs or small groups, pick one of the other variables
-## in the dataset (not positive affect) and fit an intercept only
-## linear mixed model by completing the code below.
+## in the dataset (not STRESS, not PosAff) that is repeatedly measured
+## calculate individual means and deviations from the means
+## then fit a model predicting positive affect, first from the overall
+## score and then from the mean and deviation scores.
 
 ## if you need a refresher on what variables are available
-## take a look at the table in the slides or look through the example
-## above to see how we could find all the variable names in the dataset
+## take a look at the table in the slides.
 
-## store the model results in an object called "m2lmm"
-m2lmm <- lmer()
+## calculate individual means by ID
+d[,  := mean( , na.rm = TRUE), by = UserID]
 
+## calculate the deviation scores
+d[,  :=  - ]
 
-## now make a summary of the model results
-
-
-
-
-## what is the intraclass correlation coefficient for this variable?
+## fit a linear mixed model using the original variable to predict positive affect
+summary(lmer(PosAff ~      + (1 | UserID), data = d))
 
 
-
-## if you try fitting an intercept only linear regression (not LMM)
-## to the same variable, are the confidence intervals
-## wider or narrower for the LMM or linear regression?
-m2lr <- lm( )
+## fit a linear mixed model using the mean and deviation
+## variables to predict positive affect
+summary(lmer(PosAff ~      + (1 | UserID), data = d))
 
 
 
 
+#### 4. Random Slopes (Demonstration)  ####
+
+## random intercept and fixed effects only
+m1a <- lmer(PosAff ~ MeanStress + DeviationStress +
+              (1 | UserID),
+            data = d)
+
+## random intercept, random slope, and fixed effects
+m1b <- lmer(PosAff ~ MeanStress + DeviationStress +
+              (1 | UserID) + (0 + DeviationStress | UserID),
+            data = d)
+
+## correlated random intercept and random slope, and fixed effects
+m1c <- lmer(PosAff ~ MeanStress + DeviationStress +
+              (1 + DeviationStress | UserID),
+            data = d)
+
+## generate summaries of the models and compare
+## note the standard errors in particular
+summary(m1a)
+summary(m1b)
+summary(m1c)
 
 
-#### 4. Diagnostics (Demonstration)  ####
+## does adding the random slope improve model fit?
+anova(m1a, m1b, test = "LRT")
 
-## make a dataset of the residuals and expected values
-## to do this, we use the
-## fitted() function for expected values
-## resid() function for model residuals
-## NOTE: these two functions work on linear regression models too
-d.residuals <- data.table(
-  Yhat = fitted(m1lmm),
-  Residuals = resid(m1lmm))
+## does allow the random intercept and slope to correlate improve model fit?
+anova(m1b, m1c, test = "LRT")
 
-## check for normality of the outcome
-## by examining residuals
-ggplot(d.residuals, aes(Residuals)) +
-  geom_histogram()
-
-## check for normality of the outcome
-## using QQ plot
-ggplot(d.residuals, aes(sample = Residuals)) +
-  stat_qq() + stat_qq_line()
-
-## check for homogeneity of variance assumption
-ggplot(d.residuals, aes(Yhat, Residuals)) +
-  geom_point(alpha = .2)
+## overall does the model with correlated random intercept and slope
+## fit better than a random intercept only model
+## simultaneously tests 2 parameters: slope variance + 1 correlation
+anova(m1a, m1c, test = "LRT")
 
 
-## make a dataset of the random effects by UserID
-d.random <- as.data.table(coef(m1lmm)$UserID)
-
-## check whether the random effects are normally distributed
-## note that these have mean 0
-ggplot(d.random, aes(`(Intercept)`)) +
-  geom_histogram()
-
-## normality via QQ plot
-ggplot(d.random, aes(sample = `(Intercept)`)) +
-  stat_qq() + stat_qq_line()
 
 
-#### 5. Inference (Demonstration)  ####
+#### 5. Random Slopes (You Try It)  ####
 
-## fixed effects table
-fetable <- coef(summary(m1lmm))
-## view the table
-print(fetable)
+## in pairs or small groups, use the same variable you chose
+## earlier to create individual means and deviations from the means
+## use these variables to complete the models below and discuss
+## their interpretation amongst yourselves
 
-## extract the t values (b / se)
-## take their absolute value (as we typically do 2 sided hypothesis tests
-## calculate the p-value using the normal distribution function, pnorm()
-## and multiply by 2 so its a two-tailed test
-pnorm(abs(fetable[, "t value"]), lower.tail = FALSE) * 2
+## random intercept and fixed effects only
+m2a <- lmer(PosAff ~    +     +
+              (1 | UserID),
+            data = d)
 
-## confidence intervals using the Wald method are based
-## on assuming a normal distribution and are very fast and easy
-## but do not give any confidence intervals for the random effects
-confint(m1lmm, method = "Wald")
+## random intercept, random slope, and fixed effects
+m2b <- lmer(PosAff ~    +     +
+              (1 | UserID) + (0 +  | UserID),
+            data = d)
 
-## confidence intervals using the profile method are based
-## on the change in model performance (the log likelihood)
-## and are much slower, but generally a bit more precise and
-## are appropriate for random effects
-confint(m1lmm, method = "profile")
+## correlated random intercept and random slope, and fixed effects
+m2c <- lmer(PosAff ~      +      +
+              (1 +      | UserID),
+            data = d)
+
+## generate summaries of the models and compare
+## what happens to the standard errors in the fixed
+## only vs fixed + random slope models?
+summary(  )
+
+## Use the anova() function to answer these questions
+## for YOUR variable
+
+## does adding the random slope improve model fit?
+anova(    ,     , test = "LRT")
+
+## does allow the random intercept and slope to correlate improve model fit?
 
 
-## we can compare models using likelihood ratio tests
-## which are OK (not dissimilar from assuming normal) for fixed effects
-## and are about the best that can be done for random effects
-## note that you always need at least one random effect in LMMs
-## so you cannot simply remove the random intercept; generally this is
-## used for testing more complex random effects we will learn in future weeks
-## or testing several differences at once
-
-## setup a new model with an additional predictor, SurveyInteger
-lmmalt <- lmer(PosAff ~ 1 + SurveyInteger + (1 | UserID), d)
-
-## conduct a likelihood ratio test of these two, nested models
-anova(lmmalt, m1lmm, test = "LRT")
-
-## assuming normal distribution, test the fixed effects in
-## our alternate model, lmmalt
-fetablealt <- coef(summary(lmmalt))
-pnorm(abs(fetablealt[, "t value"]), lower.tail = FALSE) * 2
-
+## overall does the model with correlated random intercept and slope
+## fit better than a random intercept only model?
