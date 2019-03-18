@@ -132,6 +132,24 @@ anova(m1b, m1c, test = "LRT")
 anova(m1a, m1c, test = "LRT")
 
 
+## Convergence Issue Example
+
+## Example of a model with convergence & fit issues
+## note the "singular fit" and convergence warning
+summary(lmer(PosAff ~ STRESS + SOLs + NegAff + WASONs +
+              (1 + STRESS + SOLs + NegAff + WASONs | UserID),
+            data = d))
+
+## this is an example where we might simplify the structure to
+## aid convergence and estimation
+## note that in the above model with poor convergence
+## the SDs for SOLs and WASONs are very small
+## we could consider dropping these random slopes
+## and just keep as fixed effects
+summary(lmer(PosAff ~ STRESS + SOLs + NegAff + WASONs +
+               (1 + STRESS + NegAff | UserID),
+            data = d))
+
 
 
 #### 5. Random Slopes (You Try It)  ####
