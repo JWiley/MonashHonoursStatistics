@@ -59,9 +59,9 @@ mf.quad <- update(mf.none, . ~ . + poly(STRESS, 2))
 mf.cub <- update(mf.none, . ~ . + poly(STRESS, 3))
 
 ## update intercept only model with fixed and random slopes
-mr.lin <- update(mf.none, . ~ . +
+mr.lin <- update(mf.none, . ~ . - (1 | UserID) +
   poly(STRESS, 1) + (1 + poly(STRESS, 1) | UserID))
-mr.quad <- update(mf.none, . ~ . +
+mr.quad <- update(mf.none, . ~ . - (1 | UserID)+
   poly(STRESS, 2) + (1 + poly(STRESS, 2) | UserID))
 
 ## Likelihood Ratio Test (LRT) only makes sense for nested models
