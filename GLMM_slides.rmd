@@ -305,7 +305,7 @@ First, let's test whether women or men in the study are more likely to
 be born in or outside of Australia. To begin with and avoid a repeated
 measures dataset, we will make a dataset without repeated
 data.^[Download the script to run all the examples in lecture here:
-https://jwiley.github.io/MonashDoctoralStatistics/GLMM_slides.rmd
+https://jwiley.github.io/MonashHonoursStatistics/GLMM_slides.rmd
 Note that this is a new kind of file, but you can also open it in
 RStudio. It combines text and has `R` code in "chunks" marked by three
 back ticks and is called an `R` markdown file. `R` markdown is a very
