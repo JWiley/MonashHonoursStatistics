@@ -1,0 +1,824 @@
+---
+title: "Generalized Linear Mixed Models"
+subtitle: "An Introduction"
+author: "Joshua F. Wiley"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: default
+  tufte::tufte_book: default
+---
+
+```{r setup}
+options(digits = 2)
+
+library(data.table)
+library(lme4)
+library(ggplot2)
+library(visreg)
+
+## read in the dataset
+d <- readRDS("aces_daily_sim_processed.RDS")
+
+```
+
+# The Generalized Linear Model
+
+We have already seen the linear model^[For example,
+  t-tests, Analysis of Variance, Pearson correlations,
+  and Linear Regression are all cases of linear models]
+
+- $y = b_0 + b_1 * x_1 + ... + b_k * x_k + e$
+
+The linear model is a *special case* of the **generalized linear
+  model** or **GLM**
+
+The GLM extends the linear model to different types of
+outcomes^[The probit model is also used for binary variables.
+Unlike normally distributed outcomes, count outcomes take on
+integer values (0, 1, 2, *not* 0.5 or 1.5)
+and counts cannot be negative.]
+
+- binary 0/1 variables (logistic regression)
+
+- count variables (poisson regression)
+
+- Many other types of variables
+
+This lecture focuses on *logistic mixed effects models* for binary variables
+
+
+------------------------------------------
+
+
+## Notation and some Theory
+
+We already learned about linear regression
+
+- $y = b_0 + b_1 * x_1 + ... + b_k * x_k + e$
+
+First, we simplify the notation a bit
+
+- $\eta = b_0 + b_1 * x_1 + ... + b_k * x_k$
+- $y = \eta + e$
+
+For linear regression, we assumed a *normal* distribution
+
+The normal distribution has two parameters^[Note the mean sometimes called the *location*
+	because it controls the location of the center of the distribution and the
+	standard deviation is sometimes called the *scale* because it controls the
+	scale or spread of the distribution]
+
+- mean ($\mu$)
+
+- standard deviation ($\sigma$)
+
+- Normal distribution can be written: $N(\mu, \sigma)$
+
+In linear regression, what we are really assuming is that
+
+- $y \sim N(\eta, \sigma)$
+
+Which is read, "Y is distributed as a normal distribution with mean
+equal to $\eta$ and standard deviation $\sigma$".
+
+$\sigma$ is typically estimated as standard deviation of the
+residuals, $e$.
+
+
+------------------------------------------
+
+
+Any GLM has to be a linear model at some level, that is, this is
+always true:
+
+- $\eta = b_0 + b_1 * x_1 + ... + b_k * x_k$
+
+The GLM generalizes linear regression by defining a *function* that
+links or transforms $\eta$ to the outcome
+
+The link function is always called $g()$. Likewise an inverse link
+function exists that simple "undoes" whatever the link function
+did. This is called $g()^{-1}$.
+
+In normal linear regression, the link function and inverse link
+function are just the identity function, that is *there is no
+transformation*
+
+For many other types of regression, including *logistic regression*
+the link and inverse link functions do some transformation.
+
+In terms of formulae, we define the expected value of $y$, its mean,
+as $\mu$
+
+- $E(y) = \mu =$ mean of $y$
+
+Then
+
+- $\eta = g(\mu)$
+- $\mu = g^{-1}(\eta)$
+
+For normal linear regression because the link and inverse link
+functions are the identity function this works out to be
+
+- $\eta = g(\mu) = \mu$
+- $\mu = g^{-1}(\eta) = \eta$
+
+The powerful concept of the GLM is that by using link functions, the
+linear model
+
+- $\eta = b_0 + b_1 * x_1 + ... + b_k * x_k$
+
+always stays the same whether the outcome is continuous and normally
+distributed or binary and not normally distributed or count or any
+other type of variable and assumed distribution
+
+This means in some sense, all GLMs are interpretted like linear
+regression, so in a way you already know logistic regression!
+
+Next, we explore the link functions for logistic regression that
+make the transformation from a linear scale to a binary scale.
+
+
+------------------------------------------
+
+
+## Logistic Regression
+
+Logistic regression is regression when the outcome only takes on two
+values: 0 or 1.
+
+Logistic regression is useful for many questions
+
+- What predicts whether someone will have major depression or not?
+- Does one treatment have a higher probability of patients *remitting*
+from major depression than another treatment?
+
+------------------------------------------
+
+
+Linear regression will not work for binary outcomes for two reasons:
+
+- First, when an outcome can only be 0 or 1, a straight line is a very
+  bad fit
+    - straight lines could predict a value of 1.4 or 2 or -0.3 when
+      those values are not possible
+- Second, there is no way that a binary variable or its residuals will
+  follow a normal distribution: the normality assumption would be
+  violated
+
+The GLM solves each of these problems separately
+
+- Link functions transform the linear predicted value $\eta$ so that
+  it never goes below 0 and never goes about 1
+- Rather than assume a normal distribution, the GLM uses a new
+  distribution, the Bernoulli distribution
+    - Whereas the Normal distribution had two parameters, mean and
+      standard deviation, the Bernoulli distribution only has one: the
+      probability that an event will occur
+
+
+------------------------------------------
+
+
+For logistic regression, the link function is defined as:
+
+- $\eta = g(\mu) = ln\left(\frac{\mu}{1 - \mu}\right)$
+
+That is called the *logit* function.
+
+Here $\mu$ is the probability that the outcome will
+be 1. Probabilities range from 0 to 1: an outcome cannot happen less
+than never (probability of 0) or more than always (probability of 1).
+
+Graphing $\mu$ against $\mu$ we get
+
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Figure 1. Probabilities against Probabilities"}
+tmp <- data.frame(mu = seq(from = .01, to = .99, by = .01))
+ggplot(tmp, aes(mu, mu)) +
+  geom_point()
+```
+
+The first part of the *logit* function:
+
+- $\frac{\mu}{1 - \mu}$
+
+unbounds $\mu$ on the right side, so that as it goes to 1,
+transformed, it goes to infinity, shown graphically below
+
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Figure 2. Probabilities against right unbounded probabilities"}
+ggplot(tmp, aes(mu, mu/(1 - mu))) +
+  geom_point()
+```
+
+The next part, the natural logarithm, unbounds it on the left side
+because the log of 0 is negative infinity
+
+- $ln\left(\frac{\mu}{1 - \mu}\right)$
+
+Combined, the graph below shows the raw $\mu$ values against the
+transformed values.
+
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Figure 3. Probabilities against unbounded probabilities (logit scale)"}
+ggplot(tmp, aes(mu, log(mu/(1 - mu)))) +
+  geom_point()
+```
+
+In this way, the link function for logistic regression takes the
+probability of the event occuring, which can only fall between 0 and
+1, and transforms it to fall between negative infinity and positive
+infinity
+
+Now we have a continuous and unbounded outcome we can apply
+a linear model to!
+
+To go from predictions on the linear model back to the probability
+scale, we use the inverse link function:
+
+- $\mu = g^{-1}(\eta) = \frac{1}{1 + e^{-\eta}}$
+
+That is, suppose we had the linear predicted values, $\eta$ shown
+below graphically
+
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Figure 4. Linear predictor against linear predictor"}
+tmp2 <- data.frame(eta = seq(from = -5, to = 5, by = .1))
+ggplot(tmp2, aes(eta, eta)) +
+  geom_point()
+```
+
+Using the inverse link function, we transform them to again fall
+between 0 and 1, like probabilities.
+
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Figure 5. Linear predictor (logit scale) against probabilities"}
+ggplot(tmp2, aes(eta, 1/(1 + exp(-eta)))) +
+  geom_point()
+```
+
+------------------------------------------
+
+
+## Logistic Regression Assumptions
+
+Much like a normal distribution was assumed for normal linear
+regression, for logistic regression a Bernoulli distribution is
+assumed.
+
+- $y \sim Bern(\mu)$
+
+The Bernoulli only has the one parameter, the probability of the event
+occuring.
+
+In logistic regression the outcome is either 0 or 1, so outliers on
+the outcome are not a concern
+
+Outliers on predictors may still be a concern
+
+One problem that sometimes arises is known as separation, this occurs
+when some predictor perfectly predicts the outcome or separates the
+outcome, most often when the outcome is rare or the sample size is
+small.
+
+- In a sample of 60 people where only 10 have major depression, if 80%
+  of the sample also have PTSD, it may happen that all cases of major
+  depression occurred in people with PTSD, so the percentage of
+  depression in those without PTSD is exactly 0%, which is
+  separation.
+- The usual solution is to remove predictors or collapse groups in
+  these cases
+
+Logistic regression still requires that the errors be independent
+(i.e., individuals are independent, not dependent or repeated
+measures). Generalized linear mixed models (GLMMs) and specifically
+logistic mixed effects models  relax the indepedence assumption.
+
+Logistic regression also assumes that on the linke scale (logit scale)
+there is a linear relationship.
+
+Finally, logistic regression generally requires a large sample size.
+There are no degrees of freedom, requires large enough sample that
+parameters are distributed about normally (central limit theorem).
+
+------------------------------------------
+
+## Simple Logistic Regression (Example 1)
+
+First, let's test whether women or men in the study are more likely to
+be born in or outside of Australia. To begin with and avoid a repeated
+measures dataset, we will make a dataset without repeated
+data.^[Download the script to run all the examples in lecture here:
+https://jwiley.github.io/MonashDoctoralStatistics/GLMM_slides.rmd
+Note that this is a new kind of file, but you can also open it in
+RStudio. It combines text and has `R` code in "chunks" marked by three
+back ticks and is called an `R` markdown file. `R` markdown is a very
+flexible way to write text or notes in between pieces of `R` code. The
+whole document can be "processed" or rendered by `R` and the result
+has both the text, the code and the output, which is a great way to do
+your analyses keeping enough records and notes of why you are doing
+things or how to interpret them. To see more possibilities, go to:
+https://rmarkdown.rstudio.com/ ]
+
+```{r}
+
+## create a new dataset with just 6 variables
+## BSTRESS and BPosAff are average stress and PosAff
+wd <- d[, .(UserID, BornAUS, Female,
+            Age, BSTRESS, BPosAff)]
+
+## omit any rows (observations) that are missing
+## any variable
+wd <- na.omit(wd)
+
+## exclude any rows with duplicated IDs
+## this results in just one row per ID
+wd <- wd[!duplicated(UserID)]
+
+dim(wd)
+
+```
+
+There are `r nrow(wd)` people in this little dataset.
+Below we ask `R` for frequency tables
+
+```{r}
+
+table(wd$Female)
+
+table(wd$BornAUS)
+
+```
+
+To run the logistic regression, we need four pieces
+
+- the `glm()` function for the logistic regression model
+- A formula indicating our model of the form:
+    - dependent variable ~ predictor
+- The name of the assumed distribution, `binomial()`
+- The name of the dataset, "wd"
+
+```{r}
+
+m1 <- glm(BornAUS ~ Female,
+          family = binomial(),
+          data = wd)
+summary(m1)
+
+```
+
+The output shows several things:
+
+- The deviance residuals
+- A coefficient table, like linear regression
+    - Estimate: familiar regression coefficients on linear scale
+	- Std. Error: standard error for the regression coefficients
+	- z value: takes the place of the t statistic in normal linear
+      regression, this is essentially a z-test
+	- Pr(>|z|): the p-value, based on the Z value
+- The **residual deviance** degrees of freedom: sample size - number
+  parameters (here two: one for intercept, one for Female slope)
+- The Akaike Information Criterion (AIC) which can be used to compare
+  different models. 
+
+With a simple model, we can easily convert from the logit scale
+to the probability scale
+
+Men are the reference group, captured by the intercept
+
+- $\frac{1}{1 + e^{- (`r coef(m1)[1]`)}} = `r as.vector(plogis(coef(m1)[1]))`$
+    - Men have a `r as.vector(plogis(coef(m1)[1]))` probability of
+      being born in Australia
+
+The coefficient for women, indicates that women have `r coef(m1)[2]` higher
+log odds (the logit scale) of being born in Australia than do men
+
+To calculate the probability that women will be born in Australia:
+
+- $\frac{1}{1 + e^{- (`r coef(m1)[1]` + `r coef(m1)[2]`)}} = `r as.vector(plogis(sum(coef(m1))))`$
+    - Women have a `r as.vector(plogis(sum(coef(m1))))` probability of
+      being born in Australia
+
+------------------------------------
+
+Rather than interpret coefficients on the log odds (logit) scale,
+people commonly exponentiate the coefficients so they are on the odds
+scale.
+
+- Women have $e^{`r coef(m1)[2]`} = `r exp(coef(m1)[2])`$ times the odds
+  of being born in Australia as do men
+- This is called the odds ratio (OR)
+
+An example summary of this analysis is:
+"Women were more likely to be born in Australia than men, (OR = `r exp(coef(m1)[2])`, p
+= .039)."
+
+Another way of saying the same thing:
+"Women had `r exp(coef(m1)[2])` times the odds of being born in
+Australia as women (p = .039)."
+
+
+## Simple Logistic Regression (Example 2)
+
+Next we examine a continuous predictor, average level of positive
+affect as a predictor of whether participants were born in Australia.
+
+The figure below shows the distribution of average positive affect, "BPosAff"
+
+```{r, fig.width = 6, fig.height=4}
+ggplot(wd, aes(BPosAff)) +
+  geom_histogram(binwidth=1, colour = "black")
+```
+
+The analysis in `R` is very similar to the previous example:
+
+```{r}
+
+m2 <- glm(BornAUS ~ BPosAff,
+          family = binomial(),
+          data = wd)
+summary(m2)
+
+```
+
+- The coefficient for average positive afffect indicates that for every
+  one unit change in average PosAff, people have `r coef(m2)[2]` higher log
+  odds of being born in Australia
+- In odds ratios:
+    - For each additional unit higher average positive affect, participants have
+	`r exp(coef(m2)[2])` times the odds of being born in Australia (p = .037).
+
+
+- One challenge with the odds ratio metric is that it is multiplicative
+    - If the baseline odds are 2, then 1.2 times the odds would be
+      2.4 (an absolute difference of 0.4)
+	- If the baseline odds are 4, then 1.2 times the odds would be 4.8
+      (an absolute difference of 0.8)
+
+- Important to keep this interpretation in mind, odds ratios do not
+  directly indicate the probability of the event occuring, just how
+  many times higher the odds
+
+We can calculate the specific probability of being born in Australia
+as we did for sex 
+
+Probability of being born in Australia for participants with 0 average
+positive affect
+
+- $\frac{1}{1 + e^{- (`r coef(m2)[1]`)}} = `r as.vector(plogis(coef(m2)[1]))`$
+    - Participants with 0 average positive affect have a
+	  `r as.vector(plogis(coef(m2)[1]))` probability of being born in Australia
+
+Probability of being born in Australia for participants with a 4
+average positive affect
+
+- First calculate the log odds
+    - $`r coef(m2)[1]` + `r coef(m2)[2]` * 4 = `r coef(m2)[1] + 4 * coef(m2)[2]`$
+- Then convert the log odds to probabilities
+- $\frac{1}{1 + e^{- (`r coef(m2)[1] + 4 * coef(m2)[2]`)}} = `r as.vector(plogis(coef(m2)[1] + 4 * coef(m2)[2]))`$
+    - Participants with a 4 average positive affect have a
+	`r as.vector(plogis(coef(m2)[1] + 4 * coef(m2)[2]))` probability
+	of being born in Australia
+
+
+## Multiple Logistic Regression (Example 3)
+
+Include both sex and average positive affect as predictors.
+
+```{r}
+
+m3 <- glm(BornAUS ~ Female + BPosAff,
+          family = binomial(),
+          data = wd)
+summary(m3)
+
+```
+
+- Results show that women are more likely to be born in Australia than
+  men, controlling for average positive affect
+- In the odds ratio metric, women have 
+  `r exp(coef(m3)[2])` times the odds of being born in Australia than
+  men, controlling for average positive affect.
+- Note on the odds ratio metric, a 1 means no difference (1 times the
+  odds) and values less than 1 indicate lower odds, and values above 1
+  indicate higher odds
+
+In this model, the probability of being born in Australia depends on 
+sex and average positive affect so it is not as easy to calculate
+
+- to calculate need to pick values for *all predictors*
+    - probability for a woman with 2 average positive affect
+	- probability for a woman with 4 average positive affect, etc.
+
+## Reporting Logistic Regression
+
+Logistic regression results are often presented as
+
+- Coefficient (standard error) on the log odds scale
+- Odds ratio [95% confidence interval] on the odds ratio scale
+
+We already saw the first example, to get odds ratios and confidence
+intervals there are a couple steps
+
+- Extract coefficients and confidence intervals
+- Convert to odds ratios by exponentiating
+
+
+```{r}
+## odds ratios
+exp(coef(m3))
+
+## 95% confidence intervals for odds ratios
+exp(confint.default(m3))
+
+```
+
+From these results, we could say: "Adjusting for sex, average positive
+affect was associated with
+`r exp(coef(m3)[3])`
+[95% CI `r exp(confint.default(m3))[3, 1]`,
+`r exp(confint.default(m3))[3, 2]`] of being born in Australia, p =
+.024."
+
+We can also plot the results from logistic regressions using the
+`visreg()` function we have used for interactions.
+
+```{r, fig.width = 6, fig.height=6}
+
+visreg( m3,
+ xvar = "BPosAff",
+ by = "Female",
+ partial = FALSE, rug = FALSE,
+ overlay=TRUE)
+
+```
+
+By default, the graphs from `visreg()` are on the logit (log odds)
+scale. This shows clearly how we are still dealing with a
+(generalized) linear model. However, this is a very difficult scale to
+interpret. To make graphs easier to interpret and present, it is
+useful to present them on the probability scale. Although it is
+tedious to calculate probabilities by hand, it is straight forward
+with `visreg()` by specifying an additional argument, `scale =
+ "response"` to indicate that we want the results on the response
+ scale rather than the link scale.
+
+One thing you will notice about this graph, albeit slight, is that the
+difference in probabilities is not strictly linear, nor is the
+difference between women and men the same distance at all levels of
+average positive affect on the probability scale. Although logistic
+models are still linear on the link scale, on the response
+(probability) scale, they are not strictly linear.
+
+```{r, fig.width = 6, fig.height = 6}
+
+visreg( m3,
+ xvar = "BPosAff",
+ by = "Female",
+ partial = FALSE, rug = FALSE,
+ overlay=TRUE,
+ scale = "response")
+
+```
+
+# Generalized Linear Mixed Models
+
+Generalized Linear Mixed Models (GLMMs) are just like regular linear
+mixed models (LMMs) except that insetad of the outcome variable being
+a continuous, normally distributed variable, we assume the outcome is
+a binary variable (0/1) and follows a Bernoulli distribution and we
+use the logit link function to map the outcome to our predictors on a
+linear scale.
+
+Otherwise, GLMMs and LMMs are basically the same. On the logit (link)
+scale, we still assume a linear association of predictors and the
+outcome. We still assume that the random effects follow a 
+(multivariate) normal distribution *on the link scale*.
+
+For GLMMs, we cannot even approximate the degrees of freedom for the
+model. Because of this, the standard approach is to simply assume that
+the sample size is large enough that the t distribution approximates a
+normal distribution. In GLMMs, p-values are based off of assuming
+that: z = estimate / SE and then looking up p-values based on the Z
+values. Finally, the Bernoulli / Binomial distribution does not have a
+meaningful variance estimate so there is no residual variance
+estimate. Consequently, things like the ICC are not readily
+calculated (although if critical to your research, approximations do
+exist).
+
+One other note is that although LMMs can have some convergence issues,
+estimating GLMMs is even harder for the computer. They typically are
+slower to estimate and are more prone to convergence issues.
+
+## GLMMs in `R`
+
+GLMMs, specifically logistic mixed models are applicable any time you
+have a repeatedly measured (or multilevel, such as children within
+families) data where the outcome is binary.
+
+In the daily diary study data we have used, we do not have a perfect
+repeatedly measured, binary outcome, so we will make one by defining
+positive affect scores above 3 (the scale midpoint) as "happy" (scored
+1) and otherwise as "unhappy" (scored 0).
+
+```{r} 
+
+## create a binary positive affect variable
+## caled PosAffBin, defined as integer values for PosAff > 3
+## where 1 = TRUE (PosAff > 3) and 0 = FALSE (PosAff <= 3)
+d[, PosAffBin := as.integer(PosAff > 3)]
+
+``` 
+
+We fit GLMMs by adding a "g" to `lmer()` using the: `glmer()`
+function. `glmer()` works almost identically to `lmer()`, except that
+you also must specify the family, which is the assumed distribution
+for the outcome. We use `binomial()`.
+
+```{r}
+
+glmm1 <- glmer(PosAffBin ~ 1 + (1 | UserID),
+               family = binomial(),
+               data = d)
+
+summary(glmm1)
+
+```
+
+The output is fairly similar to output for LMMs.
+
+- `R` first tells us how it fit the model (maximum likelihood based on
+  the Laplace approximation).
+- Then it tells us the family and link function, logit.
+- Then it tells us the formula for the model and the dataset.
+- Information criterion (AIC, BIC), the log likelihood, deviance (-2 *
+  log likelihood) and the residual degrees of freedom, which are used
+  for the AIC and BIC.
+- Scaled residuals are a sort of normalized residual on the logit
+  scale.
+- Random effects are presented on the link (logit) scale and on this
+  scale are assumed to follow a normal distribution. Note that there
+  is no estimated residual variance, due to the outcome being assumed
+  to follow a Bernoulli / Binomial distribution.
+- The number of observations and groups (here people) are reported.
+- The fixed effects section is familiar with estimates (coefficients),
+  standard errors (Std. Error), z values in place of t values, and
+  p-values based off the z values, Pr(>|z|).
+
+
+Below we visualise the BLUPs for the random intercept on the logit
+(link) scale and the probability (response) scale.
+Note that the first is assumed to be normally distributed (appears
+somewhat violated in this instance). The second does not need to
+follow (and will not) a normal distribution. The second distribution
+on the probability scale shows the average probability that each
+participant is "happy" (PosAff > 3) at any given survey.
+
+```{r, fig.width = 6, fig.height = 4}
+
+ggplot(coef(glmm1)$UserID, aes(`(Intercept)`)) +
+  geom_histogram() +
+  ggtitle("BLUPs on logit scale")
+
+ggplot(coef(glmm1)$UserID, aes(plogis(`(Intercept)`))) +
+  geom_histogram()+
+  ggtitle("BLUPs on probability scale")
+
+```
+
+
+We can easily convert the fixed effect intercept estimate to a
+probability for interpretation using the `plogis()` function in `R`.
+However, GLMMs have a complexity. Because the logit function is not
+linear, when you transform from the link scale to the probability
+scale changes the results.
+For example, the average of the individual estimates on the link scale
+converted to probabilities, is not the same as the average of the
+indivdiual estimates on the probability scale.
+To see this, we calculate the BLUPs for the random effect intercept.
+In one case, we take the average then back transform to probabilities
+using the `plogis()` function. In the second example, we back
+transform then average. The results are rather different.
+**If you want the average probability, the second approach is the
+correct one.**
+
+```{r}
+
+## random intercept BLUPs
+blups <- coef(glmm1)$UserID[["(Intercept)"]]
+
+## back transform average of the BLUPs
+plogis(mean(blups))
+
+## average back transformed BLUPs
+## this is the correct way to estimate the average
+## probability of being happy
+mean(plogis(blups))
+
+```
+
+An implication of this difference is that although you can easily
+generate predicted plots for the fixed effects of GLMMs, these are
+only valid on the link scale. 
+
+As with regular LMMs, we can add predictors and include them as fixed
+and random effects, if desired. This next model tests stress as a
+fixed and random effects predictor of binary positive affect.
+Note this takes a few seconds to run.
+
+```{r}
+
+glmm2 <- glmer(PosAffBin ~ 1 + STRESS + (1 + STRESS | UserID),
+               family = binomial(),
+               data = d)
+
+summary(glmm2)
+
+``` 
+
+In the results, we can see the usual information. All of these results
+can be interpretted basically the same as for LMMs *on the link
+scale*. For example, we can interpret that when stress is 0, 
+the average log odds of being happy is `r fixef(glmm2)[1]` and that
+about two thirds of people have a log odds of being happy between 
+`r fixef(glmm2)[1] - sqrt(VarCorr(glmm2)$UserID[1,1])` and 
+`r fixef(glmm2)[1] + sqrt(VarCorr(glmm2)$UserID[1,1])`, found by
+taking the fixed effect intercept estimate plus or minus the random
+effect intercept standard deviation estimate.
+
+We can interpret the slope for stress as indicating that on average, a
+one unit increase in stress is associated with a `r fixef(glmm2)[2]`
+change in the log odds of being happy. We also can exponentiate the
+estimate and say that the fixed effects revealed that each unit change
+in stress was associated with `r exp(fixef(glmm2)[2])` times the odds
+of being happy^[Here the odds ratio is calculated by taking: $e^b$ or
+in `R` `exp(fixef(glmm2))`].
+
+Plotting or visualization on the log odds scale for the fixed effects
+also is easy. 
+
+```{r, fig.width = 6, fig.height = 4}
+
+visreg(glmm2,
+       xvar = "STRESS",
+       partial=FALSE, rug=FALSE)
+
+``` 
+
+However, although it is equally easy to produce a plot on the
+probability scale, these probabilities based solely on the fixed
+effects do not have any easy interpretation. Specifially, the
+probabilities from the fixed effects only are not the average
+probability of being happy as a function of stress.
+
+```{r, fig.width = 6, fig.height = 5}
+
+visreg(glmm2,
+       xvar = "STRESS",
+       partial=FALSE, rug=FALSE,
+       scale = "response")
+
+``` 
+
+To get the actual average probability of being happy given stress, we
+have to get predicted probabilities for each person in the dataset,
+and average the results. In the resulting figure, the predicted
+average probability never gets as low as when simply backtransforming
+the predicted log odds based on only fixed effects. This highlights
+how these two appraoches are not equivalent.
+
+```{r, fig.width = 6, fig.height = 5}
+## data for predictions, must set both stress and UserID
+predictdata <- as.data.table(expand.grid(
+  STRESS = seq(0, 10, by = .1),
+  UserID = unique(d$UserID)))
+
+## generate predicted probabilities
+## type = "response" indicates predictions on the response
+## (i.e., probability) scale
+predictdata$yhat <- predict(glmm2, newdata = predictdata,
+                            type = "response",
+                            re.form = NULL)
+
+## calculate the average probability across participants
+## by stress level
+predictdataavg <- predictdata[, .(yhat = mean(yhat)), by = STRESS]
+
+ggplot(predictdataavg, aes(STRESS, yhat)) +
+  geom_line(size = 1)
+
+```
+
+One benefit of generating individual predictions is that we can plot
+the individual predicted probabilities to get a sense of the
+differences due to random effects. First, we do it on the logit scale,
+then on the probability scale.
+
+```{r, fig.width = 6, fig.height = 4}
+
+## plot the indivdiual curves
+ggplot(predictdata, aes(STRESS, qlogis(yhat), group = UserID)) +
+  geom_line(alpha = .2) +
+  theme_bw() + ggtitle("logit scale")
+
+ggplot(predictdata, aes(STRESS, yhat, group = UserID)) +
+  geom_line(alpha = .2) +
+  theme_bw() + ggtitle("probability scale")
+
+``` 
