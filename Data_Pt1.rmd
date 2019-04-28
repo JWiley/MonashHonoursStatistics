@@ -3,8 +3,9 @@ title: "Working with Different Data Types"
 author: "Joshua F. Wiley"
 date: "`r Sys.Date()`"
 output:
-  tufte::tufte_html: default
-  tufte::tufte_book: default
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
 ---
 
 ```{r, echo=FALSE, include=FALSE}
@@ -12,6 +13,9 @@ library(checkpoint)
 checkpoint("2019-01-25", R.version = "3.5.1",
            scanForPackages = FALSE)
 ```
+
+Download the raw `R` code here:
+[https://jwiley.github.io/MonashHonoursStatistics/Data_Pt1.rmd](https://jwiley.github.io/MonashHonoursStatistics/Data_Pt1.rmd).
 
 ```{r setup}
 options(digits = 2)
@@ -23,6 +27,195 @@ library(lme4)
 
 ## read in the dataset
 d <- readRDS("aces_daily_sim_processed.RDS")
+
+```
+
+# Subsetting Data
+
+A common task in analyses is to subset the data. There are many
+reasons for this, from ecluding outliers to selecting only
+participants who meet some criteria you want to use.
+Sometimes, the order you choose to subset matters too.
+
+Most often, we subset data by using logical operators to pick specific
+rows of a dataset or specific values from a single variable. Below, we
+select cases/observations where Age = 18, this is done using the
+logical operator `==`. `R` tests if the variable "Age" is equal to 18
+and if it is returns TRUE and otherwise FALSE. Rows where the test
+returns TRUE are returned. So we don't see a giant dataset, we just
+pick two variables: UserID and Age.
+
+
+```{r}
+
+d[Age == 18, .(UserID, Age)]
+
+```
+
+You can chain conditions together using the operators:
+`&` and `|` which represent "and" and "or", respectively.
+
+```{r}
+
+## select only women who are 18y
+d[Age == 18 & Female == 1, .(UserID, Age)]
+
+## select anyone who is either a woman OR 18y
+d[Age == 18 | Female == 1, .(UserID, Age)]
+
+```
+
+If you want to select several values, the `%in%` operator is
+helpful. It tests if the variable/data on the left is in the set on
+the right hand side. This is much faster than writing many "ors"
+
+```{r}
+
+## select anyone whose age is in 18, 19, or 20
+d[Age %in% c(18, 19, 20), .(UserID, Age)]
+
+``` 
+
+You can chain even more logical requirements together by using
+parentheses. Operations occur within parentheses first.
+
+```{r}
+
+## 19 year old women or 18 year old men
+d[(Age == 19 & Female == 1) | (Age == 18 & Female == 0),
+  .(UserID, Age)]
+
+``` 
+
+Other common operators are greater than or less than, `>` and `<` or
+greater than or equal to and less than or equal to, `>=` and `<=`.
+Finally, the exclamation mark, `!` is very useful as it negates a
+logical statement.
+
+```{r}
+
+## anyone under age 20
+d[Age < 20, .(UserID, Age)]
+
+## anyone age 20 or under
+d[Age <= 20, .(UserID, Age)]
+
+## anyone who is not age 20
+d[!(Age == 20), .(UserID, Age)]
+
+## anyone who is not age 18, 19, or 20
+d[!(Age %in% c(18, 19, 20)), .(UserID, Age)]
+
+```
+
+Finally, let us see why the order of operations may matter. Suppose
+that we want to look at people who have at least 30 non-missing stress
+values and look at just observations where STRESS > 3.
+
+```{r}
+
+## remove missing stress observations
+d2 <- d[!is.na(STRESS)]
+
+## count how many observations are 
+##   present by ID
+## .N represents the number of observations 
+##   and we do this by ID
+d2[, Count := .N, by = UserID]
+
+## only take people with at least 30 non-missing stress values
+d2 <- d2[Count >= 30]
+
+## now only take stress scores > 3
+d2 <- d2[STRESS > 3]
+
+## look at IDs and number of observations
+d2[, .(UserID, STRESS)]
+
+```
+
+This whole sequence could be collapsed or chained together to write
+less code. In data tables in `R` you can chain operations by just
+adding more brackets as below. This accomplishes the same as the above.
+
+```{r}
+
+## remove missing stress observations
+## count how many observations are 
+##   present by ID
+## .N represents the number of observations 
+##   and we do this by ID
+## only take people with at least 30 non-missing 
+##   stress values
+## only take stress scores > 3
+d2 <- d[!is.na(STRESS)][, Count := .N, by = UserID][
+  Count >= 30][STRESS > 3]
+
+## look at IDs and number of observations
+d2[, .(UserID, STRESS)]
+
+```
+
+Now look what happens if we first take stress values greater than 3.
+That is we change the order of the operations. We end up with much
+fewer people.
+
+```{r}
+
+## remove missing stress observations
+## only take stress scores > 3
+## count how many observations are 
+##    present by ID
+## .N represents the number of observations 
+##    and we do this by ID
+## only take people with at least 30 non-missing 
+##   stress values
+d2 <- d[!is.na(STRESS)][STRESS > 3][, 
+        Count := .N, by = UserID][Count >= 30]
+
+## look at IDs and number of observations
+d2[, .(UserID, STRESS)]
+
+```
+
+In this new format, we are only taking people with 30
+non missing stress values > 3 whereas before we took people with 30
+non missing stress values (any value) and then only observations where
+stress > 3.
+
+## You Try It - Subsetting
+
+Select observations where:
+
+- positive affect is not missing
+- participants who have **at least 20** non missing positive affect (any value)
+- where positive affect scores are greater than or equal to 3
+
+Use the template below filling in values where appropriate.
+You should end up with 2,455 observations.
+
+
+```{r trysubset, echo = TRUE, eval = FALSE}
+
+d3 <- d[!is.na(  )][, Count := .N, by = UserID][   ][   ]
+
+## look at IDs and number of observations
+d3[, .(UserID, PosAff)]
+
+```
+
+## Finding Specific Cases or Outliers
+
+Suppose that based on graphs or other information, we had decided that
+negative affect scores above 4 were outliers and that participant 56
+was an outlier overall.
+We can exclude ID 56 and select only observations with negative affect
+at or below 4 as below.
+
+```{r}
+
+d[UserID != 56 & NegAff <= 4, 
+  .(UserID, NegAff)]
 
 ```
 
@@ -84,7 +277,7 @@ class(d1)
 ## arithmtic on dats
 d1 + 5 ## addition
 d1 - 7 ## subtract a week
-d1 * 5 ## multiplication does not make sense for dates, an error
+d1 * 5 ## multiplication does not work: error
 
 ## extract just one date
 d1[1]
@@ -113,9 +306,11 @@ To convert date into a date class in `R`, we need to tell it the format the date
 
 These pieces can be re-ordered an combined and use any separator. For example "%Y-%m-%d" for YYYY-mm-dd or "%Y/%m/%d" for YYYY/mm/dd or "%Y %m %d" for YYYY mm dd or "%d %m-%Y" for dd mm-YYYY. This flexibility is needed as different people and countries commonly write dates in many different formats.
 
-**Now you try to convert the following character strings into date class objects in `R` by fillng in the correct template in quotes for the `format = ` argument. If you do it incorrectly, you will get errors or `NA` indicating the text could not be converted to a date uing the template you supplied.
+## You Try It - Dates
 
-```{r youtry1, echo=TRUE, eval=FALSE}
+Now you try to convert the following character strings into date class objects in `R` by fillng in the correct template in quotes for the `format = ` argument. If you do it incorrectly, you will get errors or `NA` indicating the text could not be converted to a date uing the template you supplied.
+
+```{r trydates, echo = TRUE, eval = FALSE}
 
 y1 <- c("5/28/2018", "6/30/2019")
 as.Date(y1, format = "") ## you complete
@@ -127,13 +322,16 @@ dy2 ## show results
 y3 <- c("28-1-18", "15-6-19")
 as.Date(y3, format = "") ## you complete
 
-## how many days are there between 28 January 2018 and 15 June 2019?
-## use the object dy2 to complete like we did above
+## how many days are there between 
+## 28 January 2018 and 15 June 2019?
+## use the object dy2 to complete like 
+## we did above
 
 
 
 ```
 
+## Date Helper Functions
 
 Dates have a variety of helpful functions that let you operate on or learn moe about them. We can use the `weekdays()`, `months()`, and `quarters()` functions to find out the day of week, month or quarter a particular date falls in. They return character strings.
 
@@ -168,8 +366,8 @@ Note here we do not need to specify a template because `R` will assume YYYY-mm-d
 ## summary of dates
 summary(d$SurveyDay)
 
-## select surveys where the survey date is greater than or equal to
-## 2017-03-01
+## select surveys where the survey date 
+## is greater than or equal to 2017-03-01
 d2 <- d[SurveyDay >= as.Date("2017-03-01")]
 
 ## summary of dates
@@ -177,9 +375,11 @@ summary(d2$SurveyDay)
 
 ``` 
 
-Now you try to create a dataset that excludes any weekends
+## You Try It - Subset Dates
 
-```{r youtry2, echo = TRUE, eval = FALSE}
+Now you try to create a dataset that excludes any weekends.
+
+```{r trysubsetdates, echo = TRUE, eval = FALSE}
 
 ## complete to make a dataset that 
 ## excludes any weekend days
@@ -225,7 +425,8 @@ t2b <- paste0(t2, ":00")
 t2b
 
 ## now convert to a time
-y2b <-chron(times. = t2b, format = c(times = "h:m:s"))
+y2b <-chron(times. = t2b, 
+  format = c(times = "h:m:s"))
 y2b
 
 ## calculate the time difference
@@ -246,7 +447,7 @@ dates1 <- c("2019-05-24", "2019-06-14")
 times1 <- c("19:20:17", "9:15:33")
 
 dt1 <- chron(dates. = dates1, times. = times1,
-      format = c(dates = "y-m-d", times = "h:m:s"))
+  format = c(dates = "y-m-d", times = "h:m:s"))
 dt1
 
 dt1 + 1 ## add one day
@@ -269,10 +470,22 @@ x <- c(0, 1, 2, 1, 1, 2, 0)
 ## convert to a factor in R
 ## adding specific labels
 y <- factor(x, 
-  levels = c(0, 1, 2),
-  labels =c("Control", "Medication", "Psychotherapy"))
+  levels = c(1, 0, 2),
+  labels =c("Medication", "Control", "Psychotherapy"))
 y
 
+## if you do not specify levels or labels
+## it will assume you want the levels 
+## ordered numerically / alphabetically
+## and the labels should be the same as the levels
+
+## factor with labels, sorted according to 
+## the level order (1, 0, 2)
+table(y)
+
+## default factor() approach, labels based on 
+## levels and sorted numerically: 0, 1, 2
+table(factor(x)) ## automatic conversion to factor 
 
 ```
 
@@ -296,12 +509,13 @@ summary(lm(mpg ~ cylF, data = mtcars))
 
 ```
 
+## You Try It - Factors
 
 Now try using factors for dummy coding. In the daily study,
 there is a varible, SurveyInteger. 1 = morning, 2 = afternoon,
 3 = evening. Make it a factor and then fit a LMM.
 
-```{r youtry3, eval = FALSE, echo = TRUE}
+```{r tryfactors, eval = FALSE, echo = TRUE}
 
 d[, SurveyIntegerF := factor(
   SuveyInteger,
@@ -313,10 +527,3 @@ summary(lmer(PosAff ~ SurveyIntegerF +
              data = d))
 
 ```
-
-
-
-
-
-
-
