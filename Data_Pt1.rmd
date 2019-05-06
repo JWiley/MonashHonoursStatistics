@@ -518,7 +518,7 @@ there is a varible, SurveyInteger. 1 = morning, 2 = afternoon,
 ```{r tryfactors, eval = FALSE, echo = TRUE}
 
 d[, SurveyIntegerF := factor(
-  SuveyInteger,
+  SurveyInteger,
   levels = c(    ),
   labels = c(    ))]
 
