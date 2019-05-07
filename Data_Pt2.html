@@ -284,7 +284,12 @@ if (window.hljs) {
 <li><a href="#checking-data-you-try-it"><span class="toc-section-number">2.10</span> Checking Data You Try It</a></li>
 <li><a href="#merging-you-try-it-2"><span class="toc-section-number">2.11</span> Merging You Try It 2</a></li>
 </ul></li>
-<li><a href="#reshaping-data"><span class="toc-section-number">3</span> Reshaping Data</a></li>
+<li><a href="#reshaping-data"><span class="toc-section-number">3</span> Reshaping Data</a><ul>
+<li><a href="#complications-in-reshaping"><span class="toc-section-number">3.1</span> Complications in Reshaping</a></li>
+<li><a href="#you-try-it-reshape-long"><span class="toc-section-number">3.2</span> You Try It Reshape Long</a></li>
+<li><a href="#reshape-data-wide"><span class="toc-section-number">3.3</span> Reshape Data Wide</a></li>
+<li><a href="#you-try-it-reshape-wide"><span class="toc-section-number">3.4</span> You Try It Reshape Wide</a></li>
+</ul></li>
 </ul>
 </div>
 
@@ -391,8 +396,8 @@ print(surveys)</code></pre>
 </div>
 <div id="rows-and-missing-after-joining" class="section level2">
 <h2><span class="header-section-number">2.5</span> Rows and missing after joining</h2>
-<p>It is helpful to know how many rows you expect in the results.</p>
-<p>Following are two new small datasets. In each, ID 2 is repeated twice. One might anticipate that a full outer join would return 5 rows, (IDs 1, 2, 2, 3, 4). However, <code>R</code> actually returns 7 rows, with four rows for ID 2, because all rows of ID 2 in <code>surveys2</code> are repeated by all rows of ID 2 in <code>acti2</code>. <strong>Merging with any duplicates can behave in unexpected ways</strong>. In a small dataset, it is easy to see what has happened. In a large dataset, checking whether the merge worked as expected requires using summaries or other checks, such as evaluating whether the number of rows matched what you wanted or needed.</p>
+<p>It is helpful to know how many rows you expect in the results<label for="tufte-sn-12" class="margin-toggle sidenote-number">12</label><input type="checkbox" id="tufte-sn-12" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">12</span> Knowing how many rows you expect gives you a quick way to check whether the join is working as you want or something unexpected may be happening. Practical experience is that joins can easily have some errors resulting in unintended consequences, like missing data or repetitions of rows that were not wanted.</span>.</p>
+<p>In each of these two new datasets, ID 2 is repeated twice. One might anticipate that a full outer join would return <em>5</em> rows, (IDs 1, 2, 2, 3, 4). <code>R</code> actually returns <strong>7</strong> rows, with four rows for ID 2, because all rows of ID 2 in <code>surveys2</code> are repeated by all rows of ID 2 in <code>acti2</code><label for="tufte-sn-13" class="margin-toggle sidenote-number">13</label><input type="checkbox" id="tufte-sn-13" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">13</span> This behaviour is sometimes referred to as cross or cartesian joining. When there are multiple matches for a row/ID in both datasets, all possible combinations are returned. In this case, rows 2 and 3 are both ID 2 in surveys2 and rows 1 and 2 are both ID 2 in acti2, so those are crossed so you have all possible pairings of rows from each dataset associated with ID 2.</span>. <strong>Merging with any duplicates can behave in unexpected ways</strong><label for="tufte-sn-14" class="margin-toggle sidenote-number">14</label><input type="checkbox" id="tufte-sn-14" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">14</span> In a small dataset, it is easy to see what has happened. In a large dataset, checking whether the merge worked as expected requires using summaries or other checks, such as evaluating whether the number of rows matched what you wanted or needed.</span>.</p>
 <pre class="r"><code>surveys2 &lt;- data.table(
   ID = c(1, 2, 2, 3),
   Age = c(19, 18, 18, 20))
@@ -426,6 +431,7 @@ print(surveys2)</code></pre>
 </div>
 <div id="you-try-it---merging" class="section level2">
 <h2><span class="header-section-number">2.6</span> You Try It - Merging</h2>
+<p>Here are those two datasets shown as tables.</p>
 <pre class="r"><code>ds1 &lt;- data.table(
   ID = c(&quot;A1&quot;, &quot;B2&quot;, &quot;C3&quot;),
   Stress = c(4, 5, 6))
@@ -433,7 +439,6 @@ print(surveys2)</code></pre>
 ds2 &lt;- data.table(
   ID = c(&quot;A1&quot;, &quot;B2&quot;, &quot;D4&quot;, &quot;E5&quot;),
   Steps = c(9524, 15303, 7432, 4035))</code></pre>
-<p>Here are those two datsets shown as tables. <code>ds1</code></p>
 <p><!--
 <caption>--><span class="marginnote shownote">Dataset: ds1</span><!--</caption>--></p>
 <table>
@@ -458,7 +463,6 @@ ds2 &lt;- data.table(
 </tr>
 </tbody>
 </table>
-<p>and <code>ds2</code></p>
 <p><!--
 <caption>--><span class="marginnote shownote">Dataset: ds2</span><!--</caption>--></p>
 <table>
@@ -487,14 +491,13 @@ ds2 &lt;- data.table(
 </tr>
 </tbody>
 </table>
-<p>Before you try merging those datasets, see if you could answer these questions:</p>
+<p>Before you try joining those datasets, try to answer these questions<label for="tufte-sn-15" class="margin-toggle sidenote-number">15</label><input type="checkbox" id="tufte-sn-15" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">15</span> These are the sort of questions that would be on the exam to assess understanding of joining / merging.</span>. For these questions, <code>ds1</code> is the “left” dataset and <code>ds2</code> is the “right” dataset and you are joining by ID.</p>
 <ul>
-<li><p>Assuming <code>ds1</code> is the “left” dataset and <code>ds2</code> is the “right” dataset, how many rows would occur in a <strong>natural join</strong> of <code>ds1</code> and <code>ds2</code>? How many missing values total across all variables?</p></li>
-<li><p>Assuming <code>ds1</code> is the “left” dataset and <code>ds2</code> is the “right” dataset, how many rows would occur in a <strong>full outer join</strong> of <code>ds1</code> and <code>ds2</code>? How many missing values total across all variables?</p></li>
-<li><p>Assuming <code>ds1</code> is the “left” dataset and <code>ds2</code> is the “right” dataset, how many rows would occur in a <strong>left outer join</strong> of <code>ds1</code> and <code>ds2</code>? How many missing values total across all variables?</p></li>
-<li><p>Assuming <code>ds1</code> is the “left” dataset and <code>ds2</code> is the “right” dataset, how many rows would occur in a <strong>right outer join</strong> of <code>ds1</code> and <code>ds2</code>? How many missing values total across all variables?</p></li>
+<li><p>How many rows would occur in a <strong>natural join</strong> of <code>ds1</code> and <code>ds2</code>? How many missing values total across all variables?<label for="tufte-sn-16" class="margin-toggle sidenote-number">16</label><input type="checkbox" id="tufte-sn-16" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">16</span> The key to these is to know what each join does and be able to predict expected behaviour. A natural join will be only those rows IDs present in both datasets, in this case: A1 and B2. Because a natural join only includes rows present in all datasets, you will not have any missing values on any variable, unless there was missing values to begin with. So in this case, you will have 2 rows and 0 missing values.</span></p></li>
+<li><p>How many rows would occur in a <strong>full outer join</strong> of <code>ds1</code> and <code>ds2</code>? How many missing values total across all variables<label for="tufte-sn-17" class="margin-toggle sidenote-number">17</label><input type="checkbox" id="tufte-sn-17" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">17</span> A full outer join will include all rows from either dataset. That means you will have IDs A1, B2, C3, D4, and E5 (5 rows). Stress values are only present for A1, B2, and C3, so you will have two missing stress values. Steps values are present for A1, B2, D4, and E5, so there will be one missing steps value. Together you will have 5 rows, and 3 missing values.</span>?</p></li>
+<li><p>How many rows would occur in a <strong>left outer join</strong> of <code>ds1</code> and <code>ds2</code>? How many missing values total across all variables?</p></li>
+<li><p>How many rows would occur in a <strong>right outer join</strong> of <code>ds1</code> and <code>ds2</code>? How many missing values total across all variables?</p></li>
 </ul>
-<p>These are the sort of questions that would be on the exam.</p>
 <pre class="r"><code>## using the datasets ds1 and ds2, do a natural join
 merge(   )</code></pre>
 <pre><code>## Error in as.data.frame(x): argument &quot;x&quot; is missing, with no default</code></pre>
@@ -650,7 +653,10 @@ d2 &lt;- merge(   )</code></pre>
   ID = c(1, 2, 3),
   STRESS1 = c(2, 1, 3),
   STRESS2 = c(4, 5, 6),
-  STRESS3 = c(1, 1, 2))</code></pre>
+  STRESS3 = c(1, 1, 2),
+  Happy1 = c(4, 5, 3),
+  Happy2 = c(3, 2, 1),
+  Happy3 = c(5, 5, 4))</code></pre>
 <p><!--
 <caption>--><span class="marginnote shownote">Example ‘wide’ dataset where different time points are stored in separate variables.</span><!--</caption>--></p>
 <table>
@@ -660,6 +666,9 @@ d2 &lt;- merge(   )</code></pre>
 <th align="right">STRESS1</th>
 <th align="right">STRESS2</th>
 <th align="right">STRESS3</th>
+<th align="right">Happy1</th>
+<th align="right">Happy2</th>
+<th align="right">Happy3</th>
 </tr>
 </thead>
 <tbody>
@@ -668,18 +677,27 @@ d2 &lt;- merge(   )</code></pre>
 <td align="right">2</td>
 <td align="right">4</td>
 <td align="right">1</td>
+<td align="right">4</td>
+<td align="right">3</td>
+<td align="right">5</td>
 </tr>
 <tr class="even">
 <td align="right">2</td>
 <td align="right">1</td>
 <td align="right">5</td>
 <td align="right">1</td>
+<td align="right">5</td>
+<td align="right">2</td>
+<td align="right">5</td>
 </tr>
 <tr class="odd">
 <td align="right">3</td>
 <td align="right">3</td>
 <td align="right">6</td>
 <td align="right">2</td>
+<td align="right">3</td>
+<td align="right">1</td>
+<td align="right">4</td>
 </tr>
 </tbody>
 </table>
@@ -699,17 +717,221 @@ d2 &lt;- merge(   )</code></pre>
   timevar = &quot;time&quot;,
   idvar = &quot;ID&quot;,
   direction = &quot;long&quot;)</code></pre>
-<pre><code>##    ID time STRESS1
-## 1:  1    1       2
-## 2:  2    1       1
-## 3:  3    1       3
-## 4:  1    2       4
-## 5:  2    2       5
-## 6:  3    2       6
-## 7:  1    3       1
-## 8:  2    3       1
-## 9:  3    3       2</code></pre>
-<p>notes better on instructions, notes on how long to wait</p>
+<pre><code>##    ID Happy1 Happy2 Happy3 time STRESS1
+## 1:  1      4      3      5    1       2
+## 2:  2      5      2      5    1       1
+## 3:  3      3      1      4    1       3
+## 4:  1      4      3      5    2       4
+## 5:  2      5      2      5    2       5
+## 6:  3      3      1      4    2       6
+## 7:  1      4      3      5    3       1
+## 8:  2      5      2      5    3       1
+## 9:  3      3      1      4    3       2</code></pre>
+<p>In this case, you can see that only STRESS was actually reshaped long. To get Happy reshaped long as well, we need to list all the variable names for happy in order in another vector using <code>c()</code> inside the <code>varying = list()</code> section, like this:</p>
+<pre class="r"><code>reshape(
+  data = dwide,
+  varying = list(
+    STRESS = c(&quot;STRESS1&quot;, &quot;STRESS2&quot;, &quot;STRESS3&quot;),
+## extra line for happy
+    Happy = c(&quot;Happy1&quot;, &quot;Happy2&quot;, &quot;Happy3&quot;) 
+  ),
+  timevar = &quot;time&quot;,
+  idvar = &quot;ID&quot;,
+  direction = &quot;long&quot;)</code></pre>
+<pre><code>##    ID time STRESS1 Happy1
+## 1:  1    1       2      4
+## 2:  2    1       1      5
+## 3:  3    1       3      3
+## 4:  1    2       4      3
+## 5:  2    2       5      2
+## 6:  3    2       6      1
+## 7:  1    3       1      5
+## 8:  2    3       1      5
+## 9:  3    3       2      4</code></pre>
+<p>Right now, <code>R</code> is just using the first variable name for each variable in the long format, so we have “STRESS1” and “Happy1”. If we want, we can customise this, for example to get rid of the “1”.</p>
+<pre class="r"><code>reshape(
+  data = dwide,
+  varying = list(
+    STRESS = c(&quot;STRESS1&quot;, &quot;STRESS2&quot;, &quot;STRESS3&quot;),
+    Happy = c(&quot;Happy1&quot;, &quot;Happy2&quot;, &quot;Happy3&quot;) 
+  ),
+## extra line to make it just STRESS and Happy without the &quot;1&quot;
+  v.names = c(&quot;STRESS&quot;, &quot;Happy&quot;),
+  timevar = &quot;time&quot;,
+  idvar = &quot;ID&quot;,
+  direction = &quot;long&quot;)</code></pre>
+<pre><code>##    ID time STRESS Happy
+## 1:  1    1      2     4
+## 2:  2    1      1     5
+## 3:  3    1      3     3
+## 4:  1    2      4     3
+## 5:  2    2      5     2
+## 6:  3    2      6     1
+## 7:  1    3      1     5
+## 8:  2    3      1     5
+## 9:  3    3      2     4</code></pre>
+<p>Finally, by default, <code>R</code> just makes the new “time” variable integers from 1 to the maximum number of time points. Instead, we can set the exact times. For example, suppose that the first assessment is week 0, then week 6 and week 24. We might want to use 0, 6, 24 instead of the default 1, 2, 3.</p>
+<pre class="r"><code>dlong &lt;- reshape(
+  data = dwide,
+  varying = list(
+    STRESS = c(&quot;STRESS1&quot;, &quot;STRESS2&quot;, &quot;STRESS3&quot;),
+    Happy = c(&quot;Happy1&quot;, &quot;Happy2&quot;, &quot;Happy3&quot;) 
+  ),
+  v.names = c(&quot;STRESS&quot;, &quot;Happy&quot;),
+  timevar = &quot;weeks&quot;,
+## extra line for customized times
+  times = c(0, 6, 24),
+  idvar = &quot;ID&quot;,
+  direction = &quot;long&quot;)
+
+print(dlong)</code></pre>
+<pre><code>##    ID weeks STRESS Happy
+## 1:  1     0      2     4
+## 2:  2     0      1     5
+## 3:  3     0      3     3
+## 4:  1     6      4     3
+## 5:  2     6      5     2
+## 6:  3     6      6     1
+## 7:  1    24      1     5
+## 8:  2    24      1     5
+## 9:  3    24      2     4</code></pre>
+<div id="complications-in-reshaping" class="section level2">
+<h2><span class="header-section-number">3.1</span> Complications in Reshaping</h2>
+<p>Not all reshaping is straight forward. Here is another wide dataset. Some variables are time varying, others (e.g., Age) are not. Even the time varying variables are not measured at all time points. In this case at the final time point, only Happy was measured and coping only measured twice.</p>
+<pre class="r"><code>dwide2 &lt;- data.table(
+  ID = 1:3,
+  Age = c(18, 19, 22),
+  STRESS1 = c(2, 1, 3),
+  STRESS2 = c(4, 5, 6),
+  STRESS3 = c(1, 1, 2),  
+  COPE1 = c(1, 2, 3),
+  COPE2 = c(6, 3, 4),
+  Happy1 = c(4, 5, 3),
+  Happy2 = c(3, 2, 1),
+  Happy3 = c(5, 5, 4),
+  Happy4 = c(1, 2, 3))</code></pre>
+<p>Following the previous template, we might try something like this:</p>
+<pre class="r"><code>reshape(
+  data = dwide2,
+  varying = list(
+    STRESS = c(&quot;STRESS1&quot;, &quot;STRESS2&quot;, &quot;STRESS3&quot;),
+    COPE = c(&quot;COPE1&quot;, &quot;COPE2&quot;),    
+    Happy = c(&quot;Happy1&quot;, &quot;Happy2&quot;, &quot;Happy3&quot;, &quot;Happy4&quot;) 
+  ),
+  v.names = c(&quot;STRESS&quot;, &quot;COPE&quot;, &quot;Happy&quot;),
+  timevar = &quot;weeks&quot;,
+  times = c(0, 6, 12, 24),
+  idvar = &quot;ID&quot;,
+  direction = &quot;long&quot;)</code></pre>
+<pre><code>## Error in reshapeLong(data, idvar = idvar, timevar = timevar, varying = varying, : &#39;varying&#39; arguments must be the same length</code></pre>
+<p>This results in an error because we only have two stress and coping measures. To do the reshape, there must be an equal number of each variable. One way to address this is to create a useless “Pad” variable. We can repeat this “Pad” as much as needed (e.g., once for stress, twice for coping). Age is not time varying so we can ignore it. It will be used as a between person variable.</p>
+<pre class="r"><code>dwide2[, Pad := NA]
+
+reshape(
+  data = dwide2,
+  varying = list(
+    STRESS = c(&quot;STRESS1&quot;, &quot;STRESS2&quot;, &quot;STRESS3&quot;, &quot;Pad&quot;),
+    COPE = c(&quot;COPE1&quot;, &quot;COPE2&quot;, &quot;Pad&quot;, &quot;Pad&quot;),    
+    Happy = c(&quot;Happy1&quot;, &quot;Happy2&quot;, &quot;Happy3&quot;, &quot;Happy4&quot;) 
+  ),
+  v.names = c(&quot;STRESS&quot;, &quot;COPE&quot;, &quot;Happy&quot;),
+  timevar = &quot;weeks&quot;,
+  times = c(0, 6, 12, 24),
+  idvar = &quot;ID&quot;,
+  direction = &quot;long&quot;)</code></pre>
+<pre><code>##     ID Age weeks STRESS COPE Happy
+##  1:  1  18     0      2    1     4
+##  2:  2  19     0      1    2     5
+##  3:  3  22     0      3    3     3
+##  4:  1  18     6      4    6     3
+##  5:  2  19     6      5    3     2
+##  6:  3  22     6      6    4     1
+##  7:  1  18    12      1   NA     5
+##  8:  2  19    12      1   NA     5
+##  9:  3  22    12      2   NA     4
+## 10:  1  18    24     NA   NA     1
+## 11:  2  19    24     NA   NA     2
+## 12:  3  22    24     NA   NA     3</code></pre>
+</div>
+<div id="you-try-it-reshape-long" class="section level2">
+<h2><span class="header-section-number">3.2</span> You Try It Reshape Long</h2>
+<p>Using this dataset, you try reshaping a wide dataset into a long format.</p>
+<pre class="r"><code>dwtry &lt;- data.table(
+  Name = c(&quot;Jane&quot;, &quot;John&quot;), 
+  SLEEP1 = c(2, 1),
+  SLEEP2 = c(4, 5),
+  Dep1 = c(4, 5),
+  Dep2 = c(3, 2),
+  Dep3 = c(5, 5))</code></pre>
+<p><!--
+<caption>--><span class="marginnote shownote">Wide dataset for you to try reshaping.</span><!--</caption>--></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Name</th>
+<th align="right">SLEEP1</th>
+<th align="right">SLEEP2</th>
+<th align="right">Dep1</th>
+<th align="right">Dep2</th>
+<th align="right">Dep3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Jane</td>
+<td align="right">2</td>
+<td align="right">4</td>
+<td align="right">4</td>
+<td align="right">3</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="left">John</td>
+<td align="right">1</td>
+<td align="right">5</td>
+<td align="right">5</td>
+<td align="right">2</td>
+<td align="right">5</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>dltry &lt;- reshape(   )</code></pre>
+<pre><code>## Error in c(&quot;reshapeLong&quot;, &quot;reshapeWide&quot;) %in% names(attributes(data)): argument &quot;data&quot; is missing, with no default</code></pre>
+<pre class="r"><code>print(dltry)</code></pre>
+<pre><code>## Error in print(dltry): object &#39;dltry&#39; not found</code></pre>
+</div>
+<div id="reshape-data-wide" class="section level2">
+<h2><span class="header-section-number">3.3</span> Reshape Data Wide</h2>
+<p>We can also reshape data from long to wide. To do that, we will begin with the long dataset we made earlier, <code>dlong</code>. Again we use the <code>reshape()</code> function. This time, we do not need to indicate <code>varying</code> and we set <code>direction = &quot;wide&quot;</code>.</p>
+<pre class="r"><code>reshape(
+  data = dlong,
+  v.names = c(&quot;STRESS&quot;, &quot;Happy&quot;),
+  timevar = &quot;weeks&quot;,
+  idvar = &quot;ID&quot;,
+  direction = &quot;wide&quot;)</code></pre>
+<pre><code>##    ID STRESS.0 Happy.0 STRESS.6 Happy.6 STRESS.24 Happy.24
+## 1:  1        2       4        4       3         1        5
+## 2:  2        1       5        5       2         1        5
+## 3:  3        3       3        6       1         2        4</code></pre>
+<p>To create the different variables for each time point, <code>R</code> has used the base variable name, a period, and then the time value (0, 6, 24). We can customize the separator so that instead of a period, there is nothing or an underscore, or whatever we wanted.</p>
+<pre class="r"><code>reshape(
+  data = dlong,
+  v.names = c(&quot;STRESS&quot;, &quot;Happy&quot;),
+  timevar = &quot;weeks&quot;,
+  idvar = &quot;ID&quot;,
+  direction = &quot;wide&quot;,
+  sep = &quot;_T&quot;)</code></pre>
+<pre><code>##    ID STRESS_T0 Happy_T0 STRESS_T6 Happy_T6 STRESS_T24 Happy_T24
+## 1:  1         2        4         4        3          1         5
+## 2:  2         1        5         5        2          1         5
+## 3:  3         3        3         6        1          2         4</code></pre>
+</div>
+<div id="you-try-it-reshape-wide" class="section level2">
+<h2><span class="header-section-number">3.4</span> You Try It Reshape Wide</h2>
+<p>Using the long dataset from the previous You Try It, reshape <code>dltry</code> wide.</p>
+<pre class="r"><code>reshape(   )</code></pre>
+<pre><code>## Error in c(&quot;reshapeLong&quot;, &quot;reshapeWide&quot;) %in% names(attributes(data)): argument &quot;data&quot; is missing, with no default</code></pre>
+</div>
 </div>
 
 

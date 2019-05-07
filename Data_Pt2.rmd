@@ -221,14 +221,30 @@ merge(
 
 ## Rows and missing after joining
 
-It is helpful to know how many rows you expect in the results.
+It is helpful to know how many rows you expect in the 
+results[^rowsjoin].
 
-Following are two new small datasets. In each, ID 2 is repeated
-twice. One might anticipate that a full outer join would return 5
-rows, (IDs 1, 2, 2, 3, 4). However, `R` actually returns 7 rows, with
-four rows for ID 2, because all rows of ID 2 in `surveys2` are repeated by
-all rows of ID 2 in `acti2`. **Merging with any duplicates can behave
-in unexpected ways**. In a small dataset, it is easy to see what has
+[^rowsjoin]: Knowing how many rows you expect gives you a quick way to
+    check whether the join is working as you want or something
+    unexpected may be happening. Practical experience is that joins
+    can easily have some errors resulting in unintended consequences, 
+	like missing data or repetitions of rows that were not wanted.
+
+In each of these two new datasets, ID 2 is repeated twice. 
+One might anticipate that a full outer join would return *5*
+rows, (IDs 1, 2, 2, 3, 4). `R` actually returns **7** rows, with
+four rows for ID 2, because all rows of ID 2 in `surveys2` are
+repeated by all rows of ID 2 in `acti2`[^cartesian]. 
+**Merging with any duplicates can behave in unexpected ways**[^checking]. 
+
+[^cartesian]: This behaviour is sometimes referred to as cross or
+    cartesian joining. When there are multiple matches for a row/ID in
+    both datasets, all possible combinations are returned. In this
+    case, rows 2 and 3 are both ID 2 in surveys2 and rows 1 and 2 are
+    both ID 2 in acti2, so those are crossed so you have all possible
+    pairings of rows from each dataset associated with ID 2.
+
+[^checking]: In a small dataset, it is easy to see what has
 happened. In a large dataset, checking whether the merge worked as
 expected requires using summaries or other checks, such as evaluating
 whether the number of rows matched what you wanted or needed.
@@ -254,6 +270,8 @@ merge(surveys2, acti2, by = "ID", all = TRUE)
 
 ## You Try It - Merging
 
+Here are those two datasets shown as tables.
+
 ```{r datamerge}
 
 ds1 <- data.table(
@@ -266,38 +284,49 @@ ds2 <- data.table(
 
 ``` 
 
-Here are those two datsets shown as tables. `ds1`
-
 ```{r, echo = FALSE, results = "asis"}
 knitr::kable(ds1, caption = "Dataset: ds1")
 ```
-
-and `ds2`
 
 ```{r, echo = FALSE, results = "asis"}
 knitr::kable(ds2, caption = "Dataset: ds2")
 ```
 
-Before you try merging those datasets, see if you could answer these
-questions:
+Before you try joining those datasets, try to answer these
+questions[^examquestions]. For these questions, `ds1` is the "left"
+dataset and `ds2` is the "right" dataset and you are joining by ID.
 
-- Assuming `ds1` is the "left" dataset and `ds2` is the "right"
-  dataset, how many rows would occur in a **natural join** of `ds1` and
+- How many rows would occur in a **natural join** of `ds1` and
+  `ds2`? How many missing values total across all
+  variables?[^answerguide1] 
+
+- How many rows would occur in a **full outer join** of `ds1` and
+  `ds2`? How many missing values total across all
+  variables[^answerguide2]?
+
+- How many rows would occur in a **left outer join** of `ds1` and
   `ds2`? How many missing values total across all variables?
 
-- Assuming `ds1` is the "left" dataset and `ds2` is the "right"
-  dataset, how many rows would occur in a **full outer join** of `ds1` and
+- How many rows would occur in a **right outer join** of `ds1` and
   `ds2`? How many missing values total across all variables?
 
-- Assuming `ds1` is the "left" dataset and `ds2` is the "right"
-  dataset, how many rows would occur in a **left outer join** of `ds1` and
-  `ds2`? How many missing values total across all variables?
+[^examquestions]: These are the sort of questions that would be on the
+    exam to assess understanding of joining / merging.
+	
+[^answerguide1]: The key to these is to know what each join does and be
+    able to predict expected behaviour. A natural join will be only
+    those rows IDs present in both datasets, in this case: A1 and
+    B2. Because a natural join only includes rows present in all
+    datasets, you will not have any missing values on any variable,
+    unless there was missing values to begin with. So in this case,
+    you will have 2 rows and 0 missing values.
 
-- Assuming `ds1` is the "left" dataset and `ds2` is the "right"
-  dataset, how many rows would occur in a **right outer join** of `ds1` and
-  `ds2`? How many missing values total across all variables?
-
-These are the sort of questions that would be on the exam.
+[^answerguide2]: A full outer join will include all rows from either
+dataset. That means you will have IDs A1, B2, C3, D4, and E5 (5
+rows). Stress values are only present for A1, B2, and C3, so you will
+have two missing stress values. Steps values are present for A1, B2,
+D4, and E5, so there will be one missing steps value. Together you
+will have 5 rows, and 3 missing values.
 
 ```{r trymerge, error = TRUE}
 
@@ -534,7 +563,10 @@ dwide <- data.table(
   ID = c(1, 2, 3),
   STRESS1 = c(2, 1, 3),
   STRESS2 = c(4, 5, 6),
-  STRESS3 = c(1, 1, 2))
+  STRESS3 = c(1, 1, 2),
+  Happy1 = c(4, 5, 3),
+  Happy2 = c(3, 2, 1),
+  Happy3 = c(5, 5, 4))
 
 ``` 
 
@@ -570,5 +602,216 @@ reshape(
 
 ```
 
+In this case, you can see that only STRESS was actually reshaped
+long. To get Happy reshaped long as well, we need to list all the
+variable names for happy in order in another vector using `c()` inside
+the `varying = list()` section, like this:
 
-notes better on instructions, notes on how long to wait
+
+```{r}
+
+reshape(
+  data = dwide,
+  varying = list(
+    STRESS = c("STRESS1", "STRESS2", "STRESS3"),
+## extra line for happy
+    Happy = c("Happy1", "Happy2", "Happy3") 
+  ),
+  timevar = "time",
+  idvar = "ID",
+  direction = "long")
+
+```
+
+Right now, `R` is just using the first variable name for each variable
+in the long format, so we have "STRESS1" and "Happy1". If we want, we
+can customise this, for example to get rid of the "1".
+
+```{r}
+
+reshape(
+  data = dwide,
+  varying = list(
+    STRESS = c("STRESS1", "STRESS2", "STRESS3"),
+    Happy = c("Happy1", "Happy2", "Happy3") 
+  ),
+## extra line to make it just STRESS and Happy without the "1"
+  v.names = c("STRESS", "Happy"),
+  timevar = "time",
+  idvar = "ID",
+  direction = "long")
+
+```
+
+Finally, by default, `R` just makes the new "time" variable integers
+from 1 to the maximum number of time points. Instead, we can set the
+exact times. For example, suppose that the first assessment is week 0,
+then week 6 and week 24. We might want to use 0, 6, 24 instead of the
+default 1, 2, 3.
+
+```{r}
+
+dlong <- reshape(
+  data = dwide,
+  varying = list(
+    STRESS = c("STRESS1", "STRESS2", "STRESS3"),
+    Happy = c("Happy1", "Happy2", "Happy3") 
+  ),
+  v.names = c("STRESS", "Happy"),
+  timevar = "weeks",
+## extra line for customized times
+  times = c(0, 6, 24),
+  idvar = "ID",
+  direction = "long")
+
+print(dlong)
+
+```
+
+## Complications in Reshaping
+
+Not all reshaping is straight forward. Here is another wide
+dataset. Some variables are time varying, others (e.g., Age) are
+not. Even the time varying variables are not measured at all time
+points. In this case at the final time point, only Happy was
+measured and coping only measured twice.
+
+```{r}
+
+dwide2 <- data.table(
+  ID = 1:3,
+  Age = c(18, 19, 22),
+  STRESS1 = c(2, 1, 3),
+  STRESS2 = c(4, 5, 6),
+  STRESS3 = c(1, 1, 2),  
+  COPE1 = c(1, 2, 3),
+  COPE2 = c(6, 3, 4),
+  Happy1 = c(4, 5, 3),
+  Happy2 = c(3, 2, 1),
+  Happy3 = c(5, 5, 4),
+  Happy4 = c(1, 2, 3))
+
+``` 
+
+Following the previous template, we might try something like this:
+
+```{r, error=TRUE}
+
+reshape(
+  data = dwide2,
+  varying = list(
+    STRESS = c("STRESS1", "STRESS2", "STRESS3"),
+    COPE = c("COPE1", "COPE2"),    
+    Happy = c("Happy1", "Happy2", "Happy3", "Happy4") 
+  ),
+  v.names = c("STRESS", "COPE", "Happy"),
+  timevar = "weeks",
+  times = c(0, 6, 12, 24),
+  idvar = "ID",
+  direction = "long")
+
+```
+
+This results in an error because we only have two stress and coping
+measures. To do the reshape, there must be an equal number of each
+variable. One way to address this is to create a useless "Pad"
+variable. We can repeat this "Pad" as much as needed (e.g., once for
+stress, twice for coping). Age is not time varying so we can ignore
+it. It will be used as a between person variable.
+
+```{r}
+
+dwide2[, Pad := NA]
+
+reshape(
+  data = dwide2,
+  varying = list(
+    STRESS = c("STRESS1", "STRESS2", "STRESS3", "Pad"),
+    COPE = c("COPE1", "COPE2", "Pad", "Pad"),    
+    Happy = c("Happy1", "Happy2", "Happy3", "Happy4") 
+  ),
+  v.names = c("STRESS", "COPE", "Happy"),
+  timevar = "weeks",
+  times = c(0, 6, 12, 24),
+  idvar = "ID",
+  direction = "long")
+
+
+```
+
+
+## You Try It Reshape Long
+
+Using this dataset, you try reshaping a wide dataset into a long format.
+
+```{r}
+
+dwtry <- data.table(
+  Name = c("Jane", "John"), 
+  SLEEP1 = c(2, 1),
+  SLEEP2 = c(4, 5),
+  Dep1 = c(4, 5),
+  Dep2 = c(3, 2),
+  Dep3 = c(5, 5))
+
+``` 
+
+```{r, echo = FALSE, results = "asis"}
+knitr::kable(dwtry, caption = "Wide dataset for you to try reshaping.")
+```
+
+```{r tryitlong, error=TRUE}
+
+dltry <- reshape(   )
+
+print(dltry)
+
+```
+
+## Reshape Data Wide
+
+We can also reshape data from long to wide. To do that, we will begin
+with the long dataset we made earlier, `dlong`. Again we use the
+`reshape()` function. This time, we do not need to indicate `varying`
+and we set `direction = "wide"`.
+
+```{r}
+
+reshape(
+  data = dlong,
+  v.names = c("STRESS", "Happy"),
+  timevar = "weeks",
+  idvar = "ID",
+  direction = "wide")
+
+```
+
+To create the different variables for each time point, `R` has used
+the base variable name, a period, and then the time value (0, 6, 24).
+We can customize the separator so that instead of a period, there is
+nothing or an underscore, or whatever we wanted.
+
+
+```{r}
+
+reshape(
+  data = dlong,
+  v.names = c("STRESS", "Happy"),
+  timevar = "weeks",
+  idvar = "ID",
+  direction = "wide",
+  sep = "_T")
+
+```
+
+
+## You Try It Reshape Wide
+
+Using the long dataset from the previous You Try It, reshape `dltry`
+wide.
+
+```{r tryitwide, error=TRUE}
+
+reshape(   )
+
+```
