@@ -514,7 +514,7 @@ table(unique(acti$ID) %in% unique(surveys2$FirstName))
 Using our daily data:
 
 - Count how many unique IDs there are
-- Create a frequency table of the number of times each `UserID` is
+- Create a frequency table of the number of times `UserID` is
   duplicated.
 - Check if there are duplicates if you use both `UserID` and
   `SurveyDay` to create a combined ID.
@@ -534,12 +534,13 @@ Using our daily data:
 Let's say that one participant had technical problems with the surveys
 from the daily data we have worked with and so filled out the last few
 on paper and pencil. Now we want to merge this data into our master
-daily dataset. The resulting dataset, `d2` should have 6,930 rows.
+daily dataset using a *full outer join*. 
+The resulting dataset, `d2` should have 6,930 rows.
 
 ```{r trymerging2, error=TRUE}
 
 pencil <- data.table(
-  UserID = 1L,
+  UserID = factor(1),
   SurveyDay = as.Date("2017-3-08"),
   Survey = c("Morning", "Afternoon", "Evening"),
   STRESS = c(1, 3, 1))
