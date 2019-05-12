@@ -1,0 +1,544 @@
+---
+title: "Missing Data & Cleaning"
+author: "Joshua F. Wiley"
+date: "`r Sys.Date()`"
+output: 
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+---
+
+```{r, echo=FALSE, include=FALSE}
+## note this chunk is NOT required
+library(checkpoint)
+checkpoint("2019-01-25", R.version = "3.5.1",
+           scanForPackages = FALSE)
+```
+
+Download the raw `R` markdown code here
+[https://jwiley.github.io/MonashHonoursStatistics/Data_Missing.rmd](https://jwiley.github.io/MonashHonoursStatistics/Data_Missing.rmd).
+
+
+```{r setup}
+options(digits = 2)
+
+library(data.table)
+library(mice)
+library(VIM)
+library(ggplot2)
+
+## read in the dataset
+d <- readRDS("aces_daily_sim_processed.RDS")
+
+```
+
+# Data Cleaning
+
+A common data cleaning task is to identify and address extreme values.
+In multilevel / repeated measures data, extreme values may exist at
+the between person level (i.e., a person who is relatively extreme
+compared to other people) or at the within person level (i.e., an
+assessment that is relatively extreme for that person).
+
+## Between Person Cleaning
+
+First we will look at the between person level. To do this, we need to
+create between person variables and then make sure we only have one
+row per person.
+
+```{r}
+
+## make averages
+d[, MeanStress := mean(STRESS, na.rm=TRUE), by = UserID]
+## between person dataset (one row per person)
+d.b <- d[!duplicated(UserID)]
+
+```
+
+Now we can process these between person data as any other dataset. One
+way to look for outliers is using z scores and histograms.
+We can create z scores in `R` using the `scale()` function which can
+scale variables to have mean 0 and standard deviation 1 by default or
+scale to any other values as desired.
+We can see the maximum z score and the graph also suggests that one
+person is a bit extreme with an average stress score above 6.
+
+```{r}
+
+d.b[, ZStress := scale(MeanStress)]
+
+## summary of the data including min and max
+summary(d.b$ZStress)
+
+ggplot(d.b, aes(MeanStress)) +  
+  geom_histogram(bins = 20)
+
+```
+
+One option for extreme values is to winsorize them. Winsorizing
+basically involves setting a cutoff and then setting any scores above
+that cutoff at the cutoff or just slightly above it.
+Sometimes, people use z-scores to determine cut offs. However, these
+are themselves very sensitive to outliers. Percentiles tend to work
+better as they are not influenced by the presence of outliers.
+We can find percentiles in `R` using the `quantile()` function.
+For balance, it is important to winsorize both the top and bottom
+equally. Below we look at the extremes (0th and 100th percentiles),
+1st and 99th percentiles, and median (50th percentile).
+
+```{r} 
+
+quantile(d.b$MeanStress,
+         probs = c(0, .01, .5, .98, 1),
+         na.rm = TRUE)
+
+```
+
+Suppose we wanted to winsorize the top and bottom 1 percent.
+We do it by selecting the extreme rows and altering just those
+values. Remaking the histogram we can see that the most extreme values
+have been pulled in slightly. We can also convert to z-scores again
+using `scale()` now that extreme values have been pulled in and
+summarize. Now the maximum is under 3 as well. Not required, but
+showing the extremes have been reduced.
+
+```{r}
+
+d.b[MeanStress < 0.21, MeanStress := 0.21]
+d.b[MeanStress > 6.31, MeanStress := 6.31]
+
+ggplot(d.b, aes(MeanStress)) +  
+  geom_histogram(bins = 20)
+
+summary(scale(d.b$MeanStress))
+
+```
+
+## Wihin Person Cleaning
+
+Cleaning at the within person level is a bit more complex. First, we
+might create within person z scores. These are made by subtracting
+individuals' own means and dividing by individuals' own standard
+deviations, as different people might be more or less variable.
+Then we can make a summary and histogram. There are some extreme and
+rare values at the tails that we might want to pull in.
+
+```{r}
+
+d[, WZStress := scale(STRESS), by = UserID]
+
+summary(d$WZStress)
+
+ggplot(d, aes(WZStress)) +
+  geom_histogram(bins = 50)
+
+```
+
+Winsorizing at the within level requires different values be applied
+to each person. To do this, we create new variables for each person.
+
+```{r}
+
+d[, LLStress := quantile(STRESS, probs = .05, na.rm = TRUE),
+  by = UserID]
+d[, ULStress := quantile(STRESS, probs = .95, na.rm = TRUE),
+  by = UserID]
+
+```
+
+Now we can select any rows that exceed these values for each person,
+and set to their own person value. In this case, we will be
+winsorizing the top and bottom 5 percent for each person. The reason for
+choosing a higher value is that since each person only has on average
+about 30 observations, the 1st and 99th percentiles will be the
+extremes anyway. 
+Afterward, we must again re-make the z-zscores and check the
+distribution.
+
+```{r}
+
+d[, StressClean := STRESS]
+d[STRESS < LLStress, StressClean := LLStress]
+d[STRESS > ULStress, StressClean := ULStress]
+
+d[, WZStressClean := scale(StressClean), by = UserID]
+
+summary(d$WZStressClean)
+
+ggplot(d, aes(WZStressClean)) +
+  geom_histogram(bins = 50)
+
+```
+
+Even though we checked the between person level first. In general, it
+is better to clean the within person level first, because outliers on
+an individual assessment will bias the average for a person (i.e., the
+between person level).
+
+## Cleaning You Try It 
+
+Try to clean the within and between level of Negative Affect. Try
+these steps, as we did above.
+
+- Calculate and plot individual within person z scores for Negative
+  Affect (`NegAff`).
+- Winsorize at the within person level and then re-calculate and plot
+  within person z scores for Negative Affect
+- Calculate average Negative Affect (make sure to use the "clean"
+  version). Create a between person dataset with only one row per
+  person. Examine whether there are between person outliers on
+  negative affect, and if so, winsorize. Then check whether
+  winsorizing at the percentile you chose was enough to remove
+  apparent extreme values.
+  
+```{r trycleaning, error=TRUE}
+
+## within person 
+
+d[,  := scale(   ), by = UserID]
+
+summary(d$   )
+
+ggplot(d, aes(   )) +
+  geom_histogram(bins = 50)
+
+d[,   := quantile(   , probs = .05, na.rm = TRUE),
+  by = UserID]
+d[,    := quantile(   , probs = .95, na.rm = TRUE),
+  by = UserID]
+
+d[, Clean :=   ]
+d[   <   , Clean :=   ]
+d[   >   , Clean :=   ]
+
+d[, WZClean := scale(   ), by = UserID]
+
+summary(d$    )
+
+ggplot(d, aes(    )) +
+  geom_histogram(bins = 50)
+
+
+## between person
+
+## make averages
+d[,     := mean(   , na.rm=TRUE), by = UserID]
+
+## between person dataset (one row per person)
+d.b <- d[!duplicated(UserID)]
+
+d.b[,      := scale(    )]
+
+## summary of the data including min and max
+summary(d.b$   )
+
+ggplot(d.b, aes(   )) +  
+  geom_histogram(bins = 20)
+
+
+quantile(d.b$MeanStress,
+         probs = c(0, .01, .5, .98, 1),
+         na.rm = TRUE)
+
+d.b[    <   ,     :=   ]
+d.b[    >   ,     :=   ]
+
+ggplot(d.b, aes(    )) +  
+  geom_histogram(bins = 20)
+
+summary(scale(d.b$    ))
+
+```
+
+# Missing Data:  Multiple Imputation
+
+Missing data are very common, but also problematic
+
+- Results from the non-missing data may be biased
+- Missing data cause a loss of efficiency
+
+The easiest approach to "address" missing data is to only analyse
+complete cases (i.e., list-wise deletion). This often leads to
+inefficiency (e.g., discarding data on X and Z because observation on
+variable Y are missing). Also, list wise deletion may bias results
+unless the data are missing completely at random (MCAR).
+
+Missing data often are classified:
+
+- Missing completely at random (MCAR) when the missingness mechanism
+is completely independent of the estimate of our parameter(s) of interest
+- Missing at random (MAR) when the missingness mechanism is
+*conditionally* independent of the estimate of our parameter(s) of interest
+- Missing not at random (MNAR) when the missingness mechanism is
+associated with the estimate of our parameter(s) of interest
+
+Our parameters may be anything, such as a mean, a standard deviation,
+a regression coefficient, etc. We will explore **multiple imputation
+(MI)** as one robust way to address missing data.
+
+## Multiple Imputation (MI) Theory
+
+Multiple imputation is one robust way to address missing data. It
+involves generate multiple, different datasets where in each one,
+different, plausible values are imputed for the missing data,
+resulting in each imputed dataset have "complete" data since missing
+data are filled in by predictions.
+
+As the problem with missing data is very generic and impacts every
+statistic, even the most basic decriptive statistics, we need a
+general language for talking about it.
+
+- Let $Q$ be some population value (e.g., a mean, a regression
+  coefficient).
+- Let $\hat{Q}$ be an estimate of $Q$ with some estimate of
+  uncertainty due to sampling variation, calculated typically in each
+  imputed dataset.
+- Let $\bar{Q}$ be the average of a set of estimates, $\hat{Q}$ across
+  different imputed datasets, with some estimate of uncertainty both
+  due to sampling variation impacting $\hat{Q}$ and missing data
+  uncertainty (causing variation in $\hat{Q}$ from one imputed dataset
+  to the next.
+
+We will not discuss how to estimate $\hat{Q}$ as this is specific to
+the analysis being performed (e.g., mean, regression coefficient, mean
+difference from t-test, etc.). It does not really matter for the
+purpose of MI. All we need is an estimate and (valid) standard error.
+
+The general steps in MI are as follows:
+
+1. Start with the incomplete data (the raw dataset with missing
+   data).
+2. Generate $m$ datasets with no missingness, by filling in *different*
+   plausible values for any missing data. We will discuss this more
+   later.
+3. Perform the analysis of interest on **each** imputed dataset. That
+   is, the analysis of interest is repeated $m$ times. This generates
+   $m$ different $\hat{Q}$ estimates and associated standard errors.
+4. Pool the results from the analyses run on each imputed dataset to
+   generate an overall estimate, $\bar{Q}$.
+
+
+Previously in statistics, we have grown accustomed to reporting
+$\hat{Q}$, whether that be a mean, correlation, regression
+coefficient, or any other statistic of interest. With missing data
+addressed using MI, we instead report $\bar{Q}$, which is defined as:
+
+$$bar{Q} = \frac{1}{m}\sum_{i = 1}^{m}\hat{Q}_{i}$$
+
+This is simply the average of the $\hat{Q}$ estimates from each
+individual imputed dataset. What is more unique and forms an important
+difference between multiple imputation and other simpler methods
+(e.g., single mean imputation) is the variance estimate.
+
+Let $\hat{V}_{i}$ be the variance estimate (e.g., squared standard
+error) for the $ith$ imputed dataset for $\hat{Q}_{i}$. Then:
+
+$$bar{V} = \frac{1}{m}\sum_{i = 1}^{m}\hat{V}_{i}$$
+
+$\bar{V}$ is the average uncertainty estimate of $\hat{Q}$ across the
+multiply imputed datasets.
+
+However, there is another source of uncertainty in our estimate of 
+$\bar{Q}$. The between imputed dataset variation, which is:
+
+$$B = \frac{1}{m - 1}\sum_{i = 1}^{m}(\hat{Q}_{i} - \bar{Q})^2$$
+
+$B$ captures the variance in the estimates, $\hat{Q}$. Because the
+observed, non-missing data never change from one imputed dataset to
+another, the only reason that $\hat{Q}$ will change is when the
+plausible values imputed for the missing data change. Thus $B$ is an
+estimate of the uncertainty in $\bar{Q}$ due to missing data.
+
+Finally, for practical reasons we do not generate an infinite number
+of imputed datasets. We could simply continue multiply imputing more
+datasets, but this takes additional time. Because of this we do not
+have the *population* of imputed datasets, instead we have a (random)
+sample of all possible multiply imputed datasets. This results in some
+simulation error which is added to the uncertainty in our $\bar{Q}$
+estimate. Specifically, this uncertainty is:
+
+$$\frac{B}{m}$$
+
+Now we finally have all the pieces to determine what the total
+uncertainty in our average estimate, $\bar{Q}$ is:
+
+$$T = \bar{V} + B + \frac{B}{m}$$
+
+Practically, this can be thought of as: the uncertainty in the
+estimate of our statistic of interest from multiply imputed data,
+$\bar{Q}$ is due to: (1) sampling variation $\bar{V}$, (2) uncertainty
+in how we imputed the missing data $B$, and (3) uncertainty because we
+did not generate an infinite number of imputed datasets,
+$\frac{B}{m}$. One implication is that we can reduce the uncertainty
+somewhat, simply by generating more imputed datasets. However, this
+yields diminishing returns and slows analysis (remember, the analysis
+of interest must be run separately **on each imputed dataset**.  100
+imputed datasets would mean running an analysis 100 times, which takes
+more than running it for, say, 20 imputed datasets. In most cases,
+with modern computers, people recommend 25 - 100 imputed datasets now.
+
+## Multiple Imputation Steps
+
+The general process to generate multiply imputed using a robust
+approach: fully conditional specification (FCS) or multiple imputation
+through chained equations (mice) is:
+
+- Start with an initial dataset with missing data
+- Fill in the missing data values with **initial** estimates.
+Initial estimates are typically easy to generate, such as the
+median for each variable.
+- For each variable, build a prediction model using remaining
+variables. This can be any predictive model, such as linear regression
+or logistic regression, or more complex such as machine learning.
+- Use the model to predict the missing data.
+For parametric models, such as linear regression, draw a random
+value from the predicted distribution (e.g., normal with mean
+based on the predicted value and standard deviation capturing
+uncertainty) or sample from the posterior distribution in
+Bayesian models.
+For non-parametric models, such as random forest models
+uncertainty may be introduced through other means such as
+bootstrapping to build an empirical distribution around the
+predicted values and sample from this.
+- Repeat the previous step until the predicted complete
+dataset does not differ substantially from the previous
+iteration, suggesting the models have converged. 
+- All steps are repeated to generate the desired number of imputed
+datasets (e.g., 100). 
+
+Once multiple imputed datasets are generated, the previously discussed
+steps are performed. The analysis of interest is run on each dataset
+to generate estimates for the parameters of interest, $\hat{Q}$ and
+standard errors and these are combined (pooled) to generate an overall
+estimate and an uncertainty estimate that accounts for sampling
+variation, missing data uncertainty, and simulation error from finite
+number of imputed datasets. These are then reported as usual
+(estimate, standard error, confidence interval, p-value, etc.).
+
+Often, the prediction models are generalized linear models (GLMs),
+such as linear regression. GLMs are familiar and fast, but there are
+drawbacks.
+
+- GLMs assume linear relationships on the scale of the link
+function. This can be problematic for MI as if you are imputing, say,
+50 variables it is very time consuming to manually check whether the
+assumption is met.
+- GLMs only include interactions between variables when specified by
+the analyst. Often, analysts do not know which variables should
+interact. If there are, say, 50 variables, the possible number of
+interactions is overwhelming.
+- In small datasets (e.g., 100 people) it is easily possible there may
+be more variables then people. GLMs require that the sample size be
+larger then the number of predictors, making them a poor choice for MI
+in these cases.
+
+We do not discuss it here, but many of these limitations can be
+addressed using alternate prediction models, especially in machine
+learning.
+
+```{r}
+
+## read in the dataset
+d <- readRDS("aces_daily_sim_processed.RDS")
+
+
+davg <- na.omit(d[, .(
+  Female = factor(na.omit(Female)[1], levels = 0:1),
+  Age = na.omit(Age)[1],
+  STRESS = mean(STRESS, na.rm = TRUE),
+  PosAff = mean(PosAff, na.rm = TRUE),
+  NegAff = mean(NegAff, na.rm = TRUE)),
+  by = UserID])
+
+davgmiss <- copy(davg)
+davgmiss[STRESS < 1, NegAff := NA]
+davgmiss[STRESS > 4, PosAff := NA]
+## random missingness on age
+set.seed(1234)
+davgmiss[, Age := ifelse(rbinom(
+             .N, size = 1, prob = .1) == 1,
+             NA, Age)]
+## drop unneeded variables to make analysis easier
+davgmiss[, MissingProb := NULL]
+davgmiss[, UserID := NULL]
+
+aggr(davgmiss, prop = TRUE,
+     numbers = TRUE)
+
+marginplot(davgmiss[,.(STRESS, NegAff)])
+
+## does stress differ by missing on negative affect?
+t.test(STRESS ~ is.na(NegAff), data = davgmiss)
+
+## does stress differ by missing on positive affect?
+t.test(STRESS ~ is.na(PosAff), data = davgmiss)
+
+
+## does age differ by missing on negative affect?
+t.test(Age ~ is.na(NegAff), data = davgmiss)
+
+## does age differ by missing on positive affect?
+t.test(Age ~ is.na(PosAff), data = davgmiss)
+
+chisq.test(davgmiss$Female, is.na(davgmiss$PosAff))
+chisq.test(davgmiss$Female, is.na(davgmiss$NegAff))
+
+system.time(mi.1 <- mice(
+  davgmiss,
+  m = 20,   maxit = 5,
+  defaultMethod = c("norm", "logreg", "polyreg", "polr"),
+  seed = 1234, printFlag = FALSE)
+)
+
+## plot convergence diagnostics
+plot(mi.1, PosAff + NegAff + Age ~ .it | .ms)
+
+## run an additional iterations
+system.time(mi.1 <- mice.mids(
+  mi.1, maxit = 20,
+  printFlag = FALSE)
+)
+
+## plot convergence diagnostics
+plot(mi.1, PosAff + NegAff + Age ~ .it | .ms)
+
+densityplot(mi.1, ~ PosAff + NegAff + Age)
+
+xyplot(mi.1, NegAff + PosAff ~ STRESS)
+
+mi.reg <- with(mi.1, lm(NegAff ~ PosAff + Age))
+
+mi.reg
+
+pool(mi.reg)
+
+m.mireg <- summary(pool(mi.reg), conf.int=TRUE)
+
+pool.r.squared(mi.reg)
+
+
+m.true <- lm(NegAff ~ PosAff + Age, data = davg)
+m.cc <- lm(NegAff ~ PosAff + Age, data = davgmiss)
+
+summary(m.true)
+summary(m.cc)
+m.mireg
+
+res.true <- as.data.table(cbind(coef(m.true), confint(m.true)))
+res.cc <- as.data.table(cbind(coef(m.cc), confint(m.cc)))
+res.mireg <- as.data.table(m.mireg[, c("estimate", "2.5 %", "97.5 %")])
+setnames(res.true, c("B", "LL", "UL"))
+setnames(res.cc, c("B", "LL", "UL"))
+setnames(res.mireg, c("B", "LL", "UL"))
+
+res.compare <- rbind(
+  cbind(Type = "Truth", Param = names(coef(m.true)), res.true),
+  cbind(Type = "CC", Param = names(coef(m.true)), res.cc),
+  cbind(Type = "MI Reg", Param = names(coef(m.true)), res.mireg))
+
+ggplot(res.compare, aes(factor(""),
+   y = B, ymin = LL, ymax = UL, colour = Type)) +
+  geom_pointrange(position = position_dodge(.4)) +
+  facet_wrap(~Param, scales = "free")
+
+```
