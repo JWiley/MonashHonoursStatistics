@@ -175,7 +175,7 @@ is better to clean the within person level first, because outliers on
 an individual assessment will bias the average for a person (i.e., the
 between person level).
 
-## Cleaning You Try It 
+## Cleaning You Try It (Workbook)
 
 Try to clean the within and between level of Negative Affect. Try
 these steps, as we did above.
@@ -323,7 +323,7 @@ $\hat{Q}$, whether that be a mean, correlation, regression
 coefficient, or any other statistic of interest. With missing data
 addressed using MI, we instead report $\bar{Q}$, which is defined as:
 
-$$bar{Q} = \frac{1}{m}\sum_{i = 1}^{m}\hat{Q}_{i}$$
+$$\bar{Q} = \frac{1}{m}\sum_{i = 1}^{m}\hat{Q}_{i}$$
 
 This is simply the average of the $\hat{Q}$ estimates from each
 individual imputed dataset. What is more unique and forms an important
@@ -333,7 +333,7 @@ difference between multiple imputation and other simpler methods
 Let $\hat{V}_{i}$ be the variance estimate (e.g., squared standard
 error) for the $ith$ imputed dataset for $\hat{Q}_{i}$. Then:
 
-$$bar{V} = \frac{1}{m}\sum_{i = 1}^{m}\hat{V}_{i}$$
+$$\bar{V} = \frac{1}{m}\sum_{i = 1}^{m}\hat{V}_{i}$$
 
 $\bar{V}$ is the average uncertainty estimate of $\hat{Q}$ across the
 multiply imputed datasets.
@@ -383,37 +383,127 @@ The general process to generate multiply imputed using a robust
 approach: fully conditional specification (FCS) or multiple imputation
 through chained equations (mice) is:
 
-- Start with an initial dataset with missing data
-- Fill in the missing data values with **initial** estimates.
-Initial estimates are typically easy to generate, such as the
-median for each variable.
-- For each variable, build a prediction model using remaining
-variables. This can be any predictive model, such as linear regression
-or logistic regression, or more complex such as machine learning.
-- Use the model to predict the missing data.
-For parametric models, such as linear regression, draw a random
-value from the predicted distribution (e.g., normal with mean
-based on the predicted value and standard deviation capturing
-uncertainty) or sample from the posterior distribution in
-Bayesian models.
-For non-parametric models, such as random forest models
-uncertainty may be introduced through other means such as
-bootstrapping to build an empirical distribution around the
-predicted values and sample from this.
-- Repeat the previous step until the predicted complete
-dataset does not differ substantially from the previous
-iteration, suggesting the models have converged. 
-- All steps are repeated to generate the desired number of imputed
-datasets (e.g., 100). 
+1. Start with a raw dataset with missing data
+2. Fill in the missing data values with **initial** estimates[^initial].
+3. For each variable that has missing data, build a prediction model
+from other variables[^predictionmodel].
+4. Use the model to predict the missing data[^fillmissing].
+5. Repeat steps 2 and 3 until the predicted complete dataset does not
+vary within some tolerance from one iteration to the next, indicating
+convergence.
 
-Once multiple imputed datasets are generated, the previously discussed
-steps are performed. The analysis of interest is run on each dataset
-to generate estimates for the parameters of interest, $\hat{Q}$ and
-standard errors and these are combined (pooled) to generate an overall
-estimate and an uncertainty estimate that accounts for sampling
-variation, missing data uncertainty, and simulation error from finite
-number of imputed datasets. These are then reported as usual
-(estimate, standard error, confidence interval, p-value, etc.).
+[^initial]: The first "fill in" estimates are generally fast and easy
+to generate. For example, fill in missing using the median for each
+variable or even random numbers within the observed data range.
+
+[^predictionmodel]: Typically, all other variables in the dataset
+being imputed are used in the prediction model, but it is possible to
+use a subset. The most common case is to use Generalized Linear Models
+(GLMs) as the prediction model, so linear regression for continuous
+outcomes, logistic regression for binary outcomes, etc. However, any
+prediction model can be used, including more complex methods such as
+machine learning.
+
+[^fillmissing]: At this step, the average / best prediction from the
+model is used without capturing uncertainty. That is because this is
+the dataset used to build the "final" model for actually imputing the
+missing data. While we want uncertainty in our imputations, we do not
+want the uncertainty in the data used to build the imputation model.
+
+These steps may be easier to understand with a concrete example. Here
+we setup a small dataset with age and inflammation.
+
+```{r}
+set.seed(12345)
+x <- data.frame(Age = sort(round(runif(10, 30, 65))))
+x$Inflammation <-  rnorm(10, x$Age/10, sd = .2)
+x$Missing <- as.logical(rep(FALSE:TRUE, c(9, 1)))
+
+scatterp <- ggplot(x, aes(Age, Inflammation)) +
+    stat_smooth(method = "lm", se=FALSE) + 
+    geom_point(aes(colour = Missing, size = Missing)) +
+    theme_classic() + theme(legend.position = c(.8, .2))
+
+print(scatterp)
+
+## create a missing dataset
+y <- x
+y$Inflammation[y$Missing] <- NA
+
+```
+
+Here is a for loop that iterates through filling in missing values,
+first using the median and then based on linear regression.
+Here we see the scatter plots with the filled in missing value at the
+first iteration and then later iterations.
+
+```{r}
+
+## create an imputed dataset
+yimp <- y
+p <- vector("list", length = 10)
+imps <- vector("numeric", length = 10)
+
+for (i in 1:10) {
+  if (i == 1) {
+    imps[i] <- median(y$Inflammation, na.rm = TRUE)
+  } else if (i > 1) {
+    m <- lm(Inflammation ~ Age, data = yimp)
+    imps[i] <- fitted(m)[yimp$Missing]
+  }
+  yimp$Inflammation[yimp$Missing == TRUE] <- imps[i]
+  p[[i]] <- scatterp %+% yimp + ggtitle(sprintf("Iteration = %d", i))
+}
+
+print(p[[1]])
+print(p[[2]])
+print(p[[3]])
+print(p[[4]])
+
+```
+
+We can print out the imputed values too and see how those change. This
+highlights how over iterations, there are big changes at first, and
+with more iterations the changes are smaller and smaller. This is what
+is meant by convergence where you converge to a final, stable value.
+We could keep going by at some point we are close enough, we can stop.
+We might decide,say, that once it does not change beyond the 2nd
+decimal place, we stop.
+
+```{r}
+
+print(imps, digits = 5)
+
+```
+
+This gets us through Steps 2 to 5. The final step is to use those
+final models to impute missing data[^imputemissing],
+generating the desired number of imputed datasets (e.g., 100).
+
+[^imputemissing]: This can be a rather complex step. Generating the
+average prediction from, say, a linear regression is straight
+forward. However, that average prediction does not take into account
+that the linear regression model is uncertain in its prediction. To
+take uncertainty into account, from parametric models like linear
+regression, we draw random values from the predicted distribution. In
+the case of linear regression that is: a normal distribution with mean
+equal to the average prediction and standard deviation equal to the
+residual standard deviation. This both takes the model into account
+but also by using the residual standard deviation and drawing random
+numbers, we ensure that when generating multiple imputed datasets, we
+don't pretend we can fill in missing data values perfectly. We fill
+them in with some error / uncertainty, which is important for the MI
+to generate accurate standard errors, confidence intervals and
+p-values. For non-parametric models, such as random forest machine
+learning  models, we do not have an assumed distribution so we cannot
+draw random values from a distribution with some mean and standard
+deviation estimate. Instead, uncertainty in predictions must be
+captured in other ways, such as via bootstrapping. However, the
+details of this are beyond the scope of this lecture. Finally, when
+doing Bayesian modeling, the predicted values for missing data are
+very easily drawn from the posterior distribution. A fact that means
+its fairly common for MI to be implemented within a Bayesian
+framework, even if behind the scenes.
 
 Often, the prediction models are generalized linear models (GLMs),
 such as linear regression. GLMs are familiar and fast, but there are
@@ -436,12 +526,37 @@ We do not discuss it here, but many of these limitations can be
 addressed using alternate prediction models, especially in machine
 learning.
 
-```{r}
+Once multiple imputed datasets are generated, the previously discussed
+steps are performed. The analysis of interest is run on each dataset
+to generate estimates for the parameters of interest, $\hat{Q}$ and
+standard errors and these are combined (pooled) to generate an overall
+estimate and an uncertainty estimate that accounts for sampling
+variation, missing data uncertainty, and simulation error from finite
+number of imputed datasets. These are then reported as usual
+(estimate, standard error, confidence interval, p-value, etc.).
 
+## MI in `R` 
+
+Before we can try MI in `R` we need to make a dataset with missing
+values. It is possible to do multilevel imputation, but it is more
+complicated and outside the scope of this lecture.
+To begin with, we will make a single level dataset. For the sake of
+example, we will take only complete data and then add missing data
+ourselves. This allows us to compare different approaches with the
+"truth" from the non-missing data.
+
+The code below is not important to understand. It just creates three
+datasets:
+
+1. The raw daily diary dataset we've worked with
+2. A complete case, between person dataset with no missing values.
+3. A between person dataset with missing values
+
+```{r}
 ## read in the dataset
 d <- readRDS("aces_daily_sim_processed.RDS")
 
-
+## between person data, no missing
 davg <- na.omit(d[, .(
   Female = factor(na.omit(Female)[1], levels = 0:1),
   Age = na.omit(Age)[1],
@@ -450,6 +565,7 @@ davg <- na.omit(d[, .(
   NegAff = mean(NegAff, na.rm = TRUE)),
   by = UserID])
 
+## create missing data
 davgmiss <- copy(davg)
 davgmiss[STRESS < 1, NegAff := NA]
 davgmiss[STRESS > 4, PosAff := NA]
@@ -461,18 +577,41 @@ davgmiss[, Age := ifelse(rbinom(
 ## drop unneeded variables to make analysis easier
 davgmiss[, MissingProb := NULL]
 davgmiss[, UserID := NULL]
+```
 
+Before doing any imputation, it is a good idea to examine data. The
+`VIM` package in `R` has helpful functions for exploring missing
+data. We start by looking at the amount missing on each variable and
+the patterns of missing data using the `aggr()` function. This shows
+us that just over half of cases have complete data on all variables.
+
+```{r}
 aggr(davgmiss, prop = TRUE,
      numbers = TRUE)
+```
+
+A margin plot is an augmented scatter plot that in the margins shows
+the values on one variable when missing on the other along with a
+boxplot. This shows us that when negative affect is missing, stress
+scores are all low between 0 and 1. There are no missing stress scores
+so there is only one boxplot for negative affect.
+
+```{r}
 
 marginplot(davgmiss[,.(STRESS, NegAff)])
 
+``` 
+
+We can test whether levels of one variable differ by missing on
+another variable. This is often done with simple analyses, like
+t-tests or chi-square tests.
+
+```{r}
 ## does stress differ by missing on negative affect?
 t.test(STRESS ~ is.na(NegAff), data = davgmiss)
 
 ## does stress differ by missing on positive affect?
 t.test(STRESS ~ is.na(PosAff), data = davgmiss)
-
 
 ## does age differ by missing on negative affect?
 t.test(Age ~ is.na(NegAff), data = davgmiss)
@@ -482,30 +621,79 @@ t.test(Age ~ is.na(PosAff), data = davgmiss)
 
 chisq.test(davgmiss$Female, is.na(davgmiss$PosAff))
 chisq.test(davgmiss$Female, is.na(davgmiss$NegAff))
+```
 
-system.time(mi.1 <- mice(
+Actually conducting MI in `R` is relatively straight forward. A very
+flexible, robust approach is available using the `mice` package and
+the `mice()` function. You can control almost every aspect of the MI
+in `mice()` but you also can use defaults.
+
+`mice()` takes a dataset, the number of imputed datasets to generate,
+the number of iterations, the random seed (make it reproducible) and
+default imputation methods. The defaults are fine, but you can change
+default imputation methods. Below we ask for all GLMs:
+
+1. "norm" which is linear regression for numeric data
+2. "logreg" which is logistic regression for factor data with 2 levels
+3. "polyreg" which is polytomous or multinomial regression for
+   unordered factor data with 3+ levels
+4. "polr" ordered logistic regression for factor data with 3+ ordered
+   levels
+
+`R` will do the steps discussed to then generate imputed datasets.
+We plot them to see if there is evidence of convergence. From 3
+iterations, it may be too few to see evidence of convergence.
+
+```{r}
+mi.1 <- mice(
   davgmiss,
-  m = 20,   maxit = 5,
+  m = 5,   maxit = 3,
   defaultMethod = c("norm", "logreg", "polyreg", "polr"),
   seed = 1234, printFlag = FALSE)
-)
 
 ## plot convergence diagnostics
 plot(mi.1, PosAff + NegAff + Age ~ .it | .ms)
 
+```
+
+If we are not convinced the model converged, re-run with more
+iterations. Convergence is when there is no clear systematic change
+with additional iterations.
+
+```{r}
 ## run an additional iterations
-system.time(mi.1 <- mice.mids(
+mi.1 <- mice.mids(
   mi.1, maxit = 20,
   printFlag = FALSE)
-)
+
 
 ## plot convergence diagnostics
 plot(mi.1, PosAff + NegAff + Age ~ .it | .ms)
 
+```
+
+Once we are satisfied with convergence, we can plot the imputed data
+versus observed data. Imputed data are in red.
+
+```{r}
 densityplot(mi.1, ~ PosAff + NegAff + Age)
 
 xyplot(mi.1, NegAff + PosAff ~ STRESS)
 
+```
+
+Once you have created the imputed datasets, you can analyse
+them. Recall that analyses must be repeated on each individual
+dataset. For models that are fitted with a formula interface, you can
+use the special `with()` function which works with multiply imputed
+datasets. It means that the analysis is automatically run on each
+imputed dataset separately. If we view the results, we end up with a
+bunch of separate linear regressions.
+To pool the results from the individual regressions, we use the
+`pool()` function. We can also summarise the pooled results with
+confidence intervals and get a pooled $R^2$ value.
+
+```{r}
 mi.reg <- with(mi.1, lm(NegAff ~ PosAff + Age))
 
 mi.reg
@@ -516,13 +704,19 @@ m.mireg <- summary(pool(mi.reg), conf.int=TRUE)
 
 pool.r.squared(mi.reg)
 
+```
 
+In general, you can use any analysis you want with multiple
+imputation, replacing `lm()` with another function, including `lmer()`
+as we've worked with this semester.
+
+Finally, just by way of comparison, we have fit the models again using
+the true, non-missing data and complete case only. The plot compares
+the true, complete case, and imputed results.
+
+```{r}
 m.true <- lm(NegAff ~ PosAff + Age, data = davg)
 m.cc <- lm(NegAff ~ PosAff + Age, data = davgmiss)
-
-summary(m.true)
-summary(m.cc)
-m.mireg
 
 res.true <- as.data.table(cbind(coef(m.true), confint(m.true)))
 res.cc <- as.data.table(cbind(coef(m.cc), confint(m.cc)))
