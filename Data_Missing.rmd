@@ -22,6 +22,24 @@ Download the raw `R` markdown code here
 ```{r setup}
 options(digits = 2)
 
+## There are two new packages: (1) mice (2) VIM
+## both are used for missing data. You can try installing
+## by uncommenting the install.packages() code below
+
+#install.packages("mice", type = "binary")
+#install.packages("VIM", type = "binary")
+
+## some people report also needing the zip pkg
+# install.packages("zip", type = "binary")
+
+## some people also report type="binary" does not work
+## if that happens to you, try:
+# install.packages("mice")
+# install.packages("VIM")
+
+## once installed, open the packages using the 
+## library() calls below
+
 library(data.table)
 library(mice)
 library(VIM)
@@ -89,7 +107,7 @@ equally. Below we look at the extremes (0th and 100th percentiles),
 ```{r} 
 
 quantile(d.b$MeanStress,
-         probs = c(0, .01, .5, .98, 1),
+         probs = c(0, .01, .5, .99, 1),
          na.rm = TRUE)
 
 ```
@@ -236,8 +254,8 @@ ggplot(d.b, aes(   )) +
   geom_histogram(bins = 20)
 
 
-quantile(d.b$MeanStress,
-         probs = c(0, .01, .5, .98, 1),
+quantile(d.b$,
+         probs = c(0, .01, .5, .99, 1),
          na.rm = TRUE)
 
 d.b[    <   ,     :=   ]
