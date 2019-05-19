@@ -6,6 +6,11 @@ output:
   tufte::tufte_html: 
     toc: true
     number_sections: true
+  tufte::tufte_handout: 
+    toc: true
+    number_sections: true
+  word_document:
+    toc: false
 ---
 
 ```{r, echo=FALSE, include=FALSE}
@@ -452,8 +457,25 @@ y$Inflammation[y$Missing] <- NA
 
 Here is a for loop that iterates through filling in missing values,
 first using the median and then based on linear regression.
-Here we see the scatter plots with the filled in missing value at the
-first iteration and then later iterations.
+The graphs following show the scatter plots with the filled in missing
+value at the first iteration and then later iterations[^iterconverge].
+Watch how the imputed missing value changes from one iteration to the
+next and how with later iterations, the amount of change gets
+smaller and smaller.
+
+[^iterconverge]: The goal behind iterating is to build a prediction
+    model to impute the missing data. However, building that model in
+    the first place is difficult when the data on which the model
+    would be built are (partially) missing. To deal with this, we
+    iterate between predicting the missing data and (re)building a
+    model on the new dataset, now that missingness has been imputed.
+	Multiple iterations are required because every time we generate new
+    predictions to fill in the missing data, the dataset on which the
+    prediction model was built changes, so we must rebuild the
+    prediction model using the latest iteration of the dataset. This
+    process is repeated until the change from one iteration to the
+    next is very small. At that point, we say the results have
+    **converged**.
 
 ```{r}
 
@@ -571,6 +593,7 @@ datasets:
 3. A between person dataset with missing values
 
 ```{r}
+
 ## read in the dataset
 d <- readRDS("aces_daily_sim_processed.RDS")
 
@@ -593,8 +616,8 @@ davgmiss[, Age := ifelse(rbinom(
              .N, size = 1, prob = .1) == 1,
              NA, Age)]
 ## drop unneeded variables to make analysis easier
-davgmiss[, MissingProb := NULL]
 davgmiss[, UserID := NULL]
+
 ```
 
 Before doing any imputation, it is a good idea to examine data. The
@@ -604,8 +627,10 @@ the patterns of missing data using the `aggr()` function. This shows
 us that just over half of cases have complete data on all variables.
 
 ```{r}
+
 aggr(davgmiss, prop = TRUE,
      numbers = TRUE)
+
 ```
 
 A margin plot is an augmented scatter plot that in the margins shows
@@ -625,6 +650,7 @@ another variable. This is often done with simple analyses, like
 t-tests or chi-square tests.
 
 ```{r}
+
 ## does stress differ by missing on negative affect?
 t.test(STRESS ~ is.na(NegAff), data = davgmiss)
 
@@ -639,6 +665,7 @@ t.test(Age ~ is.na(PosAff), data = davgmiss)
 
 chisq.test(davgmiss$Female, is.na(davgmiss$PosAff))
 chisq.test(davgmiss$Female, is.na(davgmiss$NegAff))
+
 ```
 
 Actually conducting MI in `R` is relatively straight forward. A very
@@ -663,6 +690,7 @@ We plot them to see if there is evidence of convergence. From 3
 iterations, it may be too few to see evidence of convergence.
 
 ```{r}
+
 mi.1 <- mice(
   davgmiss,
   m = 5,   maxit = 3,
@@ -679,6 +707,7 @@ iterations. Convergence is when there is no clear systematic change
 with additional iterations.
 
 ```{r}
+
 ## run an additional iterations
 mi.1 <- mice.mids(
   mi.1, maxit = 20,
@@ -694,6 +723,7 @@ Once we are satisfied with convergence, we can plot the imputed data
 versus observed data. Imputed data are in red.
 
 ```{r}
+
 densityplot(mi.1, ~ PosAff + NegAff + Age)
 
 xyplot(mi.1, NegAff + PosAff ~ STRESS)
@@ -708,17 +738,56 @@ datasets. It means that the analysis is automatically run on each
 imputed dataset separately. If we view the results, we end up with a
 bunch of separate linear regressions.
 To pool the results from the individual regressions, we use the
-`pool()` function. We can also summarise the pooled results with
-confidence intervals and get a pooled $R^2$ value.
+`pool()` function[^pooloutput].
+
+[^pooloutput]: The pooled output has several pieces:
+**estimate**: the pooled, average regression coefficients;
+**ubar**: the average variance (based on the squared standard errors)
+associated with sampling variation, we called it $\bar{V}$; 
+**b**: the between imputation variance; 
+**t**: the total variance incorporating sampling variation, between
+imputation variance, and simulation error;
+**dfcom**: the degrees of freedom for the complete data analysis (i.e.,
+if there had not been missing data);
+**df**: the estimated residual degrees of freedom for the model, taking
+into account missingness;
+**riv**: the relative increase variance due to missing data;
+**lambda** or $\lambda$: the proportion of total variance due to
+missing data, that is: $\lambda = \frac{B + B/m}{T}$;
+**fmi**: the fraction of missing information
 
 ```{r}
+
 mi.reg <- with(mi.1, lm(NegAff ~ PosAff + Age))
 
 mi.reg
 
 pool(mi.reg)
 
+```
+
+We can also summarise the pooled results with confidence intervals
+using the `summary()` function on the pooled results[^summaryoutput].
+Finally, we can get a pooled $R^2$ value using the
+`pool.r.squared()` function on the analyses.
+
+[^summaryoutput]: The summary output includes standard regression
+output in this case.
+**estimate**: the pooled, average regression coefficients;
+**std.error**: the standard error of the estimates incorporating all
+three sources of MI error, specifically: $se = \sqrt{T}$;
+**statistic**: $\frac{estimate}{std.error}$;
+**df**: the estimated degrees of freedom incorporating uncertainty due
+to missing data, combined with the statistic to calculate p-values;
+**p.value**: the p-value, the probability of obtaining the estimate or
+larger in the sample given that the true population value was zero.
+**2.5%**: the lower limit of the 95% confidence interval;
+**97.5%**: the upper limit of the 95% confidence interval.
+
+```{r}
+
 m.mireg <- summary(pool(mi.reg), conf.int=TRUE)
+print(m.mireg)
 
 pool.r.squared(mi.reg)
 
@@ -728,9 +797,24 @@ In general, you can use any analysis you want with multiple
 imputation, replacing `lm()` with another function, including `lmer()`
 as we've worked with this semester.
 
-Finally, just by way of comparison, we have fit the models again using
-the true, non-missing data and complete case only. The plot compares
-the true, complete case, and imputed results.
+## Multiple Imputation Comparison
+
+One thing that often is helpful is to compare results under different
+models or assumptions. The code that follows is a bit complicated
+(don't worry, you don't need to use it yourself), and is used to fit
+the same model in three ways:
+
+1. pooled from the multiple imputations that was already done,
+   labelled "MI Reg".
+2. based on the true, non-missing data, since we made the missing data
+ourselves and have the true data, labelled, "Truth".
+3. Complete case analysis using listwise deletion, labelled "CC".
+
+The graph that follows shows that compared to the true data, the
+multiply imputed results have larger confidence intervals slightly. In
+this case, the multiply imputed results are closer to the truth in the
+absolute estimates (dots in the graph) than are the estimates from the
+complete case analysis.
 
 ```{r}
 m.true <- lm(NegAff ~ PosAff + Age, data = davg)
