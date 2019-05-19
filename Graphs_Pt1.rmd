@@ -1,0 +1,252 @@
+---
+title: "Graphs Part 1"
+author: "Joshua F. Wiley"
+date: "`r Sys.Date()`"
+output: 
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+  tufte::tufte_handout: 
+    toc: true
+    number_sections: true
+  word_document:
+    toc: false
+---
+
+```{r, echo=FALSE, include=FALSE}
+## note this chunk is NOT required
+library(checkpoint)
+checkpoint("2019-01-25", R.version = "3.5.1",
+           scanForPackages = FALSE)
+```
+
+Download the raw `R` markdown code here
+[https://jwiley.github.io/MonashHonoursStatistics/Graphs_Pt1.rmd](https://jwiley.github.io/MonashHonoursStatistics/Graphs_Pt1.rmd).
+
+
+```{r setup}
+options(digits = 2)
+
+## one new package is cowplot
+## You can try installing
+## by uncommenting the install.packages() code below
+
+#install.packages("cowplot", type = "binary")
+
+
+## some people also report type="binary" does not work
+## if that happens to you, try:
+# install.packages("cowplot")
+
+## once installed, open the packages using the 
+## library() calls below
+
+library(data.table)
+library(ggplot2)
+library(cowplot)
+
+## read in the dataset
+d <- readRDS("aces_daily_sim_processed.RDS")
+
+## small sample dataset
+dt <- data.table(
+  Age = c(20, 30, 40, 50, 60),
+  Memory = c(7, 5, 6, 4.5, 4))
+
+```
+
+# Grammar of Graphics
+
+`ggplot2` is based on the **g**rammar of **g**raphics, a framework for
+creating graphs.
+
+The idea is that graphics or data visualization generally can be
+broken down into basic low level pieces and then combined, like
+language, into a final product.
+
+Under this system, line plots and scatter plots are essentially the
+same. Both have data mapped to the x and y axes.  The difference is
+the plotting symbol (**ge**ometries labelled `geom`s in `R`) in
+is a point or line. The data, axes, labels, titles, etc. may be
+identical in both cases.
+
+`ggplot2` also uses aesthetics, which control how geometries are
+displayed. For example, the size, shape, colour, transparency level
+all are **aes**thetics.
+
+# Univariate Graphs
+
+To begin with, we will make some simple graphs using `ggplot2`. The
+first step is specifying the dataset and mapping variables to axes.
+For basic, univariate plots such as a histograms, we only need to
+specify the dataset and what variable is mapped to the x axis.
+We can re-use this basic setup with different **geom**etries to make
+different graphs.
+
+```{r}
+
+pb <- ggplot(
+  data = mtcars,
+  aes(x = mpg))
+
+```
+
+Using our basic mapping, we can "add" a histogram geometry to view a
+histogram.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "A histogram in ggplot2 for mpg"}
+
+pb + geom_histogram()
+
+```
+
+We also can make a density plot, which also attempts to show the
+distribution, but using a smooth density function rather than binning
+the data and plotting the frequencies. Like histograms, the height
+indicates the relative frequency of observations at a particular
+value. Density plots are designed so that they sum to one.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "A density plot for mpg"}
+
+pb + geom_density()
+
+``` 
+
+Another type of plot are (stacked) dotplots. These are very effective
+at showing raw data for small datasets. Each dot represents one
+person. If two dots would overlap, they are stacked on top of each
+other. While these often are difficult to view with large datasets,
+for small datasets, they provide greater precision than histograms.
+
+```{r, fig.width = 6, fig.height = 3, fig.cap = "A dot plot for mpg"}
+
+pb + geom_dotplot()
+
+```
+
+## Mapping Additional Variables
+
+We can map additional variables to aesthetics such as the colour to
+include more information.  To break the dataset down further, it is
+helpful to have a bit larger dataset than the 32 cars in `mtcars`. The
+`iris` dataset has measurements on 150 flowers from three species of
+iris. For density plots, separating by colour is easy, by adding the
+`Species` variable as an additional aesthetic.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Density plot coloured by Species for Sepal Length"}
+
+ggplot(iris, aes(Sepal.Length, colour = Species)) +
+  geom_density()
+
+```
+
+For histograms, rather than control the colour of the lines, it is
+more helpful to control the fill colour. By default, overlapping bars
+are stacked on top of each other.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Histogram coloured by Species for Sepal Length"}
+
+ggplot(iris, aes(Sepal.Length, fill = Species)) +
+  geom_histogram()
+
+```
+
+Overlapping bars also can be dodged instead of stacked.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Dodged histogram coloured by Species for Sepal Length"}
+
+ggplot(iris, aes(Sepal.Length, fill = Species)) +
+  geom_histogram(position = "dodge")
+
+```
+
+Multiple geometric objects can be combined. The following figure
+combines dot and density plots into one. 
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Density and dot plot plot coloured by Species for Sepal Length"}
+
+ggplot(iris, aes(Sepal.Length, colour = Species)) +
+  geom_dotplot() + geom_density()
+
+```
+
+While the colour works well for the density plots, filling would work
+better for the dotplot. We can map separate aesthetics to each
+geometric object.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Density and dot plot plot coloured by Species for Sepal Length"}
+
+ggplot(iris, aes(Sepal.Length)) +
+  geom_dotplot(aes(fill = Species)) +
+  geom_density(aes(colour = Species))
+
+```
+
+## Bivariate Graphs
+
+We can make bivariate plots by mapping variables to both the x and
+y-axis. For a scatter plot, we use point geometric objects.
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot of mpg and hp"}
+
+ggplot(mtcars,
+       aes(
+         x = mpg,
+         y = hp)) +
+  geom_point()
+
+```
+
+We also can use lines for bivariate data. For this example, we will
+use a small made up dataset. Compared to a scatter plot, we only
+change point to line geometric objects.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Line plot of age and memory"}
+
+ggplot(dt, aes(Age, Memory)) +
+  geom_line()
+
+```
+
+We also can use lines for bivariate data. For this example, we will
+use a small made up dataset. Compared to a scatter plot, we only
+change point to line geometric objects.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of age and memory"}
+
+ggplot(dt, aes(Age, Memory)) +
+  geom_bar(stat = "identity")
+
+```
+
+
+
+# Improving Data Visualization
+
+Edward Tufte and William Cleveland are two authors who have written
+extensively on data visualization and how to make good graphs. There
+work is well worth reading to improving understanding on how to
+efficiently convey data graphically.
+
+- Tufte: [https://www.edwardtufte.com/tufte/](https://www.edwardtufte.com/tufte/)
+- Cleveland: [http://www.stat.purdue.edu/~wsc/](http://www.stat.purdue.edu/~wsc/)
+
+
+```{r}
+
+ggplot(mtcars, aes(cyl, mpg)) +
+  stat_summary(fun.y = mean, geom = "bar")
+
+
+ggplot(mtcars, aes(sample = mpg)) + geom_qq()
+
+
+
+ggplot(d, aes(STRESS, PosAff)) +
+  geom_point(colour = "grey50", alpha = .2)
+
+ggplot(d, aes(STRESS, PosAff)) +
+  geom_jitter(colour = "grey50", alpha = .2) +
+  geom_density2d(size = 1, colour = "black") 
+
+```
