@@ -1,5 +1,5 @@
 ---
-title: "Graphs Part 1"
+title: "DRAFT TBC - Graphs Part 1"
 author: "Joshua F. Wiley"
 date: "`r Sys.Date()`"
 output: 
@@ -27,16 +27,18 @@ Download the raw `R` markdown code here
 ```{r setup}
 options(digits = 2)
 
-## one new package is cowplot
+## two new packages are: (1) cowplot and (2) ggthemes
 ## You can try installing
 ## by uncommenting the install.packages() code below
 
 #install.packages("cowplot", type = "binary")
+#install.packages("ggthemes", type = "binary")
 
 
 ## some people also report type="binary" does not work
 ## if that happens to you, try:
 # install.packages("cowplot")
+# install.packages("ggthemes")
 
 ## once installed, open the packages using the 
 ## library() calls below
@@ -44,6 +46,7 @@ options(digits = 2)
 library(data.table)
 library(ggplot2)
 library(cowplot)
+library(ggthemes)
 
 ## read in the dataset
 d <- readRDS("aces_daily_sim_processed.RDS")
@@ -208,9 +211,10 @@ ggplot(dt, aes(Age, Memory)) +
 
 ```
 
-We also can use lines for bivariate data. For this example, we will
-use a small made up dataset. Compared to a scatter plot, we only
-change point to line geometric objects.
+With relatively discrete x axis, we can use a barplot for bivariate
+data. By default, `geom_bar()` calculates the count of observations
+that occur at each x value, so if we want our values to be the actual
+bar height, we set `set = "identity"`.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of age and memory"}
 
@@ -219,9 +223,44 @@ ggplot(dt, aes(Age, Memory)) +
 
 ```
 
+The grammar of graphics is designed to be like sentences, where you
+can add or modify easily. For example, "There is a ball." or "There is
+a big, red, striped ball." are both valid sentences. So to with
+graphics, we often can chain pieces together to make it more nuanced.
+In `R` we just "add" more by separating each component with `+`. 
+Note that most argument names (i.e., `data = `, `mapping = `) are not
+strictly required. `R` will match input to the correct argument by
+position, often. The two sets of code below yield the same plot. In
+the first, we explicitly label all arguments, in the second we rely on
+position matching. Positional matching does not always work, for
+example we still must specify `size = ` because we don't always
+provide input for every argument, instead relying on defaults and only
+changing the specific arguments we want changed from defaults.
 
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of age and memory"}
+
+ggplot(
+  data = dt,
+  mapping = aes(
+    x = Age,
+    y = Memory)) +
+  geom_bar(
+    mapping = aes(fill = Age),
+    stat = "identity") +
+  geom_line(size = 2) + 
+  geom_point(size = 6)
+
+ggplot(dt, aes(Age, Memory)) +
+  geom_bar(aes(fill = Age), stat = "identity") +
+  geom_line(size = 2) + 
+  geom_point(size = 6)
+
+```
 
 # Improving Data Visualization
+
+Before we continue examining graphs, it is helpful to think a bit more
+about what makes a good graph or good data visualization.
 
 Edward Tufte and William Cleveland are two authors who have written
 extensively on data visualization and how to make good graphs. There
@@ -231,6 +270,140 @@ efficiently convey data graphically.
 - Tufte: [https://www.edwardtufte.com/tufte/](https://www.edwardtufte.com/tufte/)
 - Cleveland: [http://www.stat.purdue.edu/~wsc/](http://www.stat.purdue.edu/~wsc/)
 
+One key principle that Tufte emphasises is the data to ink ratio. This
+ratio is how much data is conveyed versus ink used, and Tufte argues
+to try to maximize this (i.e., more data, less ink). To see this,
+consider the following graph, which is a fairly standard way stats
+programs (Excel, etc.) tend to make barplots.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of age and memory - Step 1"}
+
+ggplot(dt, aes(Age, Memory)) +
+  geom_bar(stat = "identity") +
+  theme_bw()
+
+``` 
+
+For starters, the borders tell us nothing. They edge the space but
+convey no information. This can be cleaned up using a different
+theme. Once we loaded the `cowplot` package, it automatically set its
+own theme as the default, so if we leave off the `theme_bw()` we get a
+cleaner graph.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of age and memory - Step 2"}
+
+ggplot(dt, aes(Age, Memory)) +
+  geom_bar(stat = "identity")
+
+``` 
+
+However, there are still some borders, which we can strip away with no
+loss of data, but reducing the ink.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of age and memory - Step 2"}
+
+ggplot(dt, aes(Age, Memory)) +
+  geom_bar(stat = "identity") +
+  theme(axis.line = element_blank())
+
+``` 
+
+Next, think about what data are conveyed in this graph. The bars
+capture two pieces of information: (1) the age and (2) the memory at
+that age. The only pieces of the bars we really need are the top. The
+rest of the bars take up a lot of ink, but convey no data. Points can
+do this more efficiently. The chart that follows has a much higher
+data-to-ink ratio as it is stripped back nearly to just the data.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Dot plot of age and memory - Step 3"}
+
+ggplot(dt, aes(Age, Memory)) +
+  geom_point(size = 4) +
+  theme(axis.line = element_blank())
+
+``` 
+
+Depending on the number of data points, one may push a bit
+further. Many people in practice find they are unfamiliar with these
+sort of graphs and at first it can take a bit longer to read. We are
+trained and used to seeing plots with "chartjunk" and low data to
+ink ratios. However, a chart like this is a far more condensed display
+of data and removes distractions to really highlight the raw data or
+results.
+
+```{r, fig.width = 5, fig.height = 4, fig.cap = "Dot plot of age and memory - Step 4"}
+
+ggplot(dt, aes(Age, Memory)) +
+  geom_point(size = 4) +
+  geom_text(aes(y = Memory + .5, label = Memory)) + 
+  theme(axis.line = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank()) +
+  ggtitle("Working memory levels across the lifespan")
+
+``` 
+
+Another example is the popular scatter plot. By default scatter plots
+already have relatively high data to ink ratios.
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 1"}
+
+ggplot(mtcars, aes(mpg, hp)) +
+  geom_point()
+
+``` 
+
+However, "normal" axes don't convey data, so they can be removed.
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 2"}
+
+ggplot(mtcars, aes(mpg, hp)) +
+  geom_point() +
+  theme(axis.line = element_blank())
+
+``` 
+
+If we want something *like* axes but to be more useful, we can use the
+function `geom_rangeframe()` from the `ggthemes` package to put more
+informative data in. Range frames add "axes" but only that go the
+range of the observed data. Thus, these new axes show the minimum and
+maximum of each variable.
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 3"}
+
+ggplot(mtcars, aes(mpg, hp)) +
+  geom_point() +
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() 
+
+``` 
+
+Finally, we can make the axis labels more informative. Instead of
+presenting "pretty" numbers but that convey no data, we can pick axis
+labels and breaks at meaningful points of the data.
+One option is quantiles / percentiles: 0th, 25th, 50th (median), 75th
+and 100th percentiles are given by default from the `quantile()`
+function. Now almost every piece of ink in this figure conveys some
+useful information. We can visually see the range of the `mpg` and
+`hp` variables from the axes. We can see the median and interquartile
+range as well.
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 4"}
+
+ggplot(mtcars, aes(mpg, hp)) +
+  geom_point() +
+  scale_x_continuous(breaks = as.numeric(quantile(mtcars$mpg))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(mtcars$hp))) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe()
+
+``` 
+
+
+
+## TBD
 
 ```{r}
 
@@ -239,8 +412,6 @@ ggplot(mtcars, aes(cyl, mpg)) +
 
 
 ggplot(mtcars, aes(sample = mpg)) + geom_qq()
-
-
 
 ggplot(d, aes(STRESS, PosAff)) +
   geom_point(colour = "grey50", alpha = .2)
