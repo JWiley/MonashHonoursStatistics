@@ -270,6 +270,10 @@ efficiently convey data graphically.
 - Tufte: [https://www.edwardtufte.com/tufte/](https://www.edwardtufte.com/tufte/)
 - Cleveland: [http://www.stat.purdue.edu/~wsc/](http://www.stat.purdue.edu/~wsc/)
 
+A few additional pages with good discussions on making good graphs:
+[Graphic Design Stack Exchange 1](https://graphicdesign.stackexchange.com/questions/35052/how-to-visualise-two-dimensional-scientific-data-points-in-a-chart-in-graysca/35062#35062)
+and [Graphic Design Stack Exchange 2](https://graphicdesign.stackexchange.com/questions/36908/best-plotting-symbols-for-scientific-plots-with-multiple-datasets/57122)
+
 One key principle that Tufte emphasises is the data to ink ratio. This
 ratio is how much data is conveyed versus ink used, and Tufte argues
 to try to maximize this (i.e., more data, less ink). To see this,
@@ -401,7 +405,147 @@ ggplot(mtcars, aes(mpg, hp)) +
 
 ``` 
 
+In the rest of the graphs we examine, we will try to implement this
+data to ink ratio principle. It does require some additional `R` code
+versus simply plotting with the defaults and often at first, you may
+need to spend a bit more time explaining your graph to people in text
+or in the figure legend. However, ultimately, such plots convey more
+data. For example, it makes it clear that cars in the top 25% of `mpg`
+(i.e., 23 to 34) all fall below the median `hp` (i.e., below
+123). Conversely, cares in the bottom 25% of `mpg`(i.e., 10 to 15) all
+fall above the median `hp` (i.e., 123) with nearly all in the top 25%
+of `hp`.
 
+# Advanced Bivariate Graphs
+
+As with univariate graphs, we can map additional variables to
+additional aesthetics. This allows us to integrate more into standard
+bivariate plots. The following graph shows a simple example of
+this. 
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with shapes"}
+
+ggplot(mtcars, aes(mpg, hp, shape = factor(cyl))) +
+  geom_point() +
+  scale_x_continuous(breaks = as.numeric(quantile(mtcars$mpg))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(mtcars$hp))) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe()
+
+```
+
+However, although the shapes are distinguishable, they are
+visually difficult. Cleveland did some studies around shape
+perception, particularly when points may be partially overlapping and
+on this basis suggested other shaped. We can manually specify the
+number for which shape we want applied to which value of `cyl` using
+the `scale_shape_manual()` function[^moreshapes]. We also use the
+`name = ` argument so that instead of getting the legend labelled
+`factor(cyl)` it is labelled `Number Cylinders`. In `R` the `\n` means
+add a line break so in the legend there will be a line break between
+"number" and "cylinders".
+
+[^moreshapes]: There are many other shapes available. To see a list,
+    go to: [http://sape.inf.usi.ch/quick-reference/ggplot2/shape](http://sape.inf.usi.ch/quick-reference/ggplot2/shape).
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with shapes"}
+
+
+ggplot(mtcars, aes(mpg, hp, shape = factor(cyl))) +
+  geom_point(size = 3) +
+  scale_shape_manual(
+    name = "Number\nCylinders",
+    values = c("4" = 1, "6" = 3, "8" = 83)) + 
+  scale_x_continuous(breaks = as.numeric(quantile(mtcars$mpg))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(mtcars$hp))) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe()
+
+
+```
+
+Scatter plots are a helpful way to represent the raw data and
+association between two variables. In some cases, however, it can be
+harder to see the results. The following graph is a scatter plot of
+stress and positive affect in the daily diary data we have used.
+First we remove any missing data on those variables, then we plot.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with a lot of data"}
+
+d2 <- d[!is.na(STRESS) & !is.na(PosAff)]
+
+ggplot(d2, aes(STRESS, PosAff)) +
+  geom_point() +
+  scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(d2$PosAff))) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe()
+
+```
+
+There are so many assessments and each overlap with each other so much
+that it is very difficult to see any pattern or trend.
+`STRESS` is skewed so both the minimum value and the 25th percentile
+are 0, which is why we only see four labels on the x axis instead of
+five.
+We can try to better see the data by shrinking the raw points, making
+them transparent and adding some noise (a.k.a., jittering) on stress.
+This works relatively well for these data and helps us see the pattern
+more clearly.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with a lot of data reducing overplotting"}
+
+ggplot(d2, aes(jitter(STRESS), PosAff)) +
+  geom_point(size = 0.6, alpha = .2) +
+  scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(d2$PosAff))) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe()
+
+```
+
+Another option for large amounts of data where plotting the raw points
+may be too much is to use summaries. For example, to examine
+univariate distributions, we used histograms and density
+plots. Similar options exist for bivariate data. Before we look at
+some of these, we start with a 3D graph of the density of data by
+stress and positive affect.
+
+```{r, fig.width = 8, fig.height = 8, echo = FALSE, webgl=TRUE, warning=FALSE, fig.cap = "Three dimensional perspective plot of the densities of stress and positive affect"}
+
+## This code chunk for demonstration only
+## you do not need these packages or to be able to run this yourselves
+library(knitr)
+library(rgl)
+
+knit_hooks$set(webgl = hook_webgl)
+tmp <- MASS::kde2d(d2$STRESS, d2$PosAff)
+colour <- rev(rainbow(100, start = 0/6, end = 4/6))
+zcolour <- cut(tmp$z, 100)
+persp3d(tmp$x, tmp$y, tmp$z, col = colour[zcolour],
+        xlab = "STRESS", ylab = "PosAff", zlab = "Density")
+
+```
+
+Once you are familiar with this 3D representation, now we can look at
+the 2D versions. One common approach is a contour plot. Each line in a
+contour plot represents the same value on the third dimension, here
+density. They are equally spaced, so if contours are near together, it
+means that the level of the third variable changes rapidly with a
+change in x or y. If they are far apart, it means the value of the
+third variable changes slowly with x or y.
+
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with a lot of data reducing overplotting"}
+
+ggplot(d2, aes(STRESS, PosAff)) +
+  geom_density2d(size = 1, colour = "black") +
+  scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(d2$PosAff))) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe()
+
+```
 
 ## TBD
 
@@ -410,14 +554,9 @@ ggplot(mtcars, aes(mpg, hp)) +
 ggplot(mtcars, aes(cyl, mpg)) +
   stat_summary(fun.y = mean, geom = "bar")
 
-
 ggplot(mtcars, aes(sample = mpg)) + geom_qq()
 
 ggplot(d, aes(STRESS, PosAff)) +
   geom_point(colour = "grey50", alpha = .2)
-
-ggplot(d, aes(STRESS, PosAff)) +
-  geom_jitter(colour = "grey50", alpha = .2) +
-  geom_density2d(size = 1, colour = "black") 
 
 ```
