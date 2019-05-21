@@ -1,5 +1,5 @@
 ---
-title: "DRAFT TBC - Graphs Part 1"
+title: "Graphs Part 1"
 author: "Joshua F. Wiley"
 date: "`r Sys.Date()`"
 output: 
@@ -55,6 +55,12 @@ d <- readRDS("aces_daily_sim_processed.RDS")
 dt <- data.table(
   Age = c(20, 30, 40, 50, 60),
   Memory = c(7, 5, 6, 4.5, 4))
+
+## convert a few variables in mtcars dataset
+## into discrete factor variables
+mtcars$cyl <- factor(mtcars$cyl)
+mtcars$vs <- factor(mtcars$vs)
+mtcars$am <- factor(mtcars$am)
 
 ```
 
@@ -127,6 +133,21 @@ pb + geom_dotplot()
 
 ```
 
+Finally, we can make Q-Q plots, although these require sample values
+instead of values on just the x-axis. We use the `scale()` function to
+z-score the data on the fly. Finally, we add a line with an intercept
+(`a`) and slope (`b`) using `geom_abline()` which is the line all the
+points would fall on if they were perfectly normally distributed.
+
+```{r}
+
+ggplot(mtcars, aes(sample = scale(mpg))) +
+  geom_qq() +
+  geom_abline(intercept = 0, slope = 1)
+
+```
+
+
 ## Mapping Additional Variables
 
 We can map additional variables to aesthetics such as the colour to
@@ -185,7 +206,26 @@ ggplot(iris, aes(Sepal.Length)) +
 
 ```
 
-## Bivariate Graphs
+## Try It - Univariate
+
+Using the `mtcars` dataset:
+
+1. make a histogram for the variable: `qsec`.
+2. make a QQ plot for qsec
+3. Make a dotplot and density plot for: `disp` *separated* by `am`
+
+```{r tryunivariate, error=TRUE}
+
+## histogram code here (qsec)
+
+## QQ plot code here (qsec)
+
+## dotplot and density plot code here (disp by am)
+
+
+```
+
+# Bivariate Graphs
 
 We can make bivariate plots by mapping variables to both the x and
 y-axis. For a scatter plot, we use point geometric objects.
@@ -425,7 +465,7 @@ this.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with shapes"}
 
-ggplot(mtcars, aes(mpg, hp, shape = factor(cyl))) +
+ggplot(mtcars, aes(mpg, hp, shape = cyl)) +
   geom_point() +
   scale_x_continuous(breaks = as.numeric(quantile(mtcars$mpg))) + 
   scale_y_continuous(breaks = as.numeric(quantile(mtcars$hp))) + 
@@ -441,7 +481,7 @@ on this basis suggested other shaped. We can manually specify the
 number for which shape we want applied to which value of `cyl` using
 the `scale_shape_manual()` function[^moreshapes]. We also use the
 `name = ` argument so that instead of getting the legend labelled
-`factor(cyl)` it is labelled `Number Cylinders`. In `R` the `\n` means
+`cyl` it is labelled `Number Cylinders`. In `R` the `\n` means
 add a line break so in the legend there will be a line break between
 "number" and "cylinders".
 
@@ -450,8 +490,7 @@ add a line break so in the legend there will be a line break between
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with shapes"}
 
-
-ggplot(mtcars, aes(mpg, hp, shape = factor(cyl))) +
+ggplot(mtcars, aes(mpg, hp, shape = cyl)) +
   geom_point(size = 3) +
   scale_shape_manual(
     name = "Number\nCylinders",
@@ -460,7 +499,6 @@ ggplot(mtcars, aes(mpg, hp, shape = factor(cyl))) +
   scale_y_continuous(breaks = as.numeric(quantile(mtcars$hp))) + 
   theme(axis.line = element_blank()) +
   geom_rangeframe()
-
 
 ```
 
@@ -475,7 +513,7 @@ First we remove any missing data on those variables, then we plot.
 d2 <- d[!is.na(STRESS) & !is.na(PosAff)]
 
 ggplot(d2, aes(STRESS, PosAff)) +
-  geom_point() +
+  geom_point(alpha = .2) +
   scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
   scale_y_continuous(breaks = as.numeric(quantile(d2$PosAff))) + 
   theme(axis.line = element_blank()) +
@@ -503,6 +541,41 @@ ggplot(d2, aes(jitter(STRESS), PosAff)) +
   geom_rangeframe()
 
 ```
+
+The breaks for positive affect are useful but probably printed in too
+much precision. We can use the `round()` function to reduce this
+precision and clean up the numbers.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with a lot of data reducing overplotting with rounding for positive affect"}
+
+ggplot(d2, aes(jitter(STRESS), PosAff)) +
+  geom_point(size = 0.6, alpha = .2) +
+  scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
+  scale_y_continuous(breaks = round(as.numeric(quantile(d2$PosAff)), digits = 2)) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe()
+
+```
+
+To more clearly see the trend in scatter plot data, we can add smooth
+lines. `R` can add these easily using some flexible regression-based
+models but that allow flexibility in the association. With repeated
+measures data, the standard errors will be wrong, so we turn them off
+using the argument `se = FALSE`.
+
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with a lot of data reducing overplotting with rounding for positive affect and a smooth trend line added"}
+
+ggplot(d2, aes(jitter(STRESS), PosAff)) +
+  geom_point(size = 0.6, alpha = .2) +
+  scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
+  scale_y_continuous(breaks = round(as.numeric(quantile(d2$PosAff)), digits = 2)) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  stat_smooth(se = FALSE)
+
+```
+
 
 Another option for large amounts of data where plotting the raw points
 may be too much is to use summaries. For example, to examine
@@ -535,28 +608,176 @@ means that the level of the third variable changes rapidly with a
 change in x or y. If they are far apart, it means the value of the
 third variable changes slowly with x or y.
 
-
-```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with a lot of data reducing overplotting"}
+```{r, fig.width = 6, fig.height = 5, fig.cap = "2D contour plot of densities"}
 
 ggplot(d2, aes(STRESS, PosAff)) +
   geom_density2d(size = 1, colour = "black") +
   scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
-  scale_y_continuous(breaks = as.numeric(quantile(d2$PosAff))) + 
+  scale_y_continuous(breaks = round(as.numeric(quantile(d2$PosAff)), 2)) + 
   theme(axis.line = element_blank()) +
   geom_rangeframe()
 
 ```
 
-## TBD
+We can use the `fill` argument to add colour to help. Higher numbers
+indicate higher density (i.e., more observations). 
 
-```{r}
+```{r, fig.width = 6, fig.height = 5, fig.cap = "2D filled contour plot of densities"}
 
-ggplot(mtcars, aes(cyl, mpg)) +
-  stat_summary(fun.y = mean, geom = "bar")
+ggplot(d2, aes(STRESS, PosAff)) +
+  stat_density_2d(aes(fill = ..level..), geom = "polygon", colour = "black") + 
+  scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
+  scale_y_continuous(breaks = round(as.numeric(quantile(d2$PosAff)), 2)) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe()
 
-ggplot(mtcars, aes(sample = mpg)) + geom_qq()
+```
 
-ggplot(d, aes(STRESS, PosAff)) +
-  geom_point(colour = "grey50", alpha = .2)
+One last option we will look at for large amounts of two-dimensional
+data is kind of like a histogram. The data are binned, and
+counted. Instead of binning on one dimension, data are binned on two
+dimensions. 
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "2D histogram by hexagonal binning"}
+
+ggplot(d2, aes(STRESS, PosAff)) +
+  geom_hex(bins = 20) + 
+  scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
+  scale_y_continuous(breaks = round(as.numeric(quantile(d2$PosAff)), 2)) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe()
+
+```
+
+A challenge with these plots can be figuring out the ideal number of
+bins to use, especially withvery skewed or "clumpy" data. Too many
+people in one bin means that the colour scale must go up so high that
+you do not get much granularity to compare different frequencies on
+the lower end (e.g., below with `bins = 10` the colour scale is in
+100s of observations).
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "2D histogram by hexagonal binning"}
+
+ggplot(d2, aes(STRESS, PosAff)) +
+  geom_hex(bins = 10) + 
+  scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
+  scale_y_continuous(breaks = round(as.numeric(quantile(d2$PosAff)), 2)) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe()
+
+```
+
+## Try It - Bivariate
+
+Using the daily diary dataset we have worked with all semester, `d` dataset:
+
+1. Make a scatter plot (points) for `SUPPORT` and `COPEPrb`. Use the
+   good visualization principles we have learned. Make your own
+   decisions about jittering, size, and alpha transparency to make the
+   scatter plot most useful to read.
+2. Extend your final plot from number 1 to include an overall trend line.
+3. Create a plot of the distribution/density of `SUPPORT` and
+   `COPEPrb`. This can be a contour plot, hexgonal bin, or if you are
+   very keen, a 3D plot.
+
+```{r trybivariate, error=TRUE}
+
+## scatter plot code here
+
+
+## scatter plot + trend line code here
+
+
+## 2d distribution plot code here
+
+
+```
+
+# Longitudinal Plots
+
+For longitudinal data or time series data, line plots often make
+sense. We have seen simple line plots before, but when there are
+multiple people, using an overall line plot is not effective.
+
+The following code subset the data to just 4 randomly sampled people
+with non missing support values and creates a line plot.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Longitudinal plots"}
+
+set.seed(123)
+d3 <- d[!is.na(SUPPORT) & UserID %in% sample(unique(d$UserID), 4)]
+
+ggplot(d3,aes(SurveyDay, SUPPORT)) +
+  geom_line()
+
+```
+The vertical jumps in the lines are because there are multiple
+assessments on the same day. To address this, we need to separate the
+lines by person. We can do this by using another aesthetic, such as
+colour, and/or by specifying a grouping variable. We do both below.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Longitudinal plots by person"}
+
+ggplot(d3,aes(SurveyDay, SUPPORT,
+              colour = UserID, group = UserID)) +
+  geom_line()
+
+```
+
+Just as we looked at plotting some smooth lines for scatter plots, we
+can do that for each person. All we need to do is add another line
+with the `stat_smooth()` function.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Longitudinal plots by person with smooths"}
+
+ggplot(d3,aes(SurveyDay, SUPPORT,
+              colour = UserID, group = UserID)) +
+  geom_line() +
+  stat_smooth(se=FALSE) 
+
+```
+
+If we think that the smooth lines are relatively good approximations,
+a cleaner image may be made by just showing these, which smooths out
+some of the "noise" in the raw data.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Longitudinal smooth plots by person"}
+
+ggplot(d3,aes(SurveyDay, SUPPORT,
+              colour = UserID, group = UserID)) +
+  stat_smooth(se=FALSE) 
+
+```
+
+Finally, by default `R` uses flexible smooths. However, by specifying
+`method = "lm"` we can force a linear smooth function (linear
+regression), although this might be a (very) poor fit to some data,
+such as ID 9.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Longitudinal linear smooth plots by person"}
+
+ggplot(d3,aes(SurveyDay, SUPPORT,
+              colour = UserID, group = UserID)) +
+  geom_line() + 
+  stat_smooth(method = "lm", se = FALSE) 
+
+```
+
+
+## Try It - Longitudinal
+
+Using the daily diary dataset we have worked with all semester, `d` dataset:
+
+1. Change the random seed and subset the dataset to just a few
+   participants' IDs.
+2. Plot problem focused coping over time for those few people.
+
+```{r trylong, error=TRUE}
+
+## subset the data
+
+
+## longitudinal plot
+
 
 ```
