@@ -12,7 +12,7 @@
 
 <meta name="author" content="Joshua F. Wiley" />
 
-<meta name="date" content="2019-05-08" />
+<meta name="date" content="2019-06-06" />
 
 <title>Mixed Models</title>
 
@@ -266,7 +266,7 @@ if (window.hljs) {
 <h1 class="title toc-ignore">Mixed Models</h1>
 <h3 class="subtitle"><em>PSY4210 Sample Interpretations &amp; Resources</em></h3>
 <h4 class="author"><em>Joshua F. Wiley</em></h4>
-<h4 class="date"><em>2019-05-08</em></h4>
+<h4 class="date"><em>2019-06-06</em></h4>
 
 
 <div id="TOC">
@@ -283,16 +283,32 @@ if (window.hljs) {
 </ul>
 </div>
 
+<p>Download the raw <code>R</code> markdown code here <a href="https://jwiley.github.io/MonashHonoursStatistics/LMM_Interpretation.rmd">https://jwiley.github.io/MonashHonoursStatistics/LMM_Interpretation.rmd</a>.</p>
 <pre class="r"><code>## have R round to 2 significant digits
 options(digits = 2)
 
-library(data.table)
-library(lme4)  ## load first
-library(lmerTest) ## install and load of df and p-values
-library(ggplot2)
-library(visreg)
-
-## read in the dataset
+library(data.table)</code></pre>
+<pre><code>## Warning: package &#39;data.table&#39; was built under R version 3.5.2</code></pre>
+<pre><code>## data.table 1.12.0  Latest news: r-datatable.com</code></pre>
+<pre class="r"><code>library(lme4)  ## load first</code></pre>
+<pre><code>## Warning: package &#39;lme4&#39; was built under R version 3.5.2</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## Warning: package &#39;Matrix&#39; was built under R version 3.5.2</code></pre>
+<pre class="r"><code>library(lmerTest) ## install and load of df and p-values</code></pre>
+<pre><code>## Warning: package &#39;lmerTest&#39; was built under R version 3.5.2</code></pre>
+<pre><code>## 
+## Attaching package: &#39;lmerTest&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:lme4&#39;:
+## 
+##     lmer</code></pre>
+<pre><code>## The following object is masked from &#39;package:stats&#39;:
+## 
+##     step</code></pre>
+<pre class="r"><code>library(ggplot2)</code></pre>
+<pre><code>## Warning: package &#39;ggplot2&#39; was built under R version 3.5.2</code></pre>
+<pre class="r"><code>library(visreg)</code></pre>
+<pre><code>## Warning: package &#39;visreg&#39; was built under R version 3.5.2</code></pre>
+<pre class="r"><code>## read in the dataset
 d &lt;- readRDS(&quot;aces_daily_sim_processed.RDS&quot;)</code></pre>
 <div id="statistical-inference-from-linear-mixed-models-lmms" class="section level1">
 <h1><span class="header-section-number">1</span> Statistical Inference from Linear Mixed Models (LMMs)</h1>

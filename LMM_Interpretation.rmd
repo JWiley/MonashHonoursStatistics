@@ -7,7 +7,16 @@ output:
   tufte::tufte_html: 
     toc: true
     number_sections: true
+  tufte::tufte_handout: 
+    toc: true
+    number_sections: true
+  word_document:
+    toc: false
 ---
+
+Download the raw `R` markdown code here
+[https://jwiley.github.io/MonashHonoursStatistics/LMM_Interpretation.rmd](https://jwiley.github.io/MonashHonoursStatistics/LMM_Interpretation.rmd).
+
 
 ```{r setup}
 ## have R round to 2 significant digits
