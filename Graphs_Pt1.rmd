@@ -101,7 +101,13 @@ pb <- ggplot(
 ```
 
 Using our basic mapping, we can "add" a histogram geometry to view a
-histogram.
+histogram[^histogram].
+
+[^histogram]: Histograms define equal width bins on the x axis and
+count how many observations fall within each bin. Bars display these
+where the width of the bar is the width of the bin and the height of
+the bar is the count (frequency) of observations falling within that
+range. Histograms show a univariate distribution.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "A histogram in ggplot2 for mpg"}
 
@@ -113,7 +119,17 @@ We also can make a density plot, which also attempts to show the
 distribution, but using a smooth density function rather than binning
 the data and plotting the frequencies. Like histograms, the height
 indicates the relative frequency of observations at a particular
-value. Density plots are designed so that they sum to one.
+value. Density plots are designed so that they sum to one[^density]. 
+
+[^density]: Density plots attempt to provide an empirical
+approximation of the probability density function (PDF) for data.
+A probability density function always sums to one (i.e., if you
+integrated to get the area under the curve, it would always be one).
+The underlying assumption is that the observed data likely come form
+some relatively smooth distribution, so typically a smoothing kernel
+is used so that you see the approximate density of the data, rather
+than seeing exactly where each data point falls.
+Density plots show a univariate distribution.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "A density plot for mpg"}
 
@@ -125,7 +141,14 @@ Another type of plot are (stacked) dotplots. These are very effective
 at showing raw data for small datasets. Each dot represents one
 person. If two dots would overlap, they are stacked on top of each
 other. While these often are difficult to view with large datasets,
-for small datasets, they provide greater precision than histograms.
+for small datasets, they provide greater precision than histograms
+[^dotplot].
+
+[^dotplot]: Dot plots show the raw data. The data values are on the x
+axis. If two data points would overlap, they are vertically
+displaced leading to another name: stacked dot plots. They are good
+for small datasets. The y axis is kind of like a discrete density. Dot
+plots show a univariate distribution.
 
 ```{r, fig.width = 6, fig.height = 3, fig.cap = "A dot plot for mpg"}
 
@@ -155,7 +178,14 @@ include more information.  To break the dataset down further, it is
 helpful to have a bit larger dataset than the 32 cars in `mtcars`. The
 `iris` dataset has measurements on 150 flowers from three species of
 iris. For density plots, separating by colour is easy, by adding the
-`Species` variable as an additional aesthetic.
+`Species` variable as an additional aesthetic[^multidensity].
+
+[^multidensity]: When there are multiple univariate distributions to
+view, density plots are probably one of the most efficient
+ways. Histograms are difficult to view because they either are
+stacked, which makes interpretation more difficult or dodged which is
+visually difficult to see, or overplotted, which can hide some of the
+data.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Density plot coloured by Species for Sepal Length"}
 
@@ -185,7 +215,13 @@ ggplot(iris, aes(Sepal.Length, fill = Species)) +
 ```
 
 Multiple geometric objects can be combined. The following figure
-combines dot and density plots into one. 
+combines dot and density plots into one[^densitydot]. 
+
+[^densitydot]: Note that when combining density and dot plots the
+scales do not always work out well. For example, if the range of the
+dotplot on the y axis is 0 to 1 and the range of the density plot y
+axis is 0 to .005, the two will not be easily plotted on the same
+figure. When they are more similar, however, they can be.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Density and dot plot plot coloured by Species for Sepal Length"}
 
@@ -212,7 +248,12 @@ Using the `mtcars` dataset:
 
 1. make a histogram for the variable: `qsec`.
 2. make a QQ plot for qsec
-3. Make a dotplot and density plot for: `disp` *separated* by `am`
+3. Make a dotplot and density plot for: `disp` *separated* 
+   by `am`[^tryitnote]:
+   
+[^tryitnote]: The dotplot and density plot do not show up well
+together with these particular data as the density plot has very small
+y axis values, relative to the dotplot.
 
 ```{r tryunivariate, error=TRUE}
 
@@ -432,7 +473,20 @@ and 100th percentiles are given by default from the `quantile()`
 function. Now almost every piece of ink in this figure conveys some
 useful information. We can visually see the range of the `mpg` and
 `hp` variables from the axes. We can see the median and interquartile
-range as well.
+range as well[^informativeaxes].
+
+[^informativeaxes]: These informative axes are created by asking 
+`ggplot2` to create tick marks (breaks) on the x and y axis at the 
+quintiles of the variables, which is the default output from the 
+`quantile()` function. So now instead of the default tick marks /
+breaks on the axes, the breaks and numbers are:
+**minimum** (0th percentile), </br>
+**25th** percentile (i.e., lower quartile), </br>
+**50th** percentile (i.e., median), </br>
+**75th** percentile (i.e., upper quartile), </br>
+**maximum** (i.e., 100th percentile). </br>
+This provides a useful descriptive statistics on each variable in the
+plot, right in the axes.
 
 ```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 4"}
 
@@ -542,16 +596,17 @@ ggplot(d2, aes(jitter(STRESS), PosAff)) +
 
 ```
 
-The breaks for positive affect are useful but probably printed in too
-much precision. We can use the `round()` function to reduce this
-precision and clean up the numbers.
+The **breaks** for positive affect are useful but may be printed in
+too much precision. We can use the `round()` function to reduce this 
+precision and clean up the numbers on the y axis (e.g., if we wanted
+to round to 1 decimal point).
 
-```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with a lot of data reducing overplotting with rounding for positive affect"}
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with a lot of data reducing overplotting plus rounding the axis breaks for positive affect"}
 
 ggplot(d2, aes(jitter(STRESS), PosAff)) +
   geom_point(size = 0.6, alpha = .2) +
   scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
-  scale_y_continuous(breaks = round(as.numeric(quantile(d2$PosAff)), digits = 2)) + 
+  scale_y_continuous(breaks = round(as.numeric(quantile(d2$PosAff)), digits = 1)) + 
   theme(axis.line = element_blank()) +
   geom_rangeframe()
 
@@ -606,7 +661,30 @@ contour plot represents the same value on the third dimension, here
 density. They are equally spaced, so if contours are near together, it
 means that the level of the third variable changes rapidly with a
 change in x or y. If they are far apart, it means the value of the
-third variable changes slowly with x or y.
+third variable changes slowly with x or y[^readingcontours].
+For reference, a scatter plot of the data are also shown here. 
+
+[^readingcontours]: 
+To learn how to read contour plots, first watch this video about
+reading contour lines on maps:
+[https://youtu.be/CoVcRxza8nI](https://youtu.be/CoVcRxza8nI). 
+The same principles apply to reading contour plots of densities,
+except that instead of different lines for different altitudes, they
+are different lines for different densities, which represents how many
+observations fall in any particular region. </br>
+Note that if data are bivariate normal, the bivariate distribution
+should have a single mode (peak) that is at the mean (roughly
+centered) at the mean of each variable of the bivariate
+distribution. The contours would look like circles or ellipsoids
+expanding out from the single peak. Multiple points of tightly spaced
+contour lines may suggest more than one peak (i.e., multimodal) on one
+or both dimensions. Contour lines spaced further apart indicate a
+greater distance must be moved on an axis to have the same change in
+density. This typically occurs when there is a more shallow slope of
+the density function (e.g., a valley). Skewed distributions will tend
+to have many contours lines on low or high values. Note that in a
+bivariate distribution, one variable may be skewed and another normal,
+or both skewed in the same or different directions.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "2D contour plot of densities"}
 
@@ -617,10 +695,44 @@ ggplot(d2, aes(STRESS, PosAff)) +
   theme(axis.line = element_blank()) +
   geom_rangeframe()
 
+ggplot(d2, aes(STRESS, PosAff)) +
+  geom_point() +
+  scale_x_continuous(breaks = as.numeric(quantile(d2$STRESS))) + 
+  scale_y_continuous(breaks = round(as.numeric(quantile(d2$PosAff)), 2)) + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  ggtitle("Scatter plot for comparison")
+
 ```
 
+Following is an example of a contour plot for bivariate normal data,
+where the two variables are positive correlated with each other.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "2D contour plot of densities for a bivariate normal distribution and a comparison scatter plot"}
+
+set.seed(1234)
+normaldat <- data.frame(
+  x = rnorm(5e4))
+normaldat$y <- 2 * normaldat$x + rnorm(5e4)
+
+ggplot(normaldat, aes(x, y)) +
+  geom_density2d(size = 1, colour = "black") +
+  theme(axis.line = element_blank()) +
+  geom_rangeframe()
+
+ggplot(normaldat, aes(x, y)) +
+  geom_point() + 
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  ggtitle("Scatter plot for comparison")
+
+```
+
+
 We can use the `fill` argument to add colour to help. Higher numbers
-indicate higher density (i.e., more observations). 
+indicate higher density (i.e., more observations). This is still a
+contour plot, its just filled in the space in between the contour
+lines with colour.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "2D filled contour plot of densities"}
 
@@ -636,7 +748,31 @@ ggplot(d2, aes(STRESS, PosAff)) +
 One last option we will look at for large amounts of two-dimensional
 data is kind of like a histogram. The data are binned, and
 counted. Instead of binning on one dimension, data are binned on two
-dimensions. 
+dimensions. The colour of each hexagon indicates how many people fall
+into the area covered by the hexagon, just as the height of a bar in a
+histogram indicates how many observations fall between the width of
+the bar[^hexbin]. 
+
+[^hexbin]: On the right hand side of the plot, the legend shows a
+continuous colour gradient, where brighter blues indicate more
+observations. In this instance, the brightest blues represent a count
+of over 150 observations. 
+The darker blues represent something under 50 observations. It will be
+difficult visually to distinguish 50 observations in a bin from say 20
+or 10 because all of them are a relatively dark blue. 
+It is a fairly continuous colour gradient from dark to bright blue,
+but visually we can only discern movement of a certain magnitude. When
+you have some high frequency bins requiring that bright blues be used
+for say 150+, then it gives less "space" on the colour gradient for
+the low frequencies (5, 10, 20) which means all of those (visually)
+appear very similar as a dark blue, and we cannot well distinguish
+some bins with relatively lower frequencies apart as easily. 
+Sometimes having more bins can help with this. Generally fewer bins
+will exacerbate problems like this. It is also more difficult to read
+these when points are very tightly clustered in a small region as that
+results in some space on the graph being very high counts and others
+very low counts, which is difficult to represent with a continuous
+colour gradient well.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "2D histogram by hexagonal binning"}
 
@@ -654,7 +790,9 @@ bins to use, especially withvery skewed or "clumpy" data. Too many
 people in one bin means that the colour scale must go up so high that
 you do not get much granularity to compare different frequencies on
 the lower end (e.g., below with `bins = 10` the colour scale is in
-100s of observations).
+100s of observations). The `bins = 10` option roughly means use about
+10 bins in each variable, although its used as part of an algorithm so
+you don't get exactly 10 bins in the rows or columns.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "2D histogram by hexagonal binning"}
 
@@ -700,7 +838,15 @@ sense. We have seen simple line plots before, but when there are
 multiple people, using an overall line plot is not effective.
 
 The following code subset the data to just 4 randomly sampled people
-with non missing support values and creates a line plot.
+with non missing support values and creates a line plot[^randomseeds].
+
+[^randomseeds]: The `set.seed()` function is used to set the random
+seed. This controls how `R` generates random numbers. It allows
+multiple computers to generate the same set of random numbers. So that
+over and over, this example will randomly select the **same** random 4
+IDs to plot. If you want to plot different participants, you can
+change the random seed to some other number (e.g., 52349) and then you
+will get a different 4 random participants' selected and plotted.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Longitudinal plots"}
 
