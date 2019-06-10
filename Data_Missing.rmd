@@ -11,6 +11,7 @@ output:
     number_sections: true
   word_document:
     toc: false
+  
 ---
 
 ```{r, echo=FALSE, include=FALSE}
@@ -289,11 +290,53 @@ unless the data are missing completely at random (MCAR).
 Missing data often are classified:
 
 - Missing completely at random (MCAR) when the missingness mechanism
-is completely independent of the estimate of our parameter(s) of interest
+is completely independent of the estimate of our parameter(s) of
+interest[^mcar].
 - Missing at random (MAR) when the missingness mechanism is
-*conditionally* independent of the estimate of our parameter(s) of interest
+*conditionally* independent of the estimate of our parameter(s) of
+interest[^mar]
 - Missing not at random (MNAR) when the missingness mechanism is
-associated with the estimate of our parameter(s) of interest
+associated with the estimate of our parameter(s) of interest[^mnar]
+
+[^mcar]: When data are missing completely at random (MCAR), listwise
+deletion will yield unbiased estimates of the true parameter(s) if the
+data had not been missing.
+
+[^mar]: When data are missing at random (MAR), 
+it is possible to recover unbiased
+estimates if the right other variables are present. Our lecture
+example is an example of MAR. When people had high stress, we set
+their positive affect values to missing. So the missing data
+mechanism was stress. Now, because stress and positive affect were
+correlated, low positive affect values were more likely to be
+missing. Thus, the complete cases only provide a biased
+sample. However, we DID have stress measured, and this was
+actually the cause of the missingness. So, if we condition on
+stress, we can obtain unbiased results for positive affect. This
+is MAR. The data are biased if using complete cases, but there
+exists some other or combination of other variables that, if
+conditioned correctly on, can recover unbiased estimates from the
+data despite missingness. 
+
+
+[^mnar]: When data are missing not at random (MNAR), 
+you cannot recover unbiased estimates. 
+A simple example of this would be if less happy people
+were more likely to be missing. So rather than stress driving
+missingness, its actually the positive affect scores driving
+missingness on positive affect. The data we would need to recover
+unbiased estimates (positive affect) is then itself missing and so
+we have no ability to adjust for it. We often talk about this
+based on whether the parameter(s) we are interested in estimating
+are also causes (or not) of the missingness. If mean positive
+affect is a cause of missingness, then mean positive affect will
+be MNAR. If mean stress is a cause of missingness on mean positive
+affect and we have stress, then mean positive affect will be
+MAR. If age is a cause of missingness on positive affect BUT mean
+age is unrelated to mean positive affect, mean positive affect is
+MCAR because even though data are systematically missing, for the
+parameter we care about (mean positive affect) it is completely
+random relative to the missingness. 
 
 Our parameters may be anything, such as a mean, a standard deviation,
 a regression coefficient, etc. We will explore **multiple imputation
@@ -624,7 +667,24 @@ Before doing any imputation, it is a good idea to examine data. The
 `VIM` package in `R` has helpful functions for exploring missing
 data. We start by looking at the amount missing on each variable and
 the patterns of missing data using the `aggr()` function. This shows
-us that just over half of cases have complete data on all variables.
+us that just over half of cases have complete data on all 
+variables[^aggrplot].
+
+[^aggrplot]: The left hand side of this missing data plot shows the 
+proportion of missing data on each individual variable. Variables
+where the bars have no height are variables with no (or very nearly
+no) missing data. Variables with higher bars have a greater proportion
+of missing observations on that variable. 
+The right hand side shows different patterns of missing data. Blue
+indicates present data. Red indicates missing data. About 56% of
+people have all variables present. The next most common pattern is to
+have all variables present but be missing just negative affect, with
+about 21% of people. The next most common pattern is having all
+variable but to be missing positive affect, with about 14% of people.
+Identifying the patterns of missing data can be useful for identifying
+whether there is enough overlap of relevant variables to predict
+missingness and to identify if there are any unexpected patterns that
+might indicate problems with the data.
 
 ```{r}
 
@@ -637,7 +697,21 @@ A margin plot is an augmented scatter plot that in the margins shows
 the values on one variable when missing on the other along with a
 boxplot. This shows us that when negative affect is missing, stress
 scores are all low between 0 and 1. There are no missing stress scores
-so there is only one boxplot for negative affect.
+so there is only one boxplot for negative affect[^marginplot].
+
+[^marginplot]: The margin plot starts with a scatter plot. Blue dots
+are observed data. Red dots are imputed data. The values of these can
+help to see if imputations fall outside the range of observed data,
+fit with the rest of the trend from the observed data or identify any
+other potential issues. Outside the scatter plot are up to two
+boxplots on each axis. Examining the x axis, here STRESS, the blue
+boxplot shows the distribution of stress when negative affect (the y
+axis) is not missing. The red boxplot shows the distribution of stress
+when negative affect (the y axis) **is** missing. These boxplots make
+it clear that the distribution of stress is very different when
+negative affect is missing or not. On the y axis, there is only a blue
+boxplot, because no stress values are missing. Thus there can only be
+the observed distribution of negative affect when stress is present.
 
 ```{r}
 
@@ -647,7 +721,18 @@ marginplot(davgmiss[,.(STRESS, NegAff)])
 
 We can test whether levels of one variable differ by missing on
 another variable. This is often done with simple analyses, like
-t-tests or chi-square tests.
+t-tests or chi-square tests[^missingtests].
+
+[^missingtests]: These tests tell us whether values on one variable
+differ systematically when another variable is missing or present. For
+example, do mean stress levels differ between people who are missing
+negative affect versus people who are not missing negative affect?
+These results can help to identify factors that may be relevant to
+*why* people have missing data. Any variable that is related is worth
+considering as a candidate variable to be included in any missing data
+model (e.g., multiple imputation) even if you do not care about it for
+your research question. These tests do not necessarily indicate
+whether the data are MCAR, MAR, or MNAR.
 
 ```{r}
 
@@ -704,7 +789,20 @@ plot(mi.1, PosAff + NegAff + Age ~ .it | .ms)
 
 If we are not convinced the model converged, re-run with more
 iterations. Convergence is when there is no clear systematic change
-with additional iterations.
+with additional iterations[^convergence].
+
+[^convergence]: The convergence diagnostics show estimated values of
+descriptive statistics on some of the variables that have missing
+data (note, if no missing data are present on a variable, results will
+be same for each iteration so the plot is not needed and will fail). 
+What we are looking for is no systematic change (e.g., increasing,
+decreasing) with additional iterations. Also, we would hope that the
+random process leads to more or less the same estimates across the
+different imputed datasets. If that is the case, all imputations
+should converge around the same average value. If there is a "split"
+(e.g., if some imputations have high estimates and others, low
+estimates) that would indicate non-convergence. These plots look
+pretty good with the 3 + 20 = 23 iterations.
 
 ```{r}
 
@@ -720,7 +818,21 @@ plot(mi.1, PosAff + NegAff + Age ~ .it | .ms)
 ```
 
 Once we are satisfied with convergence, we can plot the imputed data
-versus observed data. Imputed data are in red.
+versus observed data. Imputed data are in red[^midiagnostics].
+
+[^midiagnostics]: These diagnostic plots do not necessarily tell you
+whether the imputation is "right" or "wrong". They show in blue the
+observed density plots and in blue the observed data scatter
+plots. The red lines and points represent the distributions from the
+imputed data. If observed and imputed distributions and values are
+similar, it may suggest that the overall distribution does not change
+much when imputed. This may be indicative of the data being MCAR or
+that the relevant variables are missing from the imputation model.
+Impossible imputed values may warrant changing the imputation model
+(e.g., if ages could only range from 0 to 6 years old, and imputed
+ages are 15 or -4 that may be a sign that the imputation model [e.g.,
+linear] is a poor fit in this instance and a non-linear or other more
+complex model is needed to appropriately capture the data).
 
 ```{r}
 
@@ -740,20 +852,20 @@ bunch of separate linear regressions.
 To pool the results from the individual regressions, we use the
 `pool()` function[^pooloutput].
 
-[^pooloutput]: The pooled output has several pieces:
-**estimate**: the pooled, average regression coefficients;
+[^pooloutput]: The pooled output has several pieces:</br>
+**estimate**: the pooled, average regression coefficients;</br>
 **ubar**: the average variance (based on the squared standard errors)
-associated with sampling variation, we called it $\bar{V}$; 
-**b**: the between imputation variance; 
+  associated with sampling variation, we called it $\bar{V}$;</br>
+**b**: the between imputation variance; </br>
 **t**: the total variance incorporating sampling variation, between
-imputation variance, and simulation error;
+  imputation variance, and simulation error;</br>
 **dfcom**: the degrees of freedom for the complete data analysis (i.e.,
-if there had not been missing data);
+  if there had not been missing data);</br>
 **df**: the estimated residual degrees of freedom for the model, taking
-into account missingness;
-**riv**: the relative increase variance due to missing data;
+  into account missingness;</br>
+**riv**: the relative increase variance due to missing data;</br>
 **lambda** or $\lambda$: the proportion of total variance due to
-missing data, that is: $\lambda = \frac{B + B/m}{T}$;
+  missing data, that is: $\lambda = \frac{B + B/m}{T}$;</br>
 **fmi**: the fraction of missing information
 
 ```{r}
@@ -772,16 +884,16 @@ Finally, we can get a pooled $R^2$ value using the
 `pool.r.squared()` function on the analyses.
 
 [^summaryoutput]: The summary output includes standard regression
-output in this case.
-**estimate**: the pooled, average regression coefficients;
+output in this case.</br>
+**estimate**: the pooled, average regression coefficients;</br>
 **std.error**: the standard error of the estimates incorporating all
-three sources of MI error, specifically: $se = \sqrt{T}$;
-**statistic**: $\frac{estimate}{std.error}$;
+  three sources of MI error, specifically: $se = \sqrt{T}$;</br>
+**statistic**: $\frac{estimate}{std.error}$;</br>
 **df**: the estimated degrees of freedom incorporating uncertainty due
-to missing data, combined with the statistic to calculate p-values;
+  to missing data, combined with the statistic to calculate p-values;</br>
 **p.value**: the p-value, the probability of obtaining the estimate or
-larger in the sample given that the true population value was zero.
-**2.5%**: the lower limit of the 95% confidence interval;
+  larger in the sample given that the true population value was zero.</br>
+**2.5%**: the lower limit of the 95% confidence interval;</br>
 **97.5%**: the upper limit of the 95% confidence interval.
 
 ```{r}
@@ -814,7 +926,13 @@ The graph that follows shows that compared to the true data, the
 multiply imputed results have larger confidence intervals slightly. In
 this case, the multiply imputed results are closer to the truth in the
 absolute estimates (dots in the graph) than are the estimates from the
-complete case analysis.
+complete case analysis[^truthnote].
+
+[^truthnote]: In general we do not have the true estimates. In this
+example, we have the true estimates because we created the missing
+data. In real world settings, all we could do is compare the complete
+case analysis (i.e., using listwise deletion, labelled "CC") with the multiple
+imputation results (labelled "MI Reg"). 
 
 ```{r}
 m.true <- lm(NegAff ~ PosAff + Age, data = davg)
