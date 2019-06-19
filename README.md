@@ -26,6 +26,10 @@ able to copy and paste existing code and just change the dataset and
 variables to suit your specific analytic needs.
 
 This GitHub repository has a number of resources for the unit.
+All code and much of the lecture content (both as HTML, R Markdown and
+Word Documents and PDFs are available as well). If you want, you can
+sign up for notifications any time any of the files in this repository
+are changed.
 
 1.  **Week 1** *Introduction to `R`*.  
     Getting `R` installed, setup, and learning a few basics. 
@@ -56,12 +60,17 @@ This GitHub repository has a number of resources for the unit.
 7.  **Week 7** *Generalized Linear Mixed Models*.
 	Please see the [Lecture Content](GLMM_slides.html).
 
-8.  Week 8, we will learn about merging and reshaping data. TBD
+8.  **Week 8** *Working with Different Data Types*.
+	Please see the [Lecture Content](Data_Pt1.html).
 
-9.  Week 9, we will learn about data cleaning and repeated measures data. TBD
+9.  **Week 9** *Merging/Joining & Reshaping Data*.
+	Please see the [Lecture Content](Data_Pt2.html).
 
-10.  Week 10, we will learn about multiple imputation for missing data. TBD
+10. **Week 10** *Missing Data & Multiple Imputation*.
+	Please see the [Lecture Content](Data_Missing.html).
 
-11.  Week 11, we will learn about graphs and data visualization (Part 1). TBD
+11. **Week 11** *Graphs and Data Visualization (Part 1)*.
+    Please see the [Lecture Content](Graphs_Pt1.html).
 
-12.  Week 12, we will learn about graphs and data visualization (Part 2). TBD
+12. **Week 12** *Graphs and Data Visualization (Part 2)*.
+    Please see the [Lecture Content](Graphs_Pt2.html).
