@@ -27,23 +27,34 @@ variables to suit your specific analytic needs.
 
 This GitHub repository has a number of resources for the unit.
 
-1.  Week 1, we will start by just getting `R` installed, setup, and
-    learning a few basics. Please see the page 
-	[Intro to R](IntroR.md).
+1.  **Week 1** *Introduction to `R`*.  
+    Getting `R` installed, setup, and learning a few basics. 
+	Please see the page [Intro to R](IntroR.md).
+	Also see [Lecure Slides](https://docs.google.com/presentation/d/126MW6344CiuqIe_DrF978kFDOqto9qUXVTVpCIeWAtY/edit?usp=sharing).
 	
-2.  Week 2, we will learn about linear mixed effects models (LMMs;
-    Part 1). Please see the page [LMM Pt1](LMM_Pt1.md).
+2.  **Week 2** *Introductcion to linear mixed effects models (LMMs; Part 1)*. 
+	Please see the page [LMM Pt1](LMM_Pt1.md).
+	Also see [Lecture Slides](https://docs.google.com/presentation/d/14tV7mKYmLRO1Jv68Etf3dDX5BMJ1d2xo9bIEL0zHAgE/edit?usp=sharing).
 
-3.  Week 3, we will learn about linear mixed effects models (LMMs; Part 2). TBD
+3.  **Week 3** *Linear mixed effects models (LMMs; Part 2)*.
+	Please see the `R` worksheet [LMM Pt2](LMM_Pt2_worksheet.R).
+	Also see [Lecture Slides](https://docs.google.com/presentation/d/1-CFQlbbNR29weYFqdeEawxa4odkjH7coY8lTe1BMq84/edit?usp=sharing).
 
-4.  Week 4, we will learn about interactions and moderation. TBD
+4.  **Week 4** *Linear mixed effects models synthesis (LMMs; Synthesis)*.
+	Please see the `R` worksheet [LMM Synthesis](LMM_Synthesis_worksheet.R).
+	Also see [Lecture Slides](https://docs.google.com/presentation/d/17HPCrJi1-cbuH82_pirzoPH3GqS37yl35XsQlqboXB4/edit?usp=sharing).
 
-5.  Week 5, we will learn about model selection and comparison. TBD
+5.  **Week 5** *Interactions and Moderation*.
+	Please see the `R` worksheet [Moderation](LMM_Moderation_worksheet.R).
+	Also see [Lecture Slides](https://docs.google.com/presentation/d/1-y-veUD3jHfxv2zNSk6jPMMZ7TFv6OTdDgQM3Xfcscs/edit?usp=sharing)
 
-6.  Week 6, we will learn about generalized linear mixed effects
-    models (GLMMs). TBD
+6.  **Week 6** *Model Comparisons*.
+	Please see the `R` worksheet [Model
+	Comparisons](LMM_Comparison_worksheet.R).
+	Also see [Lecture Slides](https://docs.google.com/presentation/d/1J2wPZ70pA_QEJw6CNQ1xQAsMOXFDXcm1q7RCrtZIcKc/edit?usp=sharing).
 
-7.  Week 7, we will learn about working with data. TBD
+7.  **Week 7** *Generalized Linear Mixed Models*.
+	Please see the [Lecture Content](GLMM_slides.html).
 
 8.  Week 8, we will learn about merging and reshaping data. TBD
 
