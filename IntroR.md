@@ -108,12 +108,24 @@ understand this and it is normal.*
     this code once the terminal opens and press enter:
 	`brew install libgit2`
 
-10. Make sure that `R.app` and `RStudio.app` are able to access disk
+10. **Download `R`** by going [here](https://cloud.r-project.org/) and
+    clicking on "Download R for (Mac) OS X" then download the download
+    the latest version. Once you have downloaded `R` make sure to
+    install it to your apps.
+
+11. **Download RStudio** this is an interface to `R` and makes it much
+    nicer to work with. To download it, just go
+    [here](https://www.rstudio.com/products/rstudio/download/#download) 
+	and then under the "Installers" pick your operating system. 
+	Once you have downloaded RStudio, make sure to install it to your
+    apps. 
+	
+12. Make sure that `R.app` and `RStudio.app` are able to access disk
     resources needed. Follow
 	[this guide](https://www.r-bloggers.com/escaping-the-macos-10-14-mojave-filesystem-sandbox-with-r-rstudio/)
 	to give them the necessary permissions.
-	
-11. Once you think you've followed all the installation steps, move on
+
+13. Once you think you've followed all the installation steps, move on
     to the next section to Try `R`.
 
 # 2. Try `R`
