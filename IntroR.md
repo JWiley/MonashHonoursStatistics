@@ -1,9 +1,79 @@
 # [Home](README.md)
 
-# 1. Install `R`
+The vision of this unit is to train you in applied statistics and data
+science for Psychology. These skills are useful not only for
+quantitative research but also are highly in demand industry/job
+skills. With industry and modern, agile teams in mind, we will be
+using several tools that are common tools used in industry. Some of
+these you may have used, some may be new. We'll introduce each.
 
-The first step for this unit is getting `R` installed and setup on
-your computer. `R` is primarily a language. To have a nicer way to
+# 1. Slack -- team communication
+
+Slack is an instant messaging / chat platform. It is used in many
+large companies and allows easier, real time communication, sharing
+code, files, and images than email. A workspace just for this unit
+this year has been created.
+
+Go [here](https://join.slack.com/t/psy42102020/shared_invite/enQtOTM5MDYzNTQ0MzkxLTFiMjhmY2JjODRkYzJiMTgxNzUxZGRmNDY5YzUwNjY1ZTRlNjMwMmE4YjRkZGY1ZDMxNTZiNzZmNTBlMWI3NWI)
+and then create a Slack account using your Monash email address
+(i.e., @monash.edu or @student.monash.edu) and
+join the PSY42102020 workspace. You should see a few channels:
+
+- `setup` this channel is for any questions around issues installing
+  and setting up software on your computer. Please DO post
+  screenshots, etc. to help us help you.
+- `stats` this channel is for any questions around statistical theory
+  or interpretation of output, etc.
+- `duringlecture` this channel will be used during live lectures for
+  real time questions and answers, sharing any extra code /
+  information (e.g., if to answer a question during lecture, some code
+  example is needed).
+- `general` Any other questions not covered by another channel.
+
+Although Moodle forums also will be available, Slack provides easier
+real time interactions that are closer to how real teams work and
+operate. Please feel free to chat openly, ask and answer questions
+with each other in this space. If you need specific help from one of
+the teachers you can use "@name" to mention them specifically and tag
+them to look at a particular message.
+
+# 2. GitHub -- collaborative code
+
+GitHub is an amazing platform and tool for building software, storing
+and managing code with over 40 million people actively using it.
+GitHub performs **version control** which just means keeping a history
+of all changes to a file, and lets you store and share files. By
+keeping a history, multiple people can work on files and then merge or
+combine their changes so it is common to use it for software
+development. Although its very powerful, in this unit, we will just
+introduce it and use it in a simple way. The lecture content and other
+support resources (worksheets, etc.) will be made available through
+GitHub. To use GitHub for this unit, follow these steps:
+
+1.  Create an account [here](https://github.com/), 
+    or if you already have an account, just sign in.
+
+2.  Once you are signed up, download the desktop app
+	[here](https://desktop.github.com/).
+	
+3.  Go to the repository (a collection of files and folders in GitHub)
+    for PSY4210, located
+    [here](https://github.com/JWiley/MonashHonoursStatistics).
+	Then click on "Clone or download" to get all the files synced to
+    your own computer.
+	
+4.  Make sure to regularly "pull" (download) the latest version to
+    your computer. We will update files regularly, for example adding
+    the latest information for later lectures and updating or
+    clarifying any materials as you all ask questions or find any
+    errors. That is the whole beauty of GitHub: it lets files be
+    edited and updated keeping a history but also letting you get the
+    very latest versions.
+
+# 3. Install and Setup `R`
+
+
+`R` is primarily a language. To have a nicer way to
 interact with and use `R` we will use RStudio. RStudio is known as an
 *I*ntegrated *D*evelopment *E*nvironment or IDE. It is a program that
 helps to keep your code, output, graphs, and files all together in one
@@ -25,7 +95,7 @@ understand this and it is normal.*
 
 1.  **Download `R`** by going [here](https://cloud.r-project.org/) and
     clicking on "Download R for Windows" then click on "install R for the
-	first time" which should let you "Download R X.X.X for Windows". 
+	first time" which should let you "Download R **3.6.2** for Windows". 
 	If you are having difficulty finding it, this link may help get you
 	[straight there](https://cloud.r-project.org/bin/windows/base/).
 	
@@ -128,7 +198,7 @@ understand this and it is normal.*
 13. Once you think you've followed all the installation steps, move on
     to the next section to Try `R`.
 
-# 2. Try `R`
+# 4. Try `R`
 
 To make sure that `R` and RStudio are installed and working correctly,
 follow these steps:
@@ -170,7 +240,7 @@ Please Post problems and errors to the discussion forum also will help
 us troubleshoot so that in later weeks when we present analyses, you
 have a fully functioning `R` on your system.
 
-# 3. Learn about RStudio
+# 5. Learn about RStudio
 
 To find out a bit more about RStudio, you can watch this <5 minute
 [video](https://www.youtube.com/watch?v=V_NoBcxpYC8).
@@ -179,20 +249,17 @@ If you want something for future reference on RStudio,
 try this 
 [cheat sheet](https://github.com/rstudio/cheatsheets/raw/master/rstudio-ide.pdf).
 
-# 4. Learn about `R`
+# 6. DataCampe: Learn about `R`
 
 To begin learning `R` we are going to be using the online platform,
 DataCamp. Follow the instructions on Moodle for getting your account
 setup. Then head over to [DataCamp](https://www.datacamp.com/), sign
 in with your Monash account, and go to "My Class". Note the first 1-2
 weeks will be fairly instense as to follow the class, you need to get
-up to a basic ability to read and follow `R` code. The "due dates" in
-DataCamp are not part of your grades, but they are *strongly*
-recommended so that you can take best advantage of the rest of the
-unit.
+up to a basic ability to read and follow `R` code. The DataCamp
+activities are official homework and are assessed, based on the number
+completed (full marks if all completed).
 
-In particular, please try your best to complete the course
-*Introduction to R*.
 
 
 # 5. Install `R` Packages

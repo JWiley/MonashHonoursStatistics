@@ -1,0 +1,132 @@
+######################################################################
+#                                                                    #
+#               Importing Data and Descriptives in R                 #
+#                                                                    #
+######################################################################
+
+## Note: in R a hashtag (#) indicates a comment. Comments are added 
+## throughout to help describe what each piece of code does
+
+
+#### Importing Data ####
+
+The first thing you need to do in R is import a dataset.
+You can do this in RStudio by clicking on "Import" and then choosing
+SPSS for the class dataset we are working with this semester.
+Note that if you do it this way, your dataset may be called the file
+name in R. If that is the case, you would need to replace "d" in the
+code below with whatever you read the dataset in as
+
+ALTERNATELY, you can use the code below
+
+## the nicest tools to import SPSS datafiles are from the
+## addon package, "haven". Your first time you'll need to install it
+## you should not need to install it again, once you have installed it
+install.packages("haven")
+
+## once haven is installed, you launch it by running
+## library(haven)
+library(haven)
+
+## this code reads in an SPSS file (.sav file)
+## and saves it in R as a dataset called "d"
+## it should open a pop up window for you to browse and find the data
+## (PSY3062_EAMMI2_Data)
+d <- read_sav(file.choose())
+
+## once its in, you can view the data by running:
+View(d)
+## or just click on it in RStudio
+
+## NOTE: if you used RSTudio
+
+## frequency table
+## top row shows the values, bottom row shows the counts (frequencies)
+## for example, the results for education show that 30 people have a value of "1"
+## note that <NA> or NA means missing, in this case no missing data
+table(d$edu, useNA = "always")
+## to understand what "1" means, we can look at the labels
+## if they were included with the dataset (yes, in this case)
+## this shows that "high school or less" is coded as "1"
+## so now we can better interpret the numbers
+attributes(d$edu)$labels
+
+## labels for sex to interpret
+attributes(d$sex)$labels
+
+## frequency table for sex
+table(d$sex, useNA = "always")
+## proportions instead of just counts
+## 0.25083 proportion of the data were "1s" (men)
+prop.table(table(d$sex, useNA = "always"))
+## multiply and round to get "cleaner" percentages
+## 25.08% of the data were "1s" (men)
+round(prop.table(table(d$sex, useNA = "always")) * 100, 2)
+
+
+## labels, frequencies, and percentages for income
+attributes(d$income)$labels
+table(d$income, useNA = "always")
+round(prop.table(table(d$income, useNA = "always"))*100, 2)
+
+
+## get a summary for continuous variables
+## including mean, median, quartiles, minimum and maximum
+summary(d$age)
+## get standard deviation, note use na.rm=TRUE to exclude missing values
+sd(d$age, na.rm = TRUE)
+
+## z score age by using the scale() function, then calculate descriptives
+## because we scale() first, the descriptives are on the z scores
+## the mean is 0, as it should be for z scores
+## we can also see the minimum and maximum z score, helpful for
+## finding outliers
+summary(scale(d$age))
+## the sd of the z scores is 1, as it should be
+sd(scale(d$age), na.rm = TRUE)
+
+## we can also examine the distribution and look for outliers
+## using histograms, QQ plots, and boxplots
+
+## here is a histogram of age
+hist(d$age)
+
+## and a QQ plot
+qqnorm(d$age)
+
+## and a boxplot
+boxplot(d$age)
+
+## boxplots of age separated by sex
+boxplot(age ~ sex, data = d)
+
+## to remind yourself what the numbers mean
+attributes(d$sex)$labels
+
+
+
+## Score a variable
+round(cor(d[, paste0("NPI", 1:13)], use = "pair"), 1)
+
+table(d$NPI1)
+attributes(d$NPI1)$labels
+attributes(d$NPI2)$labels
+attributes(d$NPI3)$labels
+attributes(d$NPI4)$labels
+attributes(d$NPI5)$labels
+attributes(d$NPI6)$labels
+attributes(d$NPI7)$labels
+attributes(d$NPI8)$labels
+attributes(d$NPI9)$labels
+attributes(d$NPI10)$labels
+attributes(d$NPI11)$labels
+attributes(d$NPI12)$labels
+attributes(d$NPI13)$labels
+
+d$NPI_Total <- (3 - d$NPI1) + d$NPI2 + (3 - d$NPI3) + (3 - d$NPI4) +
+  d$NPI5 + (3 - d$NPI6) + (3 - d$NPI7) + d$NPI8 +
+  d$NPI9 + (3 - d$NPI10) + d$NPI11 +
+  (3 - d$NPI12) + (3 - d$NPI13)
+
+summary(d$NPI_Total)
+sd(d$NPI_Total, na.rm = TRUE)
