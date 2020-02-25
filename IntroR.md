@@ -95,7 +95,7 @@ understand this and it is normal.*
 
 1.  **Download `R`** by going [here](https://cloud.r-project.org/) and
     clicking on "Download R for Windows" then click on "install R for the
-	first time" which should let you "Download R **3.6.2** for Windows". 
+	first time" which should let you "Download R **3.6.3** for Windows". 
 	If you are having difficulty finding it, this link may help get you
 	[straight there](https://cloud.r-project.org/bin/windows/base/).
 	
@@ -180,7 +180,7 @@ understand this and it is normal.*
 
 10. **Download `R`** by going [here](https://cloud.r-project.org/) and
     clicking on "Download R for (Mac) OS X" then download the download
-    the latest version. Once you have downloaded `R` make sure to
+    version **3.6.3**. Once you have downloaded `R` make sure to
     install it to your apps.
 
 11. **Download RStudio** this is an interface to `R` and makes it much
@@ -255,10 +255,11 @@ To begin learning `R` we are going to be using the online platform,
 DataCamp. Follow the instructions on Moodle for getting your account
 setup. Then head over to [DataCamp](https://www.datacamp.com/), sign
 in with your Monash account, and go to "My Class". Note the first 1-2
-weeks will be fairly instense as to follow the class, you need to get
-up to a basic ability to read and follow `R` code. The DataCamp
-activities are official homework and are assessed, based on the number
-completed (full marks if all completed).
+weeks will be fairly intense as to follow the class, you need to get
+up to a basic ability to read and follow `R` code.
+
+**The DataCamp activities are official homework and are assessed,
+based on the number completed (full marks if all completed).**
 
 
 
@@ -272,17 +273,8 @@ during the honours unit.
 ## some general language features, used in other packages
 install.packages("rlang", dependencies = TRUE)
 
-## reshape data (for longitudinal datasets)
-install.packages("reshape2", dependencies = TRUE) 
-
 ## general data management
 install.packages("data.table", dependencies = TRUE) 
-
-## work with longitudinal data
-install.packages("zoo", dependencies = TRUE) 
-
-## work with date/time data
-install.packages("chron", dependencies = TRUE) 
 
 ## read text files into R
 install.packages("readr", dependencies = TRUE) 
@@ -293,38 +285,40 @@ install.packages("readxl", dependencies = TRUE)
 ## read SPSS, STATA, and SAS files into R
 install.packages("haven", dependencies = TRUE) 
 
-## mixed effects models
-install.packages("lme4", dependencies = TRUE) 
+## reshape data (for longitudinal datasets)
+install.packages("reshape2", dependencies = TRUE) 
 
 ## beautiful graphs in R
 install.packages("ggplot2", dependencies = TRUE) 
 
 ## create panels of plots in R
-install.packages("cowplot", dependencies = TRUE) 
-
-## beautiful colours for plots in R
-install.packages("viridis", dependencies = TRUE) 
+install.packages("ggpubr", dependencies = TRUE) 
 
 ## visreg app helps visualize regression models easily
 install.packages("visreg", dependencies = TRUE)
+
+## mixed effects models
+install.packages("lme4", dependencies = TRUE) 
+
+## diagnostics and effect sizes for GLMs
+install.packages("JWileymisc", dependencies = TRUE) 
 
 ## multiple imputation
 install.packages("mice", dependencies = TRUE) 
 
 
+
 ## load the packages (basically open/run the apps)
-library(reshape2)
 library(data.table)
-library(zoo)
-library(chron)
 library(readr)
 library(readxl)
 library(haven)
-library(lme4)
+library(reshape2)
 library(ggplot2)
-library(cowplot)
-library(viridis)
+library(ggpubr)
 library(visreg)
+library(lme4)
+library(JWileymisc)
 library(mice)
 
 ```
@@ -342,20 +336,7 @@ following a hashtag, #, is treated as a comment, not a command. This
 is a helpful way to document code, so you know what the purpose of a
 particular piece of code is._
 
-# 6. Lecture 01 Worksheet
-
-In preparation for the first lecture, download these two files: 
-
-- [Intro R Worksheet](IntroR_worksheet.R) and
-- [Example Excel Data](actigraph_scored_31.xlsx)
-
-to your laptop into a folder for the unit. Try opening RStudio and
-then going to 
-`File -> Open File -> and navigate to IntroR_worksheet.R` 
-You should be able to open it and see the code
-in RStudio. No need to go through it yet. We will do that in class.
-
-# 7. Summary and Checklist
+# 6. Summary and Checklist
 
 This module covers installing and setting up `R` and RStudio. You have
 a functioning version of `R` on your own computer. Before the first
@@ -366,9 +347,8 @@ checklist.
 - [ ] RStudio is installed and you can open and use it to add numbers
 - [ ] You have watched/read the basics about RStudio
 - [ ] You are registered and can access DataCamp and/or have posted to
-  the discussion board so we can make sure you have access to DataCamp
-- [ ] You have completed the "Introduction to R" section on DataCamp
+  Slack so we can make sure you have access to DataCamp
 - [ ] You bring your laptop to every lecture and have RStudio open
   ready to follow along any activities.
 - [ ] Packages have been installed and/or you have posted
-  problems/errors to the discussion board
+  problems/errors to Slack
