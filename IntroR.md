@@ -145,18 +145,12 @@ understand this and it is normal.*
 	[here](https://www.xquartz.org/), download and run the file and
 	follow any on screen instructions.
 
-5.  Install `clang`: go to `R` page
-	[here](https://cran.rstudio.com/bin/macosx/tools)
-	From there, download and install `clang-7.0.0.pkg`.
-	**do not install clang-8** as that is for the beta version of
-	`R`.
-
-6.  Install `gfortran`: go 
+5.  Install `gfortran`: go 
     [here](https://github.com/fxcoudert/gfortran-for-macOS/releases)
     and download `gfortran 8.2 for Mojave`. Download and install
     following any instructions.
 
-7.  Install `homebrew` for macOS. Go [here](https://brew.sh/) 
+6.  Install `homebrew` for macOS. Go [here](https://brew.sh/) 
     and follow the "Install Homebrew" steps.
     If you run into any access issues, you may need to enable
 	root. You can do that by type in Terminal the following: 
@@ -166,34 +160,40 @@ understand this and it is normal.*
     enter/return. When typing your password in the terminal, no
     characters will appear, but it is still being entered.*
 	
-8.  Install `openssl` which will allow `R` to securely download files
+7.  Install `openssl` which will allow `R` to securely download files
     and packages from the internet.  Do this by opening the terminal
     (you can search for "terminal" or look in the launchpad) and type
     this code once the terminal opens and press enter: 
 	`brew install openssl`
 
-9.  Install `libgit2` which is needed for one of our graphing
+8.  Install `libgit2` which is needed for one of our graphing
     packages. Do this by opening the terminal
     (you can search for "terminal" or look in the launchpad) and type
     this code once the terminal opens and press enter:
 	`brew install libgit2`
 
-10. **Download `R`** by going [here](https://cloud.r-project.org/) and
+9.  **Download `R`** by going [here](https://cloud.r-project.org/) and
     clicking on "Download R for (Mac) OS X" then download the download
     version **3.6.3**. Once you have downloaded `R` make sure to
     install it to your apps.
 
-11. **Download RStudio** this is an interface to `R` and makes it much
+10. **Download RStudio** this is an interface to `R` and makes it much
     nicer to work with. To download it, just go
     [here](https://www.rstudio.com/products/rstudio/download/#download) 
 	and then under the "Installers" pick your operating system. 
 	Once you have downloaded RStudio, make sure to install it to your
     apps. 
 	
-12. Make sure that `R.app` and `RStudio.app` are able to access disk
+11. Make sure that `R.app` and `RStudio.app` are able to access disk
     resources needed. Follow
 	[this guide](https://www.r-bloggers.com/escaping-the-macos-10-14-mojave-filesystem-sandbox-with-r-rstudio/)
 	to give them the necessary permissions.
+	
+12. Install `clang`: go to `R` page
+	[here](https://cran.rstudio.com/bin/macosx/tools)
+	From there, download and install `clang-7.0.0.pkg`.
+	**do not install clang-8** as that is for the beta version of
+	`R`.
 
 13. Once you think you've followed all the installation steps, move on
     to the next section to Try `R`.
@@ -267,6 +267,30 @@ based on the number completed (full marks if all completed).**
 
 This section will have you pre-install many packages we will use
 during the honours unit.
+
+*Note*, during installation, you may get asked if you want to install
+more recent packages from source or something like:
+"there is a binary version available but the source version is later".
+In `R`, **binary** packages are pre-built on servers and you download
+a ready-to-use version. Like buy a complete bookshelf. Conversely,
+**source** packages are the raw code and have to be built after you
+download them. Your computer does this, like buying a bookshelf from
+Ikea where you get the parts but spend some time putting it together.
+In this unit, we do not need the very latest versions so getting the
+binary version is fine and generally easier/faster. So for now, if
+given the option to install from source, you can type "no". That said,
+the reason you have to install so many other tools (like `clang`) is
+so that your computer *has* all the tools need to build packages from
+source, *just in case*. The goal is to get your machine setup as much
+as possible so that during the semester you run into fewer issues
+installing packages. Here is an example of what this might look like
+while installing packages:
+
+![install from source screenshot](install_source_screenshot.png)
+
+in that screenshot example, you would type at the console "no"
+(without the quotes) and press enter/return at which point `R` should
+install the binary version.
 
 ```r 
 
