@@ -300,6 +300,9 @@ install.packages("rlang", dependencies = TRUE)
 ## general data management
 install.packages("data.table", dependencies = TRUE) 
 
+## data operations
+install.packages("extraoperators", dependencies = TRUE) 
+
 ## read text files into R
 install.packages("readr", dependencies = TRUE) 
 
@@ -321,19 +324,21 @@ install.packages("ggpubr", dependencies = TRUE)
 ## visreg app helps visualize regression models easily
 install.packages("visreg", dependencies = TRUE)
 
+## diagnostics and effect sizes for GLMs
+install.packages("JWileymisc", dependencies = TRUE) 
+
 ## mixed effects models
 install.packages("lme4", dependencies = TRUE) 
 
-## diagnostics and effect sizes for GLMs
-install.packages("JWileymisc", dependencies = TRUE) 
+## mixed effects models diagnostics and effect sizes
+install.packages("multilevelTools", dependencies = TRUE)
 
 ## multiple imputation
 install.packages("mice", dependencies = TRUE) 
 
-
-
 ## load the packages (basically open/run the apps)
 library(data.table)
+library(extraoperators)
 library(readr)
 library(readxl)
 library(haven)
@@ -341,8 +346,9 @@ library(reshape2)
 library(ggplot2)
 library(ggpubr)
 library(visreg)
-library(lme4)
 library(JWileymisc)
+library(lme4)
+library(multilevelTools)
 library(mice)
 
 ```
