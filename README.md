@@ -32,8 +32,8 @@ are changed.
 
 - **Week 1** *Introduction to `R` and Setup*.  
   Getting `R` installed, setup, and learning a few basics. 
-  Please see the page [Intro to R](IntroR.md).
-  Also see TODO.
+  Please start with the page [Intro to R](IntroR.md).
+  Next, we'll work with our [first R markdown file](MyFirstRMarkdown.rmd).
 
 - **Week 2** *Working with Data*.
   <!-- Please see the [Lecture Content](Data_Pt1.html). -->

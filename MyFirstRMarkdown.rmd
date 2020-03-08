@@ -1,0 +1,153 @@
+---
+title: "My First R Markdown File"
+author: "Joshua F. Wiley"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+---
+
+Download the raw `R` code here:
+[https://jwiley.github.io/MonashHonoursStatistics/MyFirstRMarkdown.rmd](https://jwiley.github.io/MonashHonoursStatistics/MyFirstRMarkdown.rmd).
+
+# `R` Markdown Files
+
+`R` markdown files combine `R` code for data analysis with markdown, a
+markup language that adds some additional text to plain text to manage
+formating. For example, asterisks can be used around words to
+*italicize* the words, or double asterisks to **make words bold**.
+Hashtags create headings, with one, two, three, etc. hashtags
+creating:
+
+# Level 1 Heading
+
+## Level 2 Heading
+
+### Level 3 Heading
+
+The benefit of `R` and markdown together is that you can write `R`
+code and in between your code, you can write regular text in markdown
+to explain what the code does or interpret the output.
+To let the computer know some of what we type is `R` code, we
+delimitters that indicate the start and end of `R` code: triple
+backticks and `r`. Here is our first `R` code chunk, where we ask `R`
+to calculate 6 * 5.5. In the markdown part, nothing happens, but when
+written as `R` code it can be processed and `R` will work as a
+calculator.
+
+```{r}
+
+6 * 5.5
+
+```
+
+The whole set of `R` code above is called a "chunk" and any document
+can have none, one or more `R` code chunks. Inside the curly braces
+that start each chunk, we can write additional code to give the chunk
+a name and control other aspects of how it is run. For example, let's
+call the next chunk "TestName" and there let's find out the homework
+mark if someone did 14 of the chapters and 4 of the courses from the
+homework software exercises.
+
+```{r TestName}
+
+14 * (1/46) + 4 * (4/46)
+
+
+```
+
+# Using `R` Packages
+
+We often want to do more data analysis or use tools that are not part
+of "default" `R`. There are many packages (like apps for a phone) that
+augment `R`. In fact there are over 10,000 such packages. The 
+[setuppage](http://joshuawiley.com/MonashHonoursStatistics/IntroR.html) 
+linked in Week 1 for Moodle had you install several of these.
+In our first `R` markdown file, let's just use two important ones:
+
+- `data.table` is a package with extensive data management tools
+- `ggplot2` is the second version of the **g**rammar of **g**raphics
+  plot package. It makes amazing graphs in `R` and we'll rely on it
+  for data visualization.
+  
+To open a package (app), instead of tapping like a phone, we use the
+`library()` function. In `R` functions always have a name and then an
+open and close paretheses. We add arguments or options inside the
+parentheses to tell the funciton what we want it to do specifically.
+The `library()` function is used to access our library of packages and
+open a specific one, and the argument we need to give it is the name.
+Here is an example.
+
+
+```{r}
+
+## open the data.table app for data management
+library(data.table)
+
+## open the ggplot2 app for graphing
+library(ggplot2)
+
+```
+
+In the `R` chunk above, you might have noticed that hash tags were
+used, but they did not make level 2 headings. Inside an `R` chunk,
+what we write behaves *differently* to outside and `R` chunk. In `R`
+hashtags indicate that everything that follows on that line is a
+comment. That is, its not actually code, its just a short note or
+comment to ourselves or our reader about what this code is supposed to
+do. Now, let's do a few simple things with a dataset.
+First, we'll convert the built in `mtcars` dataset with different
+features of 32 cars into a `data.table` and we'll call it "d" 
+(formally, we assign the results of the function call to an object,
+"d"). That means when we type "d" in the future, in `R` that will mean
+the data.table of the mtcars data. Then we'll look at a few rows of
+the data, and view only the rows that correspond to cars that get over
+30 miles per gallon (this is an old dataset).
+
+
+```{r}
+
+## convert mtcars dataset to a data.table
+d <- as.data.table(mtcars)
+
+## view the first few rows of the data
+head(d)
+
+## view only cars that get over 30 mpg
+d[mpg > 30]
+
+```
+
+Finally, let's take a look at a couple basic graphs using `ggplot2`.
+We'll cover how to create graphs and visualize data in more depth
+later, for now, just focus on how to run `R` code and where the code,
+output and explanation live in an `R` markdown file.
+
+```{r}
+
+## bar plot
+ggplot(d, aes(cyl)) + 
+  geom_bar()
+
+```
+
+Sometimes, we might want to adjust the size of the graph. We can do
+this through *chunk options* which are addded in the header of the chunk.
+
+```{r, fig.width = 6, fig.height = 4}
+
+## bar plot
+ggplot(d, aes(cyl)) + 
+  geom_bar()
+
+```
+
+The very last step is to turn all of this code into a document that
+you can reference later or could send to someone else. This is one of
+the great parts of using `R` markdown files. You may do some analysis
+now and need to refer to it later, or you may do some analysis and
+want to send it to a coworker who knows nothing about `R` but you
+still want them to see all yours notes and all the output. We'll do
+this by `render`ing the `R` markdown file. You can do this through
+code, but we'll just use `RStudio` to help us do it.

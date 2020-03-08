@@ -297,6 +297,9 @@ install the binary version.
 ## some general language features, used in other packages
 install.packages("rlang", dependencies = TRUE)
 
+## for working with R and markdown files
+install.packages("rmarkdown", dependencies = TRUE)
+
 ## general data management
 install.packages("data.table", dependencies = TRUE) 
 
