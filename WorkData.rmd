@@ -8,21 +8,171 @@ output:
     number_sections: true
 ---
 
-Download the raw `R` code here:
-[https://jwiley.github.io/MonashHonoursStatistics/WorkData.rmd](https://jwiley.github.io/MonashHonoursStatistics/WorkData.rmd).
+# Intro
 
-```{r setup}
-options(digits = 2)
+Monash has asked that we watch 
+[this video](https://www.youtube.com/watch?v=pIWEMSoDUZY&feature=youtu.be).
 
-library(data.table)
-library(ggplot2)
+`r margin_note("Core ideas and code are in the main document. Extra information that may help understanding but is not the big picture I will go in margin notes, like this. Remember that if you use GitHub desktop, you should already have the Rmarkdown file on your computer (see Week 1).")`
 
-## read in the dataset
-d <- readRDS("aces_daily_sim_processed.RDS")
+To start off the lecture, please make sure that you:
+
+Have downloaded the `R`markdown file for the lectuere here
+[https://jwiley.github.io/MonashHonoursStatistics/WorkData.rmd](https://jwiley.github.io/MonashHonoursStatistics/WorkData.rmd)
+and that you have RStudio open and have opened the project you are using for
+this class and have the `R`markdown file for this lecture open on
+your own laptop (or are following along with someone else).
+
+
+# Basic `R` Use
+
+As a brief refresher, we'll start just by using `R` as a basic calculator.
+
+```{r calculator}
+
+3 + 4 # addition
+
+2 * 6 # multiplication
+
+4 / 2 # division
+
+3^2 # powers [2 squared]
+```
+
+`r margin_note("Objects in R can be almost anything. They can be a single number, a vector or set of numbers, the results from a regression, a graph, a dataset. You can have many objects at the same time in your worksapce, which can be a useful way to save results or store something for later use.")`
+In `R` many things you do with an individual number can be done with a
+vector, a set of numbers. Here's a quick refresher on creating
+vectors, using `c()` and on storing them in an object, here I used
+`x`.
+
+Once you have created an object, it should show up in RStudion in the
+"Environment". In addition, we can view or operate on all the elements
+of an object by referring to it by name.
+
+```{r vectors}
+c(1, 5, 4) ## create a vector
+
+x <- c(1, 3, 5) ## asign vector to x
+
+x ## view x
+
+x + 2 ## add 2 to every element of x
+```
+
+`r margin_note("Computers do not work quite like people or
+regular math. Usually, numbers are represented using 
+floating-point arithmetic (https://en.wikipedia.org/wiki/Floating-point_arithmetic)
+often a binary representation is used as much in the computing world
+is based on bits stored in 0s and 1s. For example, with a binary
+based, 1/5 cannot be represented exactly. An implication of this is
+that sometimes numbers are not represented in R quite like you might
+think. For example: 1/5 == 0.2000000000000001 is evaluated as false
+but 1/5 == 0.20000000000000001 is evaluated as true. The default
+precision for floating points in R cannot distinguish those two
+numbers.")`
+Finally, here are a few quick tips on formatting `R` output.
+Let's say we have a number with lots of decimal points, we might not
+always need all that precision.
+
+You can use `R` to round for you, using the `round()`
+function. You can also use the `options()` function to
+control the default options for how `R` prints output. This is helpful
+if you want everything printed to your screen to be rounded more. One
+difference is that `options()` actually uses 
+[significant figures](https://en.wikipedia.org/wiki/Significant_figures)  
+so you will not get a fixed number of decimal points, rather you get a
+fixed number of significant figures.
+
+`r margin_note("The round function has two main arguments (i.e., pieces
+of input it needs from you). The first is the number or vector to be
+rounded. It can be a single number or a whole vector of numbers. The
+second is how many digits you want R to use in the rounding.
+The results may not always print the number of digits you requested,
+which may be confusing. This can happen when one of the digits rounds
+to 0 (e.g., 1.199 rounds to 1.20 and the 0 would be dropped so
+1.2).")`
+
+```{r format}
+
+1.214294254
+
+round(1.214294254, digits = 2)
+
+options(digits = 2) ## set default for the R session
+
+1.214294254
 
 ```
 
-# Subsetting Data
+# Working with Data
+
+To continue on, we're going to open a few of the packages that you
+should have already installed from Week 1.
+
+```{r packages}
+
+library(data.table)
+library(reshape2)
+library(JWileymisc)
+library(extraoperators)
+
+``` 
+
+Next, we are going to load some sample data. This is simulated data
+based on a 12-day study where people reported a few measures at
+baseline along with stress and affect three times per day.
+After loading it, we convert it to a data.table format, using the
+`as.data.table()` function so that we can use many of the useful tools
+from the `data.table` package for data management.
+
+```{r data}
+
+data(aces_daily)
+d <- as.data.table(aces_daily)
+
+```
+
+## Operators 
+
+`r margin_note("In software, logical values and logical operators are
+often used to refer to things that return a boolean value. Booleans
+are one of two values, conventionally: TRUE or FALSE. By
+convention if you do any arithmetic on them, TRUE is treated as 1
+and FALSE is treated as 0.")`
+
+A lot of data management involves using logical operators. Operators
+take data on the left hand side and a few options arguments on the
+right hand side. Logical operators return `TRUE` or
+`FALSE`.
+
+We use logical operators when working with data for lots of
+reasons. You might want to find outliers, values that are greater than
+or less than a specific score, check if values fall within the
+expected range, recode continuous variables into categorical variables
+(low, medium, high, etc.). Much of this work is underpinned by logical
+operators. Here is a list of some operators from `R` and expanded by
+the `extraoperators` package.
+
+
+| Operator       | What it does                                 |
+|----------------|----------------------------------------------|
+| ==             | Are values / vectors equal                   |
+| !=             | Are values / vector NOT equal                |
+| <  OR  %l%     | Less than                                    |
+| <=  OR  %le%   | Less than or equal                           |
+| >  OR  %g%     | Greater than                                 |
+| >=  OR  %ge%   | Greater than or equal                        |
+| %gl%           | Greater than AND less than                   |
+| %gel%          | Greater than or equal AND less than          |
+| %gle%          | Greater than AND less than or equal          |
+| %gele%         | Greater than or equal AND less than or equal |
+| %in%           | In                                           |
+| %!in% OR %nin% | Not in                                       |
+| %c%            | Chain operations on the RHS together         |
+| %e%            | Set operator, to use set notation            |
+
+
+## Subsetting Data
 
 A common task in analyses is to subset the data. There are many
 reasons for this, from ecluding outliers to selecting only
@@ -44,6 +194,26 @@ d[Age == 18, .(UserID, Age)]
 
 ```
 
+Suppose we decide that under 20y or above 25y are extreme ages for our
+data. We might want to run analyses in data excluding people outside
+that range. We could create a copy of the dataset, `d.noout`, with
+"outliers" removed where we only include cases that are between
+20-50y. Here we use `%gele%` to capture people greater than or equal
+to 20y and less than or equal to 25.
+
+```{r}
+
+d.noout <- d[Age %gele% c(20, 25), .(UserID, Age)]
+
+## frequency table for ages
+table(d.noout$Age)
+
+## view a few rows of the data
+head(d.noout)
+
+``` 
+
+Sometimes, a single variable is not sufficient. 
 You can chain conditions together using the operators:
 `&` and `|` which represent "and" and "or", respectively.
 
@@ -81,8 +251,6 @@ d[(Age == 19 & Female == 1) | (Age == 18 & Female == 0),
 
 Other common operators are greater than or less than, `>` and `<` or
 greater than or equal to and less than or equal to, `>=` and `<=`.
-Finally, the exclamation mark, `!` is very useful as it negates a
-logical statement.
 
 ```{r}
 
@@ -93,36 +261,69 @@ d[Age < 20, .(UserID, Age)]
 d[Age <= 20, .(UserID, Age)]
 
 ## anyone who is not age 20
-d[!(Age == 20), .(UserID, Age)]
+d[Age != 20, .(UserID, Age)]
 
 ## anyone who is not age 18, 19, or 20
-d[!(Age %in% c(18, 19, 20)), .(UserID, Age)]
+d[Age %!in% c(18, 19, 20), .(UserID, Age)]
 
 ```
 
 Finally, let us see why the order of operations may matter. Suppose
 that we want to look at people who have at least 30 non-missing stress
 values and look at just observations where STRESS > 3.
+First, we'll remove cases that are missing on `STRESS`. We do this
+using the `is.na()` function, which returns `TRUE` if a value is NA
+(NA in `R` means not available, missing) and `FALSE` if a value is not
+missing. Then we negate that using `!` to get "not missing".
 
 ```{r}
 
 ## remove missing stress observations
 d2 <- d[!is.na(STRESS)]
 
-## count how many observations are 
-##   present by ID
-## .N represents the number of observations 
-##   and we do this by ID
+```
+
+Next, we can create a new variable in the dataset, which we'll call
+"Count" and we'll assign this the number of observations that occur 
+by ID.
+
+In `R` `data.table`s have three main parts
+    `DT i, j, by` the DT represents the name of the data table, the `i`
+    represents which row(s) we want to select. If we leave it blank, that
+    means select all rows. After the first comma, the `j` represents
+    columns/variables. That could be selecting only certain
+    columns/variables to display *or* creating / modifying a column or
+    variable. The last part, the `by` represents a grouping variable or
+    some way or organising our operations. For example, we might want to
+    perform the same operation for each ID in the dataset. Lastly, if
+    there are NO commas, that means just give me the
+    rows/cases that match my criteria, but give me all columns/variables.
+
+Here we take all cases (we aren't using any subsetting yet) and then
+create a new variable Count, we use the assignment operator in
+`data.table`, `:=` which means, assign to the thing on the left, in
+this case a new variable, whatever the value on the right is. Here the
+value on the right is `.N` that means the "n" or count / sample
+size. Finally, we have `data.table` do this by ID, so that we don't
+get the sample size of the entire dataset, we get the sample size, the
+number of surveys, completed by each ID or person.
+
+```{r}
+
 d2[, Count := .N, by = UserID]
 
-## only take people with at least 30 non-missing stress values
+```
+
+Now we can take people who have at least 30 non-missing stress values,
+and look at high stress scores.
+
+```{r}
+
 d2 <- d2[Count >= 30]
 
-## now only take stress scores > 3
 d2 <- d2[STRESS > 3]
 
-## look at IDs and number of observations
-d2[, .(UserID, STRESS)]
+d2[, .(UserID, STRESS)] ## IDs and number of obs
 
 ```
 
@@ -132,41 +333,26 @@ adding more brackets as below. This accomplishes the same as the above.
 
 ```{r}
 
-## remove missing stress observations
-## count how many observations are 
-##   present by ID
-## .N represents the number of observations 
-##   and we do this by ID
-## only take people with at least 30 non-missing 
-##   stress values
-## only take stress scores > 3
 d2 <- d[!is.na(STRESS)][, Count := .N, by = UserID][
   Count >= 30][STRESS > 3]
 
-## look at IDs and number of observations
-d2[, .(UserID, STRESS)]
+d2[, .(UserID, STRESS)] ## IDs and number of obs
 
 ```
 
+`r margin_note("Here, the order is: first, remove missing stress
+observations, second take only surveys/rows where stress scores > 3,
+third, count how many observations are not missing by ID.")`
 Now look what happens if we first take stress values greater than 3.
 That is we change the order of the operations. We end up with much
-fewer people.
+fewer people. 
 
 ```{r}
 
-## remove missing stress observations
-## only take stress scores > 3
-## count how many observations are 
-##    present by ID
-## .N represents the number of observations 
-##    and we do this by ID
-## only take people with at least 30 non-missing 
-##   stress values
 d2 <- d[!is.na(STRESS)][STRESS > 3][, 
         Count := .N, by = UserID][Count >= 30]
 
-## look at IDs and number of observations
-d2[, .(UserID, STRESS)]
+d2[, .(UserID, STRESS)] ## IDs and number of obs
 
 ```
 
@@ -179,7 +365,7 @@ stress > 3.
 
 Select observations where:
 
-- positive affect is not missing
+- positive affect, in the dataset, called `PosAff` is not missing
 - participants who have **at least 20** non missing positive affect (any value)
 - where positive affect scores are greater than or equal to 3
 
@@ -191,8 +377,7 @@ You should end up with 2,455 observations.
 
 d3 <- d[!is.na(  )][, Count := .N, by = UserID][   ][   ]
 
-## look at IDs and number of observations
-d3[, .(UserID, PosAff)]
+d3[, .(UserID, PosAff)] ## IDs and number of obs
 
 ```
 
@@ -213,7 +398,8 @@ d[UserID != 56 & NegAff <= 4,
 
 # Data Types
 
-There are many types of data. In `R`, you can find what type of data a particular variable is by asking for its `class()`.
+There are many types of data. In `R`, you can find what type of data a
+particular variable is by asking for its `class()`. 
 
 ```{r}
 
@@ -288,7 +474,9 @@ as.numeric(d1[1] - d1[2])/365.25
 
 ``` 
 
-To convert date into a date class in `R`, we need to tell it the format the dates are written in. This is done by specifying a "template".
+To convert date into a date class in `R`, we need to tell it the
+format the dates are written in. This is done by specifying a
+"template". 
 
 - "%Y" means 4 digit year [upper case]
 - "%y" means 2 digit year [lower case]
@@ -296,11 +484,19 @@ To convert date into a date class in `R`, we need to tell it the format the date
 - "%b" means abbreviated month (e.g., "Jan")
 - "%d" means digit day
 
-These pieces can be re-ordered an combined and use any separator. For example "%Y-%m-%d" for YYYY-mm-dd or "%Y/%m/%d" for YYYY/mm/dd or "%Y %m %d" for YYYY mm dd or "%d %m-%Y" for dd mm-YYYY. This flexibility is needed as different people and countries commonly write dates in many different formats.
+These pieces can be re-ordered an combined and use any separator. For
+example "%Y-%m-%d" for YYYY-mm-dd or "%Y/%m/%d" for YYYY/mm/dd or "%Y
+%m %d" for YYYY mm dd or "%d %m-%Y" for dd mm-YYYY. This flexibility
+is needed as different people and countries commonly write dates in
+many different formats. 
 
 ## You Try It - Dates
 
-Now you try to convert the following character strings into date class objects in `R` by fillng in the correct template in quotes for the `format = ` argument. If you do it incorrectly, you will get errors or `NA` indicating the text could not be converted to a date uing the template you supplied.
+Now you try to convert the following character strings into date class
+objects in `R` by fillng in the correct template in quotes for the
+`format = ` argument. If you do it incorrectly, you will get errors or
+`NA` indicating the text could not be converted to a date uing the
+template you supplied. 
 
 ```{r trydates, echo = TRUE, eval = FALSE}
 
@@ -325,7 +521,10 @@ as.Date(y3, format = "") ## you complete
 
 ## Date Helper Functions
 
-Dates have a variety of helpful functions that let you operate on or learn moe about them. We can use the `weekdays()`, `months()`, and `quarters()` functions to find out the day of week, month or quarter a particular date falls in. They return character strings.
+Dates have a variety of helpful functions that let you operate on or
+learn moe about them. We can use the `weekdays()`, `months()`, and
+`quarters()` functions to find out the day of week, month or quarter a
+particular date falls in. They return character strings. 
 
 ```{r}
 
@@ -335,23 +534,16 @@ quarters(d1)
 
 ```
 
-The `chron` package also makes another function available, `is.weekend()` which returns logical TRUE/FALSE values for whether a particular date is a weekend or not. This can be useful, for example to test if positive affect is higher on weekends then weekdays, in the daily study we worked with.
-
-```{r}
-
-## neither date is a weekend
-is.weekend(d1)
-
-## is positive affec higheron weekends?
-summary(lmer(PosAff ~ is.weekend(SurveyDay) + 
-               (1 | UserID), 
-             data = d))
-
-``` 
-
-
-Dates also can be compared to determine if one is greater than or less than another. This can be useful for selecting observations that meet specific criteria. For example, suppose we wanted to exclude any dates that occurred before the semester started. Not everyone in the daily diary study is a student, but if they were, we might expect positive affect to be different on break than during semester. Suppose semester started 1 March 2017, we might want to only include observations that fell on or after that date.
-Note here we do not need to specify a template because `R` will assume YYYY-mm-dd when written this way.
+Dates also can be compared to determine if one is greater than or less
+than another. This can be useful for selecting observations that meet
+specific criteria. For example, suppose we wanted to exclude any dates
+that occurred before the semester started. Not everyone in the daily
+diary study is a student, but if they were, we might expect positive
+affect to be different on break than during semester. Suppose semester
+started 1 March 2017, we might want to only include observations that
+fell on or after that date. 
+Note here we do not need to specify a template because `R` will assume
+YYYY-mm-dd when written this way. 
 
 ```{r}
 
@@ -365,6 +557,11 @@ d2 <- d[SurveyDay >= as.Date("2017-03-01")]
 ## summary of dates
 summary(d2$SurveyDay)
 
+d2 <- d[weekdays(SurveyDay) %in% c("Monday")]
+
+## frequency table of days of week
+table(weekdays(d2$SurveyDay))
+
 ``` 
 
 ## You Try It - Subset Dates
@@ -377,73 +574,8 @@ Now you try to create a dataset that excludes any weekends.
 ## excludes any weekend days
 d3 <- d[ ]
 
-## fit intercept model
-summary(lmer(PosAff ~ 1 + 
-               (1 | UserID), 
-             data = d3))
-
-```
-
-# Time Variables
-
-Time variables also are commonly read into `R` as text.
-The `chron` package has functions to help with time data.
-
-```{r}
-
-t1 <- c("9:15:08", "13:09:00")
-ty1 <- chron(times. = t1, format = c(times = "h:m:s"))
-ty1
-
-## add one hour
-ty1 + (1/24)
-
-## add 20 minutes
-ty1 + (20/60/24)
-
-```
-
-Sometimes, you get times that are incomplete. `R` represents time down to at least seconds, so seconds ae required. Even if not available, you must *choose* seconds.
-
-```{r, error = TRUE}
-
-t2 <- c("9:15", "13:09")
-## this will give an error
-chron(times. = t2, format = c(times = "h:m"))
-chron(times. = t2, format = c(times = "h:m:s"))
-
-## we need to add seconds
-t2b <- paste0(t2, ":00")
-t2b
-
-## now convert to a time
-y2b <-chron(times. = t2b, 
-  format = c(times = "h:m:s"))
-y2b
-
-## calculate the time difference
-y2b[2] - y2b[1]
-
-## numeric as a fraction of 24 hurs
-as.numeric(y2b[2] - y2b[1])
-
-``` 
-
-# Date and Time Variables
-
-The `chron` package and function can be used for date and time variables.
-
-```{r}
-
-dates1 <- c("2019-05-24", "2019-06-14")
-times1 <- c("19:20:17", "9:15:33")
-
-dt1 <- chron(dates. = dates1, times. = times1,
-  format = c(dates = "y-m-d", times = "h:m:s"))
-dt1
-
-dt1 + 1 ## add one day
-dt1 + (1/24) ## add one hour
+## there should now be no surveys on weekends
+table(weekdays(d$SurveyDay))
 
 ```
 
@@ -481,31 +613,12 @@ table(factor(x)) ## automatic conversion to factor
 
 ```
 
-A helpful feature of factors is that `R` dummy 
-codes them automatically in regression models.
-
-```{r}
-
-## regression model with cyl as a numeric variable
-summary(lm(mpg ~ cyl, data = mtcars))
-
-## frequency table
-table(mtcars$cyl)
-
-## mke a factor version of cyl
-mtcars$cylF <- factor(mtcars$cyl,
-  levels = c(4, 6, 8))
-
-## regression with dummy coding
-summary(lm(mpg ~ cylF, data = mtcars))
-
-```
-
 ## You Try It - Factors
 
 Now try using factors for dummy coding. In the daily study,
 there is a varible, SurveyInteger. 1 = morning, 2 = afternoon,
-3 = evening. Make it a factor and then fit a LMM.
+3 = evening. Make it a factor and then create a frequency table 
+using `table()`.
 
 ```{r tryfactors, eval = FALSE, echo = TRUE}
 
@@ -514,59 +627,9 @@ d[, SurveyIntegerF := factor(
   levels = c(    ),
   labels = c(    ))]
 
-summary(lmer(PosAff ~ SurveyIntegerF + 
-               (1 | UserID),
-             data = d))
+table(d$SurveyIntegerF)
 
 ```
-
-
----
-title: "Merging/Joining & Reshaping Data"
-author: "Joshua F. Wiley"
-date: "`r Sys.Date()`"
-output: 
-  tufte::tufte_html: 
-    toc: true
-    number_sections: true
----
-
-```{r, echo=FALSE, include=FALSE}
-## note this chunk is NOT required
-library(checkpoint)
-checkpoint("2019-01-25", R.version = "3.5.1",
-           scanForPackages = FALSE)
-```
-
-Download the raw `R` markdown code here[^notenote]
-[https://jwiley.github.io/MonashHonoursStatistics/Data_Pt2.rmd](https://jwiley.github.io/MonashHonoursStatistics/Data_Pt2.rmd).
-
-[^notenote]: I am trying to separate out core ideas from additional
-    notes/details. Core ideas and code are in the main document. Extra
-    information that may help understanding but is not the big picture
-    will go in margin notes, like this.
-
-```{r setup}
-options(digits = 2)
-
-library(data.table)
-library(reshape2)
-library(ggplot2)
-library(lme4)
-
-## read in the dataset
-d <- readRDS("aces_daily_sim_processed.RDS")
-
-```
-
-# SETUs
-
-Please complete the SETUs for PSY4210 here:
-[https://monash.bluera.com/monash](https://monash.bluera.com/monash).
-Your feedback and evaluation is critical to understanding what worked
-and where we need to improve in this unit. In honours, the class size
-is much smaller. Every evaluation counts. Please help me by completing
-it now.
 
 # Merging Data
 
@@ -578,21 +641,23 @@ data from a FitBit.
 Data can be combined by merging, and merging in `R` is typically done
 using the `merge()` function.
 
+`r margin_note("Merging in R is the same as joins which is the more
+common term for databases, such as SQL.")`
+
 There are four main types of merges in `R` using the `merge()`
-function[^joins]. Assume we are merging two datasets: `x` and
-`y`[^xy]. The type of merge performed is controlled by arguments to
-the `merge()` function.
+function. Assume we are merging two datasets: `x` and
+`y`. 
 
-[^joins]: Merging in `R` is the same as "joins" which is the more
-common term for databases, such as SQL.
-
-[^xy]: Merging or joins always involves two datasets. Even if you need
+`r margin_note("Merging or joins always involves two datasets. Even if you need
 to merge more than two datasets (e.g., you have baseline, post, and
 follow-up data) you always merge / join them two at a time. For
-example, first joining baseline and post into one `bp` dataset and
-then joining `bp` and your follow up data. In `R` the `x` dataset is
-always the "left" and the `y` dataset is always the "right".
+example, first joining baseline and post into one bp dataset and
+then joining bp and your follow up data. In R the x dataset is
+always the left and the y dataset is always the right.")`
 	
+The type of merge performed is controlled by arguments to
+the `merge()` function.
+
 - **Natural join**: resulting data has only rows present in
   **both** `x` and `y`. Argument: `all = FALSE` .
 - **Full outer join**: the data has all rows in `x` and all rows
@@ -602,12 +667,12 @@ always the "left" and the `y` dataset is always the "right".
 - **Right outer join**: resulting data has all rows in `y`. Argument: `all.y
   = TRUE` .
 
-We will explore joins using two, small datasets[^data]. `ID` is used
-to indicate participant ID.
+`r margin_note("This small, hypothetical study collected data via surveys and
+actigraphy. The surveys have peoples ages and the actigraphy has
+their sleep duration, which we wish to join together for analysis.")`
 
-[^data]: This small, hypothetical study collected data via surveys and
-actigraphy. The surveys have people's ages and the actigraphy has
-their sleep duration, which we wish to join together for analysis.
+We will explore joins using two, small datasets. `ID` is used
+to indicate participant ID.
 
 ```{r}
 
@@ -627,27 +692,24 @@ print(acti)
 
 ## Natural Join in `R`
 
-**Only rows present in both datasets**[^naturaljoin]. 
+`r margin_note("Natural joins have only the rows / observations that
+are present in both datasets. In this example, the surveys and the
+actigraphy. You can pick whichever dataset you want to be x and 
+and y by which you list first.")`
 
+**Only rows present in both datasets**. 
+
+`r margin_note("When we write by = ID what is meant is that it should be
+by the variable called ID. The word ID is not special, its just
+that we happened to call the variable containing our IDs, ID. If
+we had called the variable containings IDs Email or Name then
+we would write: by = Email or by = Name. In other words,
+match the text in quotes to an actual variable name in the data.")` 
+	
 Joining data requires specifying how `R` should know which rows match
 each other. This is typically  done by an ID variable using the code:
-`by = "ID"`[^byid]. The argument, `all = FALSE` is what tells `R` this should
-be a natural join[^naturaljoin2].
-
-[^naturaljoin]: Natural joins have only the rows / observations that
-are present in both datasets. In this example, the surveys and the
-actigraphy. You can pick whichever dataset you want to be `x` and 
-and `y` by which you list first.
-
-[^byid]: When we write `by = "ID"` what is meant is that it should be
-    by the variable called "ID". The word ID is not special, its just
-    that we happened to call the variable containing our IDs, "ID". If
-    we had called the variable containings IDs "Email" or "Name" then
-    we would write: `by = "Email"` or `by = "Name"`. In other words,
-    match the text in quotes to an actual variable name in the data.
-
-[^naturaljoin2]: I.e., a join with only the rows present in both `x`
-and `y` datasets actually returned.
+`by = "ID"`. The argument, `all = FALSE` is what tells `R` this should
+be a natural join.
 
 ```{r}
 
@@ -661,26 +723,24 @@ merge(
 
 ## Full Outer Join
 
-**All rows present in either dataset**[^fullouter]. 
-
-The argument, `all = TRUE` is what tells `R` this should be a full
-outer join[^joinmissing].
-
-[^fullouter]: Full outer joins include all rows or  observations that
-are present in either dataset. In this case, in either the surveys
-or the actigraphy. You can pick whichever dataset you want to be "x"
-and "y" by which you list first, although with a full outer join, it
+`r margin_note("Full outer joins include cases that are present in either dataset. In this case, in either the surveys
+or the actigraphy. You can pick whichever dataset you want to be x
+and y by which you list first, although with a full outer join, it
 does not make much difference, other than which columns/variables come
 first and which come second. As before, we must specify what variable(s) to
-merge by so `R` knows how to match rows together, accomplished using
-the code: `by = "ID"`. 
-
-[^joinmissing]: Note that `R` fills in missing values for rows /
+merge by so R knows how to match rows together, accomplished using
+the code: by = ID.
+Note that R fills in missing values for rows /
 observations and variables that are present in one dataset but not the
 other. So if two datasets do not have identical rows / observations, a
 full outer join will result in some missing values. These are shown in
-the print out as `NA`.
+the print out as NA")`
 
+**All rows present in either dataset**. 
+
+The argument, `all = TRUE` is what tells `R` this should be a full
+outer join. Full outer joins include all rows or observations.	
+	
 ```{r}
 
 merge(
@@ -694,18 +754,18 @@ merge(
 
 ## Left Outer Join
 
+`r margin_note("As before, we must specify what variable(s) to
+merge by so R knows how to match rows together, accomplished using
+the code: by = ID. Also as before, R fills in missing values for
+the variables. In this case, missing values for the rows /
+observations that are present in surveys, but not in acti (i.e., the
+variable Sleep and ID = 1).")`
+
 **All rows / observations that are present in left dataset
-(surveys)**[^leftouter].
+(surveys)**.
 
 The argument, `all.x = TRUE` is what tells `R` this should be a left
 outer join.
-
-[^leftouter]: As before, we must specify what variable(s) to
-merge by so `R` knows how to match rows together, accomplished using
-the code: `by = "ID"`. Also as before, `R` fills in missing values for
-the variables. In this case, missing values for the rows /
-observations that are present in surveys, but not in acti (i.e., the
-variable Sleep and ID = 1).
 
 ```{r}
 
@@ -719,18 +779,16 @@ merge(
 
 ## Right Outer Join
 
-**All rows / observations that are present in right dataset
-(acti)**[^rightouter]. 
-
-The argument, `all.y = TRUE` is what tells `R` this should be a right
-outer join.
-
-[^rightouter]: As before, we must specify what variable(s) to merge by
-so `R` knows how to match rows together, accomplished using the code:
-`by = "ID"`. Note that `R` fills in missing values for the variables
+`r margin_note("As before, we must specify what variable(s) to merge by
+so R knows how to match rows together, accomplished using the code:
+by = ID. Note that R fills in missing values for the variables
 in surveys that are not in acti and the rows / observations that are
 present in acti, but not in surveys 
-(i.e., the variable Age and ID = 4).
+(i.e., the variable Age and ID = 4).")`
+
+**All rows / observations that are present in right dataset
+(acti)**.  The argument, `all.y = TRUE` is what tells `R` this should be a right
+outer join. 
 
 ```{r}
 
@@ -744,30 +802,33 @@ merge(
 
 ## Rows and missing after joining
 
-It is helpful to know how many rows you expect in the 
-results[^rowsjoin].
 
-[^rowsjoin]: Knowing how many rows you expect gives you a quick way to
-    check whether the join is working as you want or something
-    unexpected may be happening. Practical experience is that joins
-    can easily have some errors resulting in unintended consequences, 
-	like missing data or repetitions of rows that were not wanted.
+`r margin_note("Knowing how many rows you expect gives you a quick way to
+check whether the join is working as you want or something
+unexpected may be happening. Practical experience is that joins
+can easily have some errors resulting in unintended consequences, 
+like missing data or repetitions of rows that were not wanted.")`
+
+It is helpful to know how many rows you expect in the 
+results.
+
+
+`r margin_note("This behaviour is sometimes referred to as cross or
+cartesian joining. When there are multiple matches for a row/ID in
+both datasets, all possible combinations are returned. In this
+case, rows 2 and 3 are both ID 2 in surveys2 and rows 1 and 2 are
+both ID 2 in acti2, so those are crossed so you have all possible
+pairings of rows from each dataset associated with ID 2.")`
 
 In each of these two new datasets, ID 2 is repeated twice. 
 One might anticipate that a full outer join would return *5*
 rows, (IDs 1, 2, 2, 3, 4). `R` actually returns **7** rows, with
 four rows for ID 2, because all rows of ID 2 in `surveys2` are
-repeated by all rows of ID 2 in `acti2`[^cartesian]. 
-**Merging with any duplicates can behave in unexpected ways**[^checking]. 
+repeated by all rows of ID 2 in `acti2`. 
 
-[^cartesian]: This behaviour is sometimes referred to as cross or
-    cartesian joining. When there are multiple matches for a row/ID in
-    both datasets, all possible combinations are returned. In this
-    case, rows 2 and 3 are both ID 2 in surveys2 and rows 1 and 2 are
-    both ID 2 in acti2, so those are crossed so you have all possible
-    pairings of rows from each dataset associated with ID 2.
 
-[^checking]: In a small dataset, it is easy to see what has
+**Merging with any duplicates can behave in unexpected ways**. 
+In a small dataset, it is easy to see what has
 happened. In a large dataset, checking whether the merge worked as
 expected requires using summaries or other checks, such as evaluating
 whether the number of rows matched what you wanted or needed.
@@ -816,40 +877,24 @@ knitr::kable(ds2, caption = "Dataset: ds2")
 ```
 
 Before you try joining those datasets, try to answer these
-questions[^examquestions]. For these questions, `ds1` is the "left"
+questions, which are similar to what might be on the exam. The next
+section has an answer guide.
+For these questions, `ds1` is the "left"
 dataset and `ds2` is the "right" dataset and you are joining by ID.
 
 - How many rows would occur in a **natural join** of `ds1` and
   `ds2`? How many missing values total across all
-  variables?[^answerguide1] 
+  variables?
 
 - How many rows would occur in a **full outer join** of `ds1` and
   `ds2`? How many missing values total across all
-  variables[^answerguide2]?
+  variables?
 
 - How many rows would occur in a **left outer join** of `ds1` and
   `ds2`? How many missing values total across all variables?
 
 - How many rows would occur in a **right outer join** of `ds1` and
   `ds2`? How many missing values total across all variables?
-
-[^examquestions]: These are the sort of questions that would be on the
-    exam to assess understanding of joining / merging.
-	
-[^answerguide1]: The key to these is to know what each join does and be
-    able to predict expected behaviour. A natural join will be only
-    those rows IDs present in both datasets, in this case: A1 and
-    B2. Because a natural join only includes rows present in all
-    datasets, you will not have any missing values on any variable,
-    unless there was missing values to begin with. So in this case,
-    you will have 2 rows and 0 missing values.
-
-[^answerguide2]: A full outer join will include all rows from either
-dataset. That means you will have IDs A1, B2, C3, D4, and E5 (5
-rows). Stress values are only present for A1, B2, and C3, so you will
-have two missing stress values. Steps values are present for A1, B2,
-D4, and E5, so there will be one missing steps value. Together you
-will have 5 rows, and 3 missing values.
 
 ```{r trymerge, error = TRUE}
 
@@ -871,37 +916,25 @@ merge(   )
 
 ``` 
 
-## Merging Data by Multiple IDs
+#### Answer Key
 
-Sometimes a single variable is not enough to merge two datasets. This
-is particularly true in longitudinal studies where there are repeated
-measures. `R` can handle this by using multiple variables as IDs for
-merging. Alternately, a second, unique ID can be created by combining
-two or more pieces of information. The following shows an example.
+These are the sort of questions that would be on the
+exam to assess understanding of joining / merging.
+	
+The key to these is to know what each join does and be
+able to predict expected behaviour. A natural join will be only
+those rows IDs present in both datasets, in this case: A1 and
+B2. Because a natural join only includes rows present in all
+datasets, you will not have any missing values on any variable,
+unless there was missing values to begin with. So in this case,
+you will have 2 rows and 0 missing values.
 
-```{r}
-
-surveys <- data.table(
-  ID = c(1, 1, 2, 2),
-  Time = c(1, 2, 1, 2),
-  Stress = c(6, 4, 3, 4))
-
-acti <- data.table(
-  ID = c(1, 1, 1, 3, 3),
-  Time = c(1, 2, 3, 1, 2),
-  Sleep = c(7, 8, 9, 8, 8))
-
-## incorrect
-merge(surveys, acti,
-      by = "ID",
-      all = TRUE)
-
-## correct
-merge(surveys, acti,
-      by = c("ID", "Time"),
-      all = TRUE)
-
-``` 
+A full outer join will include all rows from either
+dataset. That means you will have IDs A1, B2, C3, D4, and E5 (5
+rows). Stress values are only present for A1, B2, and C3, so you will
+have two missing stress values. Steps values are present for A1, B2,
+D4, and E5, so there will be one missing steps value. Together you
+will have 5 rows, and 3 missing values.
 
 ## Merging Data by Different IDs
 
@@ -1049,26 +1082,6 @@ Using our daily data:
 ## you try to write the checking code here!
 
 
-
-``` 
-
-## Merging You Try It 2
-
-Let's say that one participant had technical problems with the surveys
-from the daily data we have worked with and so filled out the last few
-on paper and pencil. Now we want to merge this data into our master
-daily dataset using a *full outer join*. 
-The resulting dataset, `d2` should have 6,930 rows.
-
-```{r trymerging2, error=TRUE}
-
-pencil <- data.table(
-  UserID = factor(1),
-  SurveyDay = as.Date("2017-3-08"),
-  Survey = c("Morning", "Afternoon", "Evening"),
-  STRESS = c(1, 3, 1))
-
-d2 <- merge(   )
 
 ``` 
 
@@ -1340,3 +1353,55 @@ reshape(   )
 
 ```
 
+
+# Bonus Content - Merging by Multiple IDs
+
+Sometimes a single variable is not enough to merge two datasets. This
+is particularly true in longitudinal studies where there are repeated
+measures. `R` can handle this by using multiple variables as IDs for
+merging. Alternately, a second, unique ID can be created by combining
+two or more pieces of information. The following shows an example.
+
+```{r}
+
+surveys <- data.table(
+  ID = c(1, 1, 2, 2),
+  Time = c(1, 2, 1, 2),
+  Stress = c(6, 4, 3, 4))
+
+acti <- data.table(
+  ID = c(1, 1, 1, 3, 3),
+  Time = c(1, 2, 3, 1, 2),
+  Sleep = c(7, 8, 9, 8, 8))
+
+## incorrect
+merge(surveys, acti,
+      by = "ID",
+      all = TRUE)
+
+## correct
+merge(surveys, acti,
+      by = c("ID", "Time"),
+      all = TRUE)
+
+``` 
+
+## Merging by Multiple IDs - You Try It
+
+Let's say that one participant had technical problems with the surveys
+from the daily data we have worked with and so filled out the last few
+on paper and pencil. Now we want to merge this data into our master
+daily dataset using a *full outer join*. 
+The resulting dataset, `d2` should have 6,930 rows.
+
+```{r trymerging2, error=TRUE}
+
+pencil <- data.table(
+  UserID = factor(1),
+  SurveyDay = as.Date("2017-3-08"),
+  Survey = c("Morning", "Afternoon", "Evening"),
+  STRESS = c(1, 3, 1))
+
+d2 <- merge(   )
+
+``` 
