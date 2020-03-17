@@ -12,7 +12,7 @@
 
 <meta name="author" content="Joshua F. Wiley" />
 
-<meta name="date" content="2020-03-16" />
+<meta name="date" content="2020-03-18" />
 
 <title>Working with Data</title>
 
@@ -281,7 +281,7 @@ if (window.hljs) {
 
 <h1 class="title toc-ignore">Working with Data</h1>
 <h4 class="author">Joshua F. Wiley</h4>
-<h4 class="date">2020-03-16</h4>
+<h4 class="date">2020-03-18</h4>
 
 
 <div id="TOC">
@@ -365,9 +365,9 @@ x ## view x</code></pre>
 so you will not get a fixed number of decimal points, rather you get a fixed number of significant figures.</p>
 <p><label for="tufte-mn-4" class="margin-toggle">⊕</label><input type="checkbox" id="tufte-mn-4" class="margin-toggle"><span class="marginnote">The round function has two main arguments (i.e., pieces of input it needs from you). The first is the number or vector to be rounded. It can be a single number or a whole vector of numbers. The second is how many digits you want R to use in the rounding. The results may not always print the number of digits you requested, which may be confusing. This can happen when one of the digits rounds to 0 (e.g., 1.199 rounds to 1.20 and the 0 would be dropped so 1.2).</span></p>
 <pre class="r"><code>1.214294254</code></pre>
-<pre><code>## [1] 1.2</code></pre>
+<pre><code>## [1] 1.214294</code></pre>
 <pre class="r"><code>round(1.214294254, digits = 2)</code></pre>
-<pre><code>## [1] 1.2</code></pre>
+<pre><code>## [1] 1.21</code></pre>
 <pre class="r"><code>options(digits = 2) ## set default for the R session
 
 1.214294254</code></pre>
@@ -376,9 +376,15 @@ so you will not get a fixed number of decimal points, rather you get a fixed num
 <div id="working-with-data" class="section level1" number="3">
 <h1 number="3"><span class="header-section-number">3</span> Working with Data</h1>
 <p>To continue on, we’re going to open a few of the packages that you should have already installed from Week 1.</p>
-<pre class="r"><code>library(data.table)
-library(reshape2)
-library(JWileymisc)
+<pre class="r"><code>library(data.table)</code></pre>
+<pre><code>## data.table 1.12.8 using 24 threads (see ?getDTthreads).  Latest news: r-datatable.com</code></pre>
+<pre class="r"><code>library(reshape2)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;reshape2&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:data.table&#39;:
+## 
+##     dcast, melt</code></pre>
+<pre class="r"><code>library(JWileymisc)
 library(extraoperators)</code></pre>
 <p>Next, we are going to load some sample data. This is simulated data based on a 12-day study where people reported a few measures at baseline along with stress and affect three times per day. After loading it, we convert it to a data.table format, using the <code>as.data.table()</code> function so that we can use many of the useful tools from the <code>data.table</code> package for data management.</p>
 <pre class="r"><code>data(aces_daily)
@@ -1514,9 +1520,9 @@ merge(surveys, acti,
 ## 7:  3    2     NA     8</code></pre>
 <div id="merging-by-multiple-ids---you-try-it" class="section level2" number="9.1">
 <h2 number="9.1"><span class="header-section-number">9.1</span> Merging by Multiple IDs - You Try It</h2>
-<p>Let’s say that one participant had technical problems with the surveys from the daily data we have worked with and so filled out the last few on paper and pencil. Now we want to merge this data into our master daily dataset using a <em>full outer join</em>. The resulting dataset, <code>d2</code> should have 6,930 rows.</p>
+<p>Let’s say that one participant had technical problems with the surveys from the daily data we have worked with and so filled out the last few on paper and pencil. Now we want to merge this data into our master daily dataset using a <em>full outer join</em>. The resulting dataset, <code>d2</code> should have 6,602 rows.</p>
 <pre class="r"><code>pencil &lt;- data.table(
-  UserID = factor(1),
+  UserID = 1L,
   SurveyDay = as.Date(&quot;2017-3-08&quot;),
   Survey = c(&quot;Morning&quot;, &quot;Afternoon&quot;, &quot;Evening&quot;),
   STRESS = c(1, 3, 1))
