@@ -1392,12 +1392,12 @@ Let's say that one participant had technical problems with the surveys
 from the daily data we have worked with and so filled out the last few
 on paper and pencil. Now we want to merge this data into our master
 daily dataset using a *full outer join*. 
-The resulting dataset, `d2` should have 6,930 rows.
+The resulting dataset, `d2` should have 6,602 rows.
 
 ```{r trymerging2, error=TRUE}
 
 pencil <- data.table(
-  UserID = factor(1),
+  UserID = 1L,
   SurveyDay = as.Date("2017-3-08"),
   Survey = c("Morning", "Afternoon", "Evening"),
   STRESS = c(1, 3, 1))
