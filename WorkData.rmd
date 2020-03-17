@@ -7,6 +7,9 @@ output:
     toc: true
     number_sections: true
 ---
+```{r, include=FALSE, echo=FALSE}
+library(tufte)
+```
 
 # Intro
 
