@@ -36,7 +36,7 @@ are changed.
   Next, we'll work with our [first R markdown file](MyFirstRMarkdown.rmd).
 
 - **Week 2** *Working with Data*.
-  <!-- Please see the [Lecture Content](Data_Pt1.html). -->
+  Please see the [Content](WorkData.html).
 
 - **Week 3** *Visualizing Data (Part 1)*.
   <!-- Please see the [Lecture Content](Graphs_Pt1.html). -->
