@@ -39,7 +39,7 @@ are changed.
   Please see the [Content](WorkData.html).
 
 - **Week 3** *Visualizing Data (Part 1)*.
-  <!-- Please see the [Lecture Content](Graphs_Pt1.html). -->
+  Please see the [Lecture Content](DataViz1.html).
 
 - **Week 4** *Generalized Linear Models (Part 1)*.
 
