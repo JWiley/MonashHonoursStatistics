@@ -6,6 +6,7 @@
 .Rproj.user/
 # emacs files
 *~
+*.sav
 
 # README htmls in any folder
 README.html

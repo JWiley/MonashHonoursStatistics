@@ -157,22 +157,24 @@ operators. Here is a list of some operators from `R` and expanded by
 the `extraoperators` package.
 
 
-| Operator       | What it does                                 |
-|----------------|----------------------------------------------|
-| ==             | Are values / vectors equal                   |
-| !=             | Are values / vector NOT equal                |
-| <  OR  %l%     | Less than                                    |
-| <=  OR  %le%   | Less than or equal                           |
-| >  OR  %g%     | Greater than                                 |
-| >=  OR  %ge%   | Greater than or equal                        |
-| %gl%           | Greater than AND less than                   |
-| %gel%          | Greater than or equal AND less than          |
-| %gle%          | Greater than AND less than or equal          |
-| %gele%         | Greater than or equal AND less than or equal |
-| %in%           | In                                           |
-| %!in% OR %nin% | Not in                                       |
-| %c%            | Chain operations on the RHS together         |
-| %e%            | Set operator, to use set notation            |
+| Operator         | What it does                                      |
+|------------------|---------------------------------------------------|
+| `<-`             | assign whatever is on right to the left in R      |
+| `:=`             | assign right hand side to the left in data.table  |
+| `==`             | Are values / vectors equal                        |
+| `!=`             | Are values / vector NOT equal                     |
+| `<` OR `%l%`     | Less than                                         |
+| `<=` OR `%le%`   | Less than or equal                                |
+| `>` OR `%g%`     | Greater than                                      |
+| `>=` OR `%ge%`   | Greater than or equal                             |
+| `%gl%`           | Greater than AND less than                        |
+| `%gel%`          | Greater than or equal AND less than               |
+| `%gle%`          | Greater than AND less than or equal               |
+| `%gele%`         | Greater than or equal AND less than or equal      |
+| `%in%`           | In                                                |
+| `%!in%`OR `%nin%`| Not in                                            |
+| `%c%`            | Chain operations on the RHS together              |
+| `%e%`            | Set operator, to use set notation                 |
 
 
 ## Subsetting Data
@@ -578,7 +580,7 @@ Now you try to create a dataset that excludes any weekends.
 d3 <- d[ ]
 
 ## there should now be no surveys on weekends
-table(weekdays(d$SurveyDay))
+table(weekdays(d3$SurveyDay))
 
 ```
 

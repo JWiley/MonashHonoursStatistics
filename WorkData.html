@@ -12,7 +12,7 @@
 
 <meta name="author" content="Joshua F. Wiley" />
 
-<meta name="date" content="2020-03-18" />
+<meta name="date" content="2020-03-23" />
 
 <title>Working with Data</title>
 
@@ -281,7 +281,7 @@ if (window.hljs) {
 
 <h1 class="title toc-ignore">Working with Data</h1>
 <h4 class="author">Joshua F. Wiley</h4>
-<h4 class="date">2020-03-18</h4>
+<h4 class="date">2020-03-23</h4>
 
 
 <div id="TOC">
@@ -403,59 +403,67 @@ d &lt;- as.data.table(aces_daily)</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td>==</td>
+<td><code>&lt;-</code></td>
+<td>assign whatever is on right to the left in R</td>
+</tr>
+<tr class="even">
+<td><code>:=</code></td>
+<td>assign right hand side to the left in data.table</td>
+</tr>
+<tr class="odd">
+<td><code>==</code></td>
 <td>Are values / vectors equal</td>
 </tr>
 <tr class="even">
-<td>!=</td>
+<td><code>!=</code></td>
 <td>Are values / vector NOT equal</td>
 </tr>
 <tr class="odd">
-<td>&lt; OR %l%</td>
+<td><code>&lt;</code> OR <code>%l%</code></td>
 <td>Less than</td>
 </tr>
 <tr class="even">
-<td>&lt;= OR %le%</td>
+<td><code>&lt;=</code> OR <code>%le%</code></td>
 <td>Less than or equal</td>
 </tr>
 <tr class="odd">
-<td>&gt; OR %g%</td>
+<td><code>&gt;</code> OR <code>%g%</code></td>
 <td>Greater than</td>
 </tr>
 <tr class="even">
-<td>&gt;= OR %ge%</td>
+<td><code>&gt;=</code> OR <code>%ge%</code></td>
 <td>Greater than or equal</td>
 </tr>
 <tr class="odd">
-<td>%gl%</td>
+<td><code>%gl%</code></td>
 <td>Greater than AND less than</td>
 </tr>
 <tr class="even">
-<td>%gel%</td>
+<td><code>%gel%</code></td>
 <td>Greater than or equal AND less than</td>
 </tr>
 <tr class="odd">
-<td>%gle%</td>
+<td><code>%gle%</code></td>
 <td>Greater than AND less than or equal</td>
 </tr>
 <tr class="even">
-<td>%gele%</td>
+<td><code>%gele%</code></td>
 <td>Greater than or equal AND less than or equal</td>
 </tr>
 <tr class="odd">
-<td>%in%</td>
+<td><code>%in%</code></td>
 <td>In</td>
 </tr>
 <tr class="even">
-<td>%!in% OR %nin%</td>
+<td><code>%!in%</code>OR <code>%nin%</code></td>
 <td>Not in</td>
 </tr>
 <tr class="odd">
-<td>%c%</td>
+<td><code>%c%</code></td>
 <td>Chain operations on the RHS together</td>
 </tr>
 <tr class="even">
-<td>%e%</td>
+<td><code>%e%</code></td>
 <td>Set operator, to use set notation</td>
 </tr>
 </tbody>
@@ -842,7 +850,7 @@ table(weekdays(d2$SurveyDay))</code></pre>
 d3 &lt;- d[ ]
 
 ## there should now be no surveys on weekends
-table(weekdays(d$SurveyDay))</code></pre>
+table(weekdays(d3$SurveyDay))</code></pre>
 </div>
 </div>
 <div id="factor-variables" class="section level1" number="6">
