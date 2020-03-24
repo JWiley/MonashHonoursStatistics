@@ -207,6 +207,14 @@ range. Histograms show a univariate distribution.")`
 Using our basic mapping, we can "add" a histogram geometry to view a
 histogram.
 
+`r margin_note("When you use geom_histogram() or geom_dotplot() you'll
+likely get a warning that a default number of bins were used and you
+should specify a better binwidth. The binwidth controls how wide the
+histogram bars are or how wide the dots in the dotplot are. However,
+for our purposes the default option is almost always good enough and
+you can feel free to ignore this message generally, unless you really
+want to change your histogram.")`
+
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "A histogram in ggplot2 for stress"}
 
 pb + geom_histogram()
@@ -342,8 +350,10 @@ We can map additional variables to aesthetics such as the colour to
 include more information. 
 For density plots, separating by colour is easy, by adding another
 variable, say `AgeCat` as an additional aesthetic. For categorical
-aesthetics like color, we convert it to a factor first so `R` knows
-that the 0s and 1s are not really continuous data.
+aesthetics like color, if it had not already been a factor, 
+its a good idea to convert it to a factor first so `R` knows
+that it is discrete and to order levels in the desired order we want,
+not the default alphabetical order (unless that is what you want).
 
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Density plot coloured by age for stress"}
@@ -381,7 +391,7 @@ Using the `db` baseline dataset:
 1. make a histogram for the variable: `extraversion`.
 2. use `testDistribution()` to examine whether `selfesteem` follows a
    normal distribution and whether it has any extreme values.
-3. Make a dotplot for: `openness` *separated* 
+3. Make a dotplot for: `openness` *separated* (e.g., by colour and/or fill)
    by `AgeCat`:
    
 ```{r tryunivariate, error=TRUE}
@@ -390,7 +400,7 @@ Using the `db` baseline dataset:
 
 ## distribution check code here (selfesteem)
 
-## dotplot code here (neuroticism by AgeCat)
+## dotplot code here (openness by AgeCat)
 
 
 ```
@@ -620,8 +630,8 @@ labels and breaks at meaningful points of the data.
 One option is quantiles / percentiles: 0th, 25th, 50th (median), 75th
 and 100th percentiles are given by default from the `quantile()`
 function. Now almost every piece of ink in this figure conveys some
-useful information. We can visually see the range of the `mpg` and
-`hp` variables from the axes. We can see the median and interquartile
+useful information. We can visually see the range of the `stress` and
+`selfesteem` variables from the axes. We can see the median and interquartile
 range as well. 
 
 ```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 4"}
@@ -691,9 +701,8 @@ ggplot(db[!is.na(AgeCat)], aes(stress, selfesteem, shape = AgeCat)) +
 
 ## Try It - Bivariate
 
-Using the daily diary dataset we have worked with all semester, `d` dataset:
-
-Make a scatter plot (points) for `extraversion` and `conscientiousness`. Use the
+Make a scatter plot (points) for `extraversion` and
+`conscientiousness` in the baseline data, `db`. Use the
 good visualization principles we have learned. Make your own
 decisions to make the scatter plot most useful to read.
 
@@ -769,6 +778,11 @@ ggplot(db[!is.na(AgeCat)], aes(AgeCat, stress)) +
   xlab("Age Group")
 
 ```
+
+**This plot temporarily does not work. There seems to have been a bug
+introduced in `ggplot2` version 3.3.0 which was released earlier in
+March. Until that is fixed ignore this plot (you can track it here:
+https://github.com/tidyverse/ggplot2/issues/3910).**
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Likert plot of means showing anchors"}
 
