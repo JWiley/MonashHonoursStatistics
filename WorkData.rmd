@@ -1080,7 +1080,7 @@ Using our daily data:
 - Check if there are duplicates if you use both `UserID` and
   `SurveyDay` to create a combined ID.
 - Check if there are duplicates if you use `UserID` and `SurveyDay`
-  and `Survey`.
+  and `SurveyInteger`.
 
 ```{r trychecking}
 
@@ -1396,7 +1396,7 @@ merge(surveys, acti,
 Let's say that one participant had technical problems with the surveys
 from the daily data we have worked with and so filled out the last few
 on paper and pencil. Now we want to merge this data into our master
-daily dataset using a *full outer join*. 
+daily dataset, `d`, using a *full outer join*. 
 The resulting dataset, `d2` should have 6,602 rows.
 
 ```{r trymerging2, error=TRUE}
@@ -1406,6 +1406,12 @@ pencil <- data.table(
   SurveyDay = as.Date("2017-3-08"),
   Survey = c("Morning", "Afternoon", "Evening"),
   STRESS = c(1, 3, 1))
+
+## there is no survey integer in pencil, so we need to make that
+## to merge with the d dataset.
+pencil[Survey == "Morning", SurveyInteger := 1L]
+pencil[Survey == "Afternoon", SurveyInteger := 2L]
+pencil[Survey == "Evening", SurveyInteger := 3L]
 
 d2 <- merge(   )
 

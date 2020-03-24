@@ -12,7 +12,7 @@
 
 <meta name="author" content="Joshua F. Wiley" />
 
-<meta name="date" content="2020-03-23" />
+<meta name="date" content="2020-03-24" />
 
 <title>Working with Data</title>
 
@@ -281,7 +281,7 @@ if (window.hljs) {
 
 <h1 class="title toc-ignore">Working with Data</h1>
 <h4 class="author">Joshua F. Wiley</h4>
-<h4 class="date">2020-03-23</h4>
+<h4 class="date">2020-03-24</h4>
 
 
 <div id="TOC">
@@ -1194,7 +1194,7 @@ anyDuplicated(paste0(acti$ID, acti$Time))</code></pre>
 <li>Count how many unique IDs there are</li>
 <li>Create a frequency table of the number of times <code>UserID</code> is duplicated.</li>
 <li>Check if there are duplicates if you use both <code>UserID</code> and <code>SurveyDay</code> to create a combined ID.</li>
-<li>Check if there are duplicates if you use <code>UserID</code> and <code>SurveyDay</code> and <code>Survey</code>.</li>
+<li>Check if there are duplicates if you use <code>UserID</code> and <code>SurveyDay</code> and <code>SurveyInteger</code>.</li>
 </ul>
 <pre class="r"><code>## you try to write the checking code here!</code></pre>
 </div>
@@ -1528,12 +1528,18 @@ merge(surveys, acti,
 ## 7:  3    2     NA     8</code></pre>
 <div id="merging-by-multiple-ids---you-try-it" class="section level2" number="9.1">
 <h2 number="9.1"><span class="header-section-number">9.1</span> Merging by Multiple IDs - You Try It</h2>
-<p>Let’s say that one participant had technical problems with the surveys from the daily data we have worked with and so filled out the last few on paper and pencil. Now we want to merge this data into our master daily dataset using a <em>full outer join</em>. The resulting dataset, <code>d2</code> should have 6,602 rows.</p>
+<p>Let’s say that one participant had technical problems with the surveys from the daily data we have worked with and so filled out the last few on paper and pencil. Now we want to merge this data into our master daily dataset, <code>d</code>, using a <em>full outer join</em>. The resulting dataset, <code>d2</code> should have 6,602 rows.</p>
 <pre class="r"><code>pencil &lt;- data.table(
   UserID = 1L,
   SurveyDay = as.Date(&quot;2017-3-08&quot;),
   Survey = c(&quot;Morning&quot;, &quot;Afternoon&quot;, &quot;Evening&quot;),
   STRESS = c(1, 3, 1))
+
+## there is no survey integer in pencil, so we need to make that
+## to merge with the d dataset.
+pencil[Survey == &quot;Morning&quot;, SurveyInteger := 1L]
+pencil[Survey == &quot;Afternoon&quot;, SurveyInteger := 2L]
+pencil[Survey == &quot;Evening&quot;, SurveyInteger := 3L]
 
 d2 &lt;- merge(   )</code></pre>
 <pre><code>## Error in as.data.frame(x): argument &quot;x&quot; is missing, with no default</code></pre>
