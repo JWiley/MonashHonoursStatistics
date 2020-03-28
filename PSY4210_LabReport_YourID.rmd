@@ -1,0 +1,116 @@
+---
+title: "PSY4210 Lab Report"
+author: "Your Monash ID Number -- Your Full Name"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: 
+    toc: true
+---
+
+# 1. Generalized Linear Models 1
+
+
+```{r}
+
+library(haven)
+library(data.table)
+library(JWileymisc)
+library(ggplot2)
+library(ggpubr)
+library(visreg)
+
+
+## read in data
+db <- as.data.table(read_sav("B 19032020.sav")) # baseline data
+
+```
+
+## Run a Linear Regression
+
+Fit **one** moderated, multiple linear regression. Pick from:
+
+- Outcome: positive or negative affect at baseline
+- Predictors: `female` and any other variable of your choosing
+- Make sure that you include the interaction between your predictor and `female`.
+
+Note: you will need to score positive or negative affect. For a
+refresher, see the content for Data Visualization 1.
+
+```{r glm1reg}
+
+## put your regression model code using lm() here
+
+
+
+```
+
+## Linear Regression Diagnostics
+
+Conduct model diagnostics on your regression model. Where applicable,
+apply appropriate transformations and/or exclude outliers.
+
+```{r glm1diagnostics}
+
+## put your regression diagnostics code including plots using modelDiagnostics() here
+
+
+
+```
+
+
+## Linear Regression Summary
+
+Create a summary of your **final** model, after any relevant
+transformations or extreme values have been addressed, where
+applicable.
+
+- use `modelTest()` and `APAStyler()` to get a nice result.
+
+Create a graph to help visualize your results using `visreg()`.
+Note, you may want to adjust the `fig.width` and `fig.height` options
+to this `R` chunk to make the graph have the ratios you like.
+
+```{r glm1plot, fig.width = 6, fig.height = 4}
+
+## put your code to summarize the final model using modelTest() here
+
+
+## put your code to visualize your regression model using visreg() here
+
+
+```
+
+In the last subheading (Linear Regression Write Up) for GLM1, briefly
+summarize your analysis steps, assumption checks, any changes
+performed, and interpret the interaction and regression coefficients,
+referencing your figure visualizing the result where appropriate. 
+The total length should be about one paragraph and about 150 words.
+
+## Linear Regression Write Up
+
+
+
+
+# 2. Generalized Linear Models 2
+
+
+
+# 3. Missing Data
+
+
+
+# 4. Linear Mixed Models 1
+
+
+
+# 5. Linear Mixed Models 2
+
+
+
+# 6. Interactions and Moderation for LMMs
+
+
+
+# 7. Model Comparisons for LMMs
+
+
