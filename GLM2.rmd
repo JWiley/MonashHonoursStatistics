@@ -165,8 +165,9 @@ $$ \eta = g(\lambda) = ln(\lambda) $$
 where $ln()$ is the **n**atural **l**ogarithm (or log with base e,
 euler's number).
 
+`r margin_note("Although lambda can be exactly 0, 
 Here $\lambda$ is the average number of counts / events. Although
-counts must be > 0 and strictly whole numbers, the average number of
+counts must be at least 0 and strictly whole numbers, the average number of
 counts, $\lambda$ can be any real, positive number number > 0.
 
 Graphing $\lambda$ against $\lambda$ we get
@@ -200,8 +201,8 @@ fall between negative infinity and positive infinity
 Now we have a continuous and unbounded outcome we can apply
 a linear model to!
 
-To go from predictions on the linear model back to the probability
-scale, we use the inverse link function:
+To go from predictions on the linear model back to the original
+count scale, we use the inverse link function:
 
 - $\lambda = g^{-1}(\eta) = e^{\eta}$
 
@@ -909,7 +910,7 @@ probability of being high stress. This matches what we can see
 visually when we use `visreg()` to plot on the probability scale.
 
 
-```{r, fig.width = 6, fig.height = 4}
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Probability of being high stress by self esteem level with 95% confidence intervals"}
 
 visreg(mlog2, xvar = "selfesteem", scale = "response",
        partial = FALSE, rug = FALSE, gg = TRUE) +
@@ -941,6 +942,99 @@ xtabs(~ Observed + Predicted, data = accdata)
 mean(accdata$Observed == accdata$Predicted)
 
 ``` 
+
+### Average Marginal Effects
+
+Because the probability scale is easier to interpret than is even the
+odds ratio scale, people often desire to convert results from logistic
+regression into probabilities. A challenge on the probability scale is
+that the results are not linear. For example if looking at the graph
+of continuous self esteem predicting the probability of being high
+stress, the probability changes much less when moving from a self
+esteem score of 4 to 5 then from 10 to 11.
+
+We can see this in practice by using the `predict()` function to
+generate some predicted probabilities. We make a small new dataset
+with some particular self esteem values (4, 5, 10, 11) and specify the
+argument `type = "response"` to get probabilities rather than
+predicted log odds.
+
+```{r, results = "asis"}
+
+newdata <- data.table(
+  selfesteem = c(4, 5, 10, 11))
+
+newdata$Prob <- predict(mlog2,
+                        newdata = newdata,
+                        type = "response")
+
+knitr::kable(newdata)
+
+```
+
+The probabilities show that the predicted probability of being high
+stress changes very little when moving from 4 to 5 self esteem but
+quite a bit from 10 to 11. This illustrates a challenge: if you want
+to talk about how much the probability of being high stress changes
+for a one unit change in self esteem, it matters where the self esteem
+scores started.
+
+One principled approach to solving this problem is called the **average
+marginal effect**. There are two parts to this. A **marginal** effect
+is the instantaneous effect of change at a particular
+point. Technically, it is the derivative of the slope for those that
+helps. Because each participant has their own actual self esteem, each
+participant also will have their own marginal effect, their own
+instaneous rate of change in the probability of being high stress for
+a change in self esteem. The **average** part of average marginal
+effect is that we can average the marginal effects across all
+participants in the sample to get an average marginal effect, and this
+number represents the average change in probability that you would
+expect if you took a population that looked like our sample and could
+increase everyone's self esteem by one unit.
+
+Calculating the average marginal effect is fairly easy. 
+
+1. Using the original dataset, generate predicted probabilities for
+   everyone
+2. Add a small quantity, $h$ to every self esteem score in the dataset
+   and generate new predicted probabilities
+3. Take the difference between the original and new predicted
+   probabilities divided by $h$ so that the differences are per unit
+   change
+4. Average all the differences in probabilities
+
+```{r}
+
+## pick h value for difference, store that in variable h
+h <- .01
+
+## make the original dataset
+originaldata <- db[, .(selfesteem)]
+
+## make the incrased self esteem dataset (selfesteem + h)
+increaseddata <- db[, .(selfesteem = selfesteem + h)]
+
+## calculate original predicted probabilities
+originaldata$Prob <- predict(mlog2, newdata = originaldata,
+                             type = "response")
+
+## calculate increased predicted probabilities
+increaseddata$Prob <- predict(mlog2, newdata = increaseddata,
+                              type = "response")
+
+## calculate the difference in probabilities per unit
+diffprob <- (increaseddata$Prob - originaldata$Prob) / h
+
+## calculate the average marginal effect
+mean(diffprob)
+
+``` 
+
+The average marginal effect shows that on average in our sample, a one
+unit increase in self esteem predicts a 
+`r sprintf("%0.2f", mean(diffprob))` decrease in the probability of
+being high stress.
 
 ## GLMs with Multiple Predictors
 
@@ -1000,6 +1094,57 @@ visreg(mlog3, xvar = "selfesteem",
 
 ```
 
+When you have multiple predictors it also is possible to calculate
+average marginal effects for each predictor. The steps are virtually
+identical to the steps for a single predictor, except that the
+datasets must include all predictors but you only increase the values
+of one predictor at a time.
+
+
+```{r}
+
+## pick h value for difference, store that in variable h
+h <- .01
+
+## make the original dataset
+originaldata2 <- db[, .(selfesteem, neuroticism)]
+
+## make the incrased self esteem dataset (selfesteem + h)
+increasedSelfEsteem <- db[, .(selfesteem = selfesteem + h, neuroticism)]
+
+## make the incrased neuroticism dataset (neuroticism + h)
+increasedNeuro <- db[, .(selfesteem, neuroticism = neuroticism + h)]
+
+## calculate original predicted probabilities
+originaldata2$Prob <- predict(mlog3, newdata = originaldata2,
+                             type = "response")
+
+## calculate increased predicted probabilities for self esteem
+increasedSelfEsteem$Prob <- predict(mlog3, newdata = increasedSelfEsteem,
+                              type = "response")
+
+## calculate increased predicted probabilities for neuroticism
+increasedNeuro$Prob <- predict(mlog3, newdata = increasedNeuro,
+                              type = "response")
+
+## calculate the difference in probabilities per unit
+se.diffprob <- (increasedSelfEsteem$Prob - originaldata2$Prob) / h
+neuro.diffprob <- (increasedNeuro$Prob - originaldata2$Prob) / h
+
+## calculate the average marginal effect s
+mean(se.diffprob) # self esteem
+mean(neuro.diffprob) # neuroticism
+
+``` 
+
+The results show that in the sample, holding neuroticism constant,
+increasing self esteem by one unit on average is predicted to result
+in a `r mean(se.diffprob)` decline in the probability of being high
+stress. Conversely, holding self esteem constant, increasing
+neuroticism by one unit on average is predicted to result in a 
+`r mean(neuro.diffprob)` increase in the probability of being high
+stress.
+
 # Summary Table
 
 Here is a little summary of some of the functions used in this
@@ -1010,24 +1155,68 @@ topic.
 | `glm()`  | Fits a generalized linear regression model, with `family=poisson()` or `family=binomial()` for poisson and logistic regression | 
 | `coef()`  | Extracts coefficients from a regression model | 
 | `confint()`  | Calculates confidence intervals (95% by default) for a regression model | 
+| `predict()` | Function to get predicted values from a model, including on the original response scale |
 | `testDistribution()` | allows testing a variable against any specific distribution | 
 | `visreg()` | can be used to make plots of regression models on the linear or original scales |
 
 
 # Bonus Content
 
+Note: you do not need to read or follow this, it is extra content for
+those who may use or be interseted.
+
+
+For binary outcomes, sometimes in place of odds ratios, people prefer
+to report relative risks. Odds ratios are how many higher times the
+odds. The relative risk is how many times higher the risk or
+probability of the event is. To get relative risks, the link function
+needs to be the natural logarithm. However, this tends to be unstable
+when used with a bernoulli distribution. The current standard in the
+literature for binary outcomes to get relative risks is to use a
+poisson regression model with a log link on the binary
+outcome. However, it is known that this results in biased standard
+errors and so it is recommended to use a robust standard errors rather
+than default standard errors if using a poisson regression to estimate
+relative risks for a binary outcome. For more examples, see:
+[here](https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-018-0519-5).
+
+Robust standard errors can be
+calculated by using the `survey` package and specifying the IDs for
+each participant in the model design, which will then have robust
+standard errors calculated (note, the `survey` package can also handle
+many other complex survey designs including when people are not
+randomly selected but were selected based off particular
+probabilities, but we are only using it here to get the robust
+standard errors). Then we use the `svyglm()` function which works
+almost the same as regular `glm()` only it can take the additional
+`design` argument and can calculate robust standard errors.
+
 ```{r}
 
-mlog <- glm(StressHigh ~ SelfesteemHigh, data = db, family = binomial())
-
-summary(mlog)
-
-## calculate relative risks using poisson family with robust standard errors
-## using svyglm()
+## first specify the design, indicating what the ID column is
+## the warning about no weights or probabilities is ignorable
 design <- svydesign(ids = ~ ID, data = db)
-mrr <- svyglm(StressHigh ~ selfesteem, data = db,
+
+## fit a poisson regression which uses a log link to the binary data
+mrr <- svyglm(StressHigh ~ SelfesteemHigh, data = db,
               family = poisson(), design = design)
 
+## get summary of coefficients, standard errors, p-values
+## assuming infinite degrees of freedom (central limit theorem)
 summary(mrr, df.resid=Inf)
 
+## calculate the relative risks and confidence intervals
+exp(coef(mrr))
+
+exp(confint(mrr))
+
 ```
+
+From these results we can say that people with high self esteem have a
+relative risk of 0.167 of being high stress as do people with low self
+esteem. In a simple case like this model, that directly means that
+people with high self esteem have 0.167 times the probability of being
+high stress as people with low self esteem. Although it is still on
+the multiplicative scale, it relates to probabilities directly rather
+than being multiplicative on the odds.
+
