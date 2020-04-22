@@ -1,0 +1,815 @@
+---
+title: "Linear Mixed Models (LMMs) - Part 1"
+author: "Joshua F. Wiley"
+date: "`r Sys.Date()`"
+output: 
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+---
+
+Download the raw `R` markdown code here
+[https://jwiley.github.io/MonashHonoursStatistics/LMM1.rmd](https://jwiley.github.io/MonashHonoursStatistics/LMM1.rmd).
+These are the `R` packages we will use.
+
+```{r setup}
+options(digits = 2)
+
+## new packages are lme4, lmerTest, and multilevelTools
+
+library(data.table)
+library(JWileymisc)
+library(lme4)
+library(lmerTest)
+library(multilevelTools)
+library(visreg)
+library(ggplot2)
+library(ggpubr)
+
+```
+
+
+```{r}
+#### 1. Setup (You Try It) ####
+
+## to start with, we will load a package for data management
+## and load a package for fitting Linear Mixed effects Models (LMMs)
+
+## recall that loading a package is like opening an app
+## and you need to repeat this process each time you start up R
+## if everything installed successfully already
+## this code should work and return no errors
+## if this does not work, try to install it first
+## by uncommenting the install packages code
+
+# install.packages("data.table", dependencies = TRUE)
+# install.packages("lme4", dependencies = TRUE)
+# install.packages("ggplot2", dependencies = TRUE)
+library(data.table)
+library(lme4)
+library(ggplot2)
+
+## load the data (note this is already an R dataset)
+## so we use a new function readRDS()
+## make sure that the data file is located in
+## your project directory
+d <- readRDS("aces_daily_sim_processed.RDS")
+
+## see the dimenions of the data (rows   columns)
+## should be: 6927   56
+dim(d)
+
+## see the names of the variables in the dataset
+names(d)
+
+
+## to visualize the multiple assessments per person
+## and the variation in means we will focus
+## one one variable, positive affect (PosAff) for just
+## four individuals (IDs 1, 2, 6, and 9)
+
+## first we subset the data to only rows
+## where UserID is in IDs 1, 2, 6 or 9
+## now that we use quotes around the IDs
+## because they are not stored as numbers but
+## as discrete categorical values (i.e., IDs are not
+## really a continuous "number", they represent discrete people).
+justfour <- d[UserID %in% c("1", "2", "6", "9")]
+
+## now we can plot it
+## (do not worry about understanding graphing, we will learn that later)
+## Note the warnings about non-finite values are because of some
+## missing data, you can ignore these safely, if you expect
+## some missing data (we do)
+ggplot(justfour, aes(UserID, PosAff)) +
+  geom_jitter() +
+  stat_summary(fun.data = mean_cl_normal,
+               colour = "blue", size = 1)
+
+
+
+## to visualize the differences in individual means
+## we first make a new dataset where we
+## calculate the mean positive affect *by* UserID
+individMeans <- d[, .(MeanPosAff = mean(PosAff, na.rm = TRUE)),
+                  by = UserID]
+
+## view the first few rows of this new individual mean dataset
+head(individMeans)
+
+## now plot a histogram of the individual means
+ggplot(individMeans, aes(MeanPosAff)) +
+  geom_histogram()
+
+
+
+#### 2. Comparing Models (Demonstration)  ####
+
+## fit an intercept only linear model (regression)
+## and store the results in an object, m1lr
+m1lr <- lm(PosAff ~ 1, data = d)
+
+## create a summary of our linear regression model
+summary(m1lr)
+
+## the intercept is the overall mean of positive affect
+## we can easily verify this
+mean(d$PosAff, na.rm = TRUE)
+
+## the linear regression model does not allow any individual differences
+
+## now we will fit a *l*inear *m*ixed *e*ffects *r*egression
+## model (LMM) using the lmer() function
+## again we only have an intercept, but this time we include
+## the intercept as a fixed effect (which will capture the mean)
+## and as a random effect (which will capture the standard deviation)
+m1lmm <- lmer(PosAff ~ 1 + (1 | UserID), data = d)
+
+## generate a summary
+## NOTE: in class walk through interpretation of output
+summary(m1lmm)
+
+## this model shows the assumed normal distribution of the
+## individual means of positive affect are summarized by
+## M = 2.67866 and SD = 0.7930
+
+
+## we can compare these values to the values we would
+## obtain if we simply calculated and summarized the individual means
+## we can see the values are very close
+## because of some differences in the estimation, these will not always
+## match exactly, but they are typically close
+mean(individMeans$MeanPosAff, na.rm = TRUE)
+sd(individMeans$MeanPosAff, na.rm = TRUE)
+
+## we also can use the variance (not standard deviation)
+## estimates from the random effects section to estimate
+## the intraclass correlation coefficient (ICC) for positive
+## affect to provide a descriptive statistic for how much
+## variance in positive affect occurs between people
+## relative to its total variance
+
+## ICC for positive affect
+.6289 / (.6289 + .5290)
+
+
+## in this intercept only model, the fixed effects estimates
+## are similar between the linear regression and the LMMs
+
+## regression coefficients (fixed effects) from linear regression
+coef(m1lr)
+## fixed effects only from LMM
+fixef(m1lmm)
+
+## however, because the linear regression erroneously assumes that
+## all observations are independent, the standard error is biased
+## downwards resulting in biased, too narrow confidence intervals
+## here we just compare the 95% confidence interval for the fixed effect
+## intercept estimate, labelled "(Intercept)" from both models
+## note that it is wider (appropriately) in the LMM
+confint(m1lr)
+confint(m1lmm, oldNames = FALSE)
+
+
+#### 3. Run a LMM (You Try It)  ####
+
+## in pairs or small groups, pick one of the other variables
+## in the dataset (not positive affect) and fit an intercept only
+## linear mixed model by completing the code below.
+
+## if you need a refresher on what variables are available
+## take a look at the table in the slides or look through the example
+## above to see how we could find all the variable names in the dataset
+
+## store the model results in an object called "m2lmm"
+m2lmm <- lmer()
+
+
+## now make a summary of the model results
+
+
+
+
+## what is the intraclass correlation coefficient for this variable?
+
+
+
+## if you try fitting an intercept only linear regression (not LMM)
+## to the same variable, are the confidence intervals
+## wider or narrower for the LMM or linear regression?
+m2lr <- lm( )
+
+
+
+
+
+
+#### 4. Diagnostics (Demonstration)  ####
+
+## make a dataset of the residuals and expected values
+## to do this, we use the
+## fitted() function for expected values
+## resid() function for model residuals
+## NOTE: these two functions work on linear regression models too
+d.residuals <- data.table(
+  Yhat = fitted(m1lmm),
+  Residuals = resid(m1lmm))
+
+## check for normality of the outcome
+## by examining residuals
+ggplot(d.residuals, aes(Residuals)) +
+  geom_histogram()
+
+## check for normality of the outcome
+## using QQ plot
+ggplot(d.residuals, aes(sample = Residuals)) +
+  stat_qq() + stat_qq_line()
+
+## check for homogeneity of variance assumption
+ggplot(d.residuals, aes(Yhat, Residuals)) +
+  geom_point(alpha = .2)
+
+
+## make a dataset of the random effects by UserID
+d.random <- as.data.table(coef(m1lmm)$UserID)
+
+## check whether the random effects are normally distributed
+## note that these have mean 0
+ggplot(d.random, aes(`(Intercept)`)) +
+  geom_histogram()
+
+## normality via QQ plot
+ggplot(d.random, aes(sample = `(Intercept)`)) +
+  stat_qq() + stat_qq_line()
+
+
+#### 5. Inference (Demonstration)  ####
+
+## fixed effects table
+fetable <- coef(summary(m1lmm))
+## view the table
+print(fetable)
+
+## extract the t values (b / se)
+## take their absolute value (as we typically do 2 sided hypothesis tests
+## calculate the p-value using the normal distribution function, pnorm()
+## and multiply by 2 so its a two-tailed test
+pnorm(abs(fetable[, "t value"]), lower.tail = FALSE) * 2
+
+## confidence intervals using the Wald method are based
+## on assuming a normal distribution and are very fast and easy
+## but do not give any confidence intervals for the random effects
+confint(m1lmm, method = "Wald")
+
+## confidence intervals using the profile method are based
+## on the change in model performance (the log likelihood)
+## and are much slower, but generally a bit more precise and
+## are appropriate for random effects
+confint(m1lmm, method = "profile")
+
+
+## we can compare models using likelihood ratio tests
+## which are OK (not dissimilar from assuming normal) for fixed effects
+## and are about the best that can be done for random effects
+## note that you always need at least one random effect in LMMs
+## so you cannot simply remove the random intercept; generally this is
+## used for testing more complex random effects we will learn in future weeks
+## or testing several differences at once
+
+## setup a new model with an additional predictor, SurveyInteger
+lmmalt <- lmer(PosAff ~ 1 + SurveyInteger + (1 | UserID), d)
+
+## conduct a likelihood ratio test of these two, nested models
+anova(lmmalt, m1lmm, test = "LRT")
+
+## assuming normal distribution, test the fixed effects in
+## our alternate model, lmmalt
+fetablealt <- coef(summary(lmmalt))
+pnorm(abs(fetablealt[, "t value"]), lower.tail = FALSE) * 2
+
+```
+
+
+# Sample Interpretation Summary for Linear Mixed Models (LMMs)
+
+There is ambiguity in terms of how best to calculate degrees of
+freedom (df) for LMMs. By default `R` does not calculate the df and so
+does not provide p-values for the regression coefficients (fixed
+effects) from LMMs.
+
+One easy, albeit imperfect, solution is to use the `lmerTest`
+package. `lmerTest` use Satterthwaite's method to calculate
+approximate degrees of freedom and use these for the t-tests and
+p-values for each regression coefficient. To use `lmerTest` simply
+make sure that **both** `lme4` and `lmerTest` packages are installed
+and that you load the `lmerTest` package after `lme4`, by using:
+`library(lmerTest)`. This is shown in the example above.
+Once that is done, all regular calls to `lmer()` function used to fit
+LMMs will automatically have df estimated and p-values. This is done
+throughout this interpretation guide.
+
+# Random Intercept LMM
+
+There are two main uses of intercept only models:
+
+- To calculate the intraclass correlation coefficient (ICC)
+- As a comparison to see how much better a more complex model
+  fits. Note that for model comparisons, we need to use ML estimation,
+  by setting `REML = FALSE`.
+
+To calculate the ICC, we use this equation:
+
+$$ICC = \frac{\sigma^{2}_{intercept}}{\sigma^{2}_{intercept} +
+\sigma^{2}_{residual}}$$
+
+Following is an example of an intercept only model, where there is
+both a fixed effects intercept and a random intercept.
+The outcome variable is `PosAff`.  All predictors come after the
+tilde, `~`. In this case, the only "predictors" are the fixed and
+random intercept, represented by `1`. The random intercept is random
+by `UserID`. The function to fit linear mixed models is `lmer()` and
+comes from the `lme4` package. It also requires a dataset be
+specified, here `d`. Finally, there are two estimation approaches,
+both based off of Maximum Likelihood (ML) estimation. The default as
+it provides the least biased estimates is Restricted Maximum
+Likelihood (REML), chosen by default or by explicitly setting 
+`REML = TRUE`.  We can get a summary using `summary()`.
+
+```{r}
+
+ri.m <- lmer(PosAff ~ 1 + (1 | UserID),
+            data = d,
+            REML = TRUE)
+
+summary(ri.m)
+
+``` 
+
+There are four main "blocks" of output from the summary.
+
+1. A repetition of the model options, formula we used, and dataset
+   used. This is for records so you know exactly what the model was.
+   In *this* model, it shows use that we fit a LMM using restricted
+   maximum likelihood (REML) and that the degrees of freedom were
+   approximated using Satterthwaite's method. The outcome variable is
+   positive affect (`PosAff`) and there are only intercept predictors,
+   `1`. The REML criterion at convergence is kind of like the log
+   likelihood (LL), but unfortunately cannot be readily used to
+   compare across models as easily as the actual LL (e.g., in AIC or
+   BIC).
+2. Scaled Pearson residuals. These are raw residuals divided by the
+   estimated standard deviation, so that they can be roughly
+   interpretted as z-scores. The minimum and maximum are useful for 
+   identifying whether there are outliers present in the model
+   residuals.
+   In *this* model, we can see that the lowest residual is 
+   `r min(residuals(ri.m, type = "pearson", scaled=TRUE))` 
+   and the maximum residual is 
+   `r min(residuals(ri.m, type = "pearson", scaled=TRUE))`
+   which while a bit large, given there are thousands of observations
+   are not so extreme if interpretted as z-scores as to be
+   concerning. Absolute residuals of 10 or 20 would be large enough
+   that they are extremely unlikely by chance alone and likely
+   represent outliers.
+3. Random effects. These show a summary of the random effects in the
+   model. Random effects are basically always also fixed effects, so
+   the random effects only shows the standard deviation and variance
+   of random effects, plus, if applicable, their correlations. The
+   means are showon in the fixed effects section. In the case of a
+   random intercept only model like this one, there are only two
+   random effects: (1) the random intercept and (2) the random
+   residual. We have both the standard deviation and variance of
+   both. We will use the variances to calculate ICCs.
+   In *this* model, the standard deviation of the random intercept, 
+   tells us that the average or typical difference between an
+   individual's average positive affect, and the population average
+   positive affect is
+   `r as.data.frame(VarCorr(ri.m))[1, "sdcor"]`.
+   The standard deviation of the residuals
+   tells us that the average or typical difference between an
+   individual positive affect score and the predicted positive affect
+   score is
+   `r as.data.frame(VarCorr(ri.m))[2, "sdcor"]`.
+   The random effects section also tells us how many observations and
+   unique people/groups went into the analysis. 
+   In *this* model we can see that we had `r as.integer(ngrps(ri.m))` 
+   people providing `r nobs(ri.m)` unique observations.
+4.  Fixed effects. This section shows the fixed effects. It is a
+    table, where each row is for a different effect / predictor and
+    each column gives a different piece of information.
+	The "Estimate" is the actual parameter estimate (i.e., THE fixed
+    effect, the regression coefficient, etc.). The "Std. Error" is the
+    standard error of the estimate, which captures uncertainty in the
+    coefficient due to sampling variation. The "df" is the
+    Satterthwaite estimated degrees of freedom. As an estimate, it may
+    have decimals. The "t value" is the ratio of the coefficient to
+    its standard error, that is: $t = \frac{Estimate}{StdError}$. 
+	The "Pr(>|t|)" is the p-value, the probability that by chance
+    alone one would obtain as or a larger absolute t-value. The
+    vertical bars indicate absolute values and the "Pr" stands for
+    probability value. Note that `R` uses 
+	[scientific E notation](https://en.wikipedia.org/wiki/Scientific_notation).
+	The number following the "e" indicates how many places to the
+    right (if positive) or left (if negative) the decimal point should
+    be moved. For example, 0.001 could be written 1e-3. 0.00052 could
+    be written 5.2e-4. These often are used for p-values which may be
+    numbers very close to zero.
+	In *this* model, we can see that the fixed effect for the
+    intercept is `r fixef(ri.m)[["(Intercept)"]]` which is the like
+    the mean of the random intercept and tells us the average
+    level of positive affect, in this instance since there are no
+    other predictors in the model.
+
+Profile likelihood confidence intervals can be obtained using the 
+`confint()` function. These confidence intervals capture the
+uncertainty in parameter estimates for both the fixed and random
+effects due to sampling variation. They do not capture indivdiual
+differences directly. Note that you only get confidence intervals for
+random effects when using the profile method, not when
+`method = "Wald"` although the Wald method is much faster.
+
+```{r}
+
+ri.ci <- confint(ri.m, method = "profile", oldNames = FALSE)
+ri.ci
+
+```
+
+## Diagnostics and Checks
+
+Typical diagnostics and checks include checking for outliers,
+assessing whether the distributional assumptions are met, checking for
+homogeneity of variance and checking whether there is a linear
+association between predictors and outcome. With only an intercept,
+there is no need for checking whether a linear association is
+appropriate.
+
+First we check for outliers on the residuals and the random intercept.
+These plots show some extreme values on the residuals and are somewhat
+unclear on the random intercept. In this case, using the scaled
+pearson residuals, which are roughly like z scores, the size of the
+residual outliers are not too big as to likely be an issue,
+particularly as we have thousands of observations.
+
+```{r}
+
+res.d <- data.table(
+  Residuals = residuals(ri.m, type = "pearson", scaled=TRUE),
+  Yhat = fitted(ri.m))
+ran.d <- as.data.table(ranef(ri.m))
+
+ggplot(res.d, aes(Residuals)) +
+  geom_histogram(bins = 50) +
+  ggtitle("Histogram of residuals")
+
+ggplot(ran.d, aes(condval)) +
+  geom_histogram(bins = 30) +
+  ggtitle("Histogram of random intercept")
+
+``` 
+
+Next, we might check the distributional assumptions. We already have
+some information on this from the histograms, but QQ plots are helpful
+as well. The QQ plots indicate some non-normality, but it is not too
+extreme and probably close enough for inference.
+
+```{r}
+
+ggplot(res.d, aes(sample = Residuals)) +
+  stat_qq() + stat_qq_line() +
+  ggtitle("QQ Plot for Residual Normality")
+
+ggplot(ran.d, aes(sample = condval)) +
+  stat_qq() + stat_qq_line() +
+  ggtitle("QQ Plot for Random Intercept Normality")
+
+```
+
+Finally, we check the homogeneity of variance. The residuals show a
+characteristic banding when there are floor and ceiling effects. At
+low predicted values, positive affect cannot be any lower than 1, so
+you have small or positive residuals. At high predicted values,
+positive affect cannot be greater than 5 so you have small positive or
+negative residuals. This is responsible for the straight, angled lines
+at the extremes. Its not particularly clear whether the residual
+variance changes much across levels of the predited value (Yhat) so
+its not terrible evidence against homogeneity of variance. Unless easy
+alternatives were available (they are not) one would probably proceed.
+
+```{r}
+
+ggplot(res.d, aes(Yhat, Residuals)) +
+  geom_point(alpha = .1) +
+  ggtitle("Scatter plot for homogeneity of variance")
+
+```
+
+## Sample Write Up
+
+An intercept only linear mixed model was fit to 
+`r nobs(ri.m)` positive affect scores from 
+`r as.integer(ngrps(ri.m))` people. The intraclass correlation
+coefficient was 
+`r as.data.frame(VarCorr(ri.m))[1, "vcov"] / sum(as.data.frame(VarCorr(ri.m))[, "vcov"])` 
+indicating that about half of the total variance in positive affect
+was between people and the other half is within person due to
+fluctuations across days. The fixed effect intercept revealed that the
+average [95% CI] positive affect was 
+`r fixef(ri.m)[["(Intercept)"]]`
+`r sprintf("[%0.2f, %0.2f]", ri.ci[3, 1], ri.ci[3, 2])`.
+However, there were individual differences, with the standard
+deviation for the random intercept being
+`r as.data.frame(VarCorr(ri.m))[1, "sdcor"]`
+indicating that there are individual differences in the mean positive
+affect. Assuming the random intercepts follow a normal distribution,
+we expect most people to fall within one standard deviation of the
+mean, which in these data would be somewhere between:
+`r fixef(ri.m)[["(Intercept)"]] + c(-1, 1) *  as.data.frame(VarCorr(ri.m))[1, "sdcor"]`. 
+
+
+
+
+# Fixed Predictor LMM
+
+Following is an example of a LMM with fixed effects and a random
+intercept (no random slopes). Although we did not explicitly add a
+fixed effects intercept by adding `1` to the equation, it is there by
+default. We still have a random intercept.
+
+```{r}
+
+fp.m <- lmer(PosAff ~ STRESS + (1 | UserID),
+            data = d,
+            REML = TRUE)
+
+summary(fp.m)
+
+``` 
+
+There are four main "blocks" of output from the summary.
+
+1. A repetition of the model options, formula we used, and dataset
+   used. This is for records so you know exactly what the model was.
+   In *this* model, it shows use that we fit a LMM using restricted
+   maximum likelihood (REML) and that the degrees of freedom were
+   approximated using Satterthwaite's method. The outcome variable is
+   positive affect (`PosAff`) and stress is a predictor.
+   The REML criterion at convergence is kind of like the log
+   likelihood (LL), but unfortunately cannot be readily used to
+   compare across models as easily as the actual LL (e.g., in AIC or
+   BIC).
+2. Scaled Pearson residuals. These are raw residuals divided by the
+   estimated standard deviation, so that they can be roughly
+   interpretted as z-scores. The minimum and maximum are useful for 
+   identifying whether there are outliers present in the model
+   residuals.
+   In *this* model, we can see that the lowest residual is 
+   `r min(residuals(fp.m, type = "pearson", scaled=TRUE))` 
+   and the maximum residual is 
+   `r min(residuals(fp.m, type = "pearson", scaled=TRUE))`
+   which while a bit large, given there are thousands of observations
+   are not so extreme if interpretted as z-scores as to be
+   concerning. Absolute residuals of 10 or 20 would be large enough
+   that they are extremely unlikely by chance alone and likely
+   represent outliers. We can see there are some more extreme positive
+   than negative residuals. That means that predictions are sometimes
+   too (extremely) low rather than too (extremely) high.
+3. Random effects. These show a summary of the random effects in the
+   model. Random effects are basically always also fixed effects, so
+   the random effects only shows the standard deviation and variance
+   of random effects, plus, if applicable, their correlations. The
+   means are showon in the fixed effects section. In the case of a
+   model where the only random effect is the intercept, the
+   random effects show: (1) the random intercept and (2) the random
+   residual. We have both the standard deviation and variance of
+   both. 
+   In *this* model, the standard deviation of the random intercept, 
+   tells us that the average or typical difference between an
+   individual's estimated positive affect when stress is 0, 
+   and the population average estimated positive affect when stress is
+   0 is
+   `r as.data.frame(VarCorr(fp.m))[1, "sdcor"]`.
+   The standard deviation of the residuals
+   tells us that the average or typical difference between an
+   individual positive affect score and the predicted positive affect
+   score is
+   `r as.data.frame(VarCorr(fp.m))[2, "sdcor"]`.
+   The random effects section also tells us how many observations and
+   unique people/groups went into the analysis. 
+   In *this* model we can see that we had `r as.integer(ngrps(fp.m))` 
+   people providing `r nobs(fp.m)` unique observations.
+4.  Fixed effects. This section shows the fixed effects. It is a
+    table, where each row is for a different effect / predictor and
+    each column gives a different piece of information.
+	The "Estimate" is the actual parameter estimate (i.e., THE fixed
+    effect, the regression coefficient, etc.). The "Std. Error" is the
+    standard error of the estimate, which captures uncertainty in the
+    coefficient due to sampling variation. The "df" is the
+    Satterthwaite estimated degrees of freedom. As an estimate, it may
+    have decimals. The "t value" is the ratio of the coefficient to
+    its standard error, that is: $t = \frac{Estimate}{StdError}$. 
+	The "Pr(>|t|)" is the p-value, the probability that by chance
+    alone one would obtain as or a larger absolute t-value. The
+    vertical bars indicate absolute values and the "Pr" stands for
+    probability value. Note that `R` uses 
+	[scientific E notation](https://en.wikipedia.org/wiki/Scientific_notation).
+	The number following the "e" indicates how many places to the
+    right (if positive) or left (if negative) the decimal point should
+    be moved. For example, 0.001 could be written 1e-3. 0.00052 could
+    be written 5.2e-4. These often are used for p-values which may be
+    numbers very close to zero.
+	In *this* model, we can see that the fixed effect for the
+    intercept is `r fixef(fp.m)[["(Intercept)"]]` which is like
+    the mean of the random intercept and tells us the average
+    estimated positive affect score when stress = 0.
+	The fixed effect (regression coefficient) for STRESS is 
+	`r fixef(fp.m)[["STRESS"]]` which tells us how much on average
+    (fixed effect) lower positive affect is expected to be when stress
+    is one unit higher. 
+
+Profile likelihood confidence intervals can be obtained using the 
+`confint()` function. These confidence intervals capture the
+uncertainty in parameter estimates for both the fixed and random
+effects due to sampling variation. They do not capture indivdiual
+differences directly. Note that you only get confidence intervals for
+random effects when using the profile method, not when
+`method = "Wald"` although the Wald method is much faster.
+
+```{r}
+
+fp.ci <- confint(fp.m, method = "profile", oldNames = FALSE)
+fp.ci
+
+```
+
+## Diagnostics and Checks
+
+Typical diagnostics and checks include checking for outliers,
+assessing whether the distributional assumptions are met, checking for
+homogeneity of variance and checking whether there is a linear
+association between predictors and outcome. With only an intercept,
+there is no need for checking whether a linear association is
+appropriate.
+
+Since we can check whether there is a linear association of stress or
+not, it can be worth checking first. This is something of a chicken
+and egg situation, though, because a non-linear association can be
+driven by outliers, but poor normality or outliers on the residuals
+also can be driven by the wrong functional form. I normally begin by
+checking linearity / functional form.
+For model comparisons, we want `REML = FALSE` and fit
+consecutive models with increasingly complicated stress polynomials.
+Note that `poly()` does not allow missing values, so we need to
+address that. Its easiest to create a base model and then update.
+
+```{r}
+
+fp0.m <- lmer(PosAff ~ 1 + (1 | UserID),
+            data = d[!is.na(STRESS)],
+            REML = FALSE)
+
+fp1.m <- update(fp0.m, . ~ . + poly(STRESS, 1))
+fp2.m <- update(fp0.m, . ~ . + poly(STRESS, 2))
+fp3.m <- update(fp0.m, . ~ . + poly(STRESS, 3))
+fp4.m <- update(fp0.m, . ~ . + poly(STRESS, 4))
+
+AIC(fp0.m, fp1.m, fp2.m, fp3.m, fp4.m)
+BIC(fp0.m, fp1.m, fp2.m, fp3.m, fp4.m)
+
+``` 
+
+In *this* case, the model shows that `fp2.m` is the best based on BIC
+and is close but still best by AIC (for both AIC and BIC, lower values
+are better).  Let's look at another summary and confidence intervals.
+However, as REML estimates are less biased, for reporting, we might
+use those.
+
+```{r}
+
+fp2.m <- update(fp2.m, REML = TRUE)
+summary(fp2.m)
+
+fp2.ci <- confint(fp2.m, method = "profile", oldNames = FALSE)
+fp2.ci
+
+```` 
+
+Since a different model is "optimal", we will proceed with that for testing.
+We check for outliers on the residuals and the random intercept.
+These plots show some extreme values on the residuals and are somewhat
+unclear on the random intercept. In this case, using the scaled
+pearson residuals, which are roughly like z scores, the size of the
+residual outliers are not too big as to likely be an issue,
+particularly as we have thousands of observations. There is a small
+positive tail, which potentially we could seek to exclude or
+winsorize, but in this case I would not.
+
+```{r}
+
+res.d <- data.table(
+  Residuals = residuals(fp2.m, type = "pearson", scaled=TRUE),
+  Yhat = fitted(fp2.m))
+ran.d <- as.data.table(ranef(fp2.m))
+
+ggplot(res.d, aes(Residuals)) +
+  geom_histogram(bins = 50) +
+  ggtitle("Histogram of residuals")
+
+ggplot(ran.d, aes(condval)) +
+  geom_histogram(bins = 30) +
+  ggtitle("Histogram of random intercept")
+
+``` 
+
+Next, we might check the distributional assumptions. We already have
+some information on this from the histograms, but QQ plots are helpful
+as well. The QQ plots indicate only very modest non-normality, but it is not too
+extreme and probably close enough for inference.
+
+```{r}
+
+ggplot(res.d, aes(sample = Residuals)) +
+  stat_qq(alpha=.2) + stat_qq_line() +
+  ggtitle("QQ Plot for Residual Normality")
+
+ggplot(ran.d, aes(sample = condval)) +
+  stat_qq() + stat_qq_line() +
+  ggtitle("QQ Plot for Random Intercept Normality")
+
+```
+
+Finally, we check the homogeneity of variance. The residuals show a
+characteristic banding when there are floor and ceiling effects. At
+low predicted values (particularly below 1), positive affect cannot be
+any lower than 1, so you *must* have positive residuals. 
+At high predicted values,
+positive affect cannot be greater than 5 so you have small positive or
+negative residuals. This is responsible for the straight, angled lines
+at the extremes. Its not particularly clear whether the residual
+variance changes much across levels of the predited value (Yhat) so
+its not terrible evidence against homogeneity of variance. Unless easy
+alternatives were available (they are not) one would probably proceed.
+
+```{r}
+
+ggplot(res.d, aes(Yhat, Residuals)) +
+  geom_point(alpha = .1) +
+  ggtitle("Scatter plot for homogeneity of variance")
+
+```
+
+## Sample Write Up
+
+To examine the association of stress and positive affect, a linear
+mixed model was fit. As the nature of the stress and affect
+relationships was not known, we used the Bayesian Information
+Criterion (BIC) and Akaike Information Criterion (AIC) to compare
+models with orthogonal polynomials of stress with degrees 1 to 4. Both
+BIC and AIC pointed to the two degree polynomial as the best fit,
+indicating that there is a quadratic association between stress and
+positive affect. The final model included `r nobs(fp2.m)` positive
+affect scores from `r as.integer(ngrps(fp2.m))` people. 
+The fixed effect intercept revealed that the
+average [95% CI] positive affect when stress is 0 was 
+`r fixef(fp2.m)[["(Intercept)"]]`
+`r sprintf("[%0.2f, %0.2f]", fp2.ci[3, 1], fp2.ci[3, 2])`.
+However, there were individual differences, with the standard
+deviation for the random intercept being
+`r as.data.frame(VarCorr(fp2.m))[1, "sdcor"]`
+indicating that there are individual differences in the mean positive
+affect. Assuming the random intercepts follow a normal distribution,
+we expect most people to fall within one standard deviation of the
+mean, which in these data would be somewhere between:
+`r fixef(fp2.m)[["(Intercept)"]] + c(-1, 1) *  as.data.frame(VarCorr(fp2.m))[1, "sdcor"]`. 
+Using Satterthwaite's approximation for degrees of freedom revealed
+that both the linear and quadratic aspects of stress were
+statistically significantly associated with positive affect (both p <
+.001). As it is difficult to interpret coefficients from orthogonal
+polynomials, a graph showing average (fixed effect) association of
+stress with positive affect is shown below. The graph shows that
+higher stress is associated with lower positive affect scores. There
+is a slightly faster drop in positive affect when stress is low and it
+begins to plateau at higher levels of stress, although the difference
+across the observed range of stress (0 to 10) is modest.
+
+```{r}
+
+visreg(fp2.m, xvar = "STRESS",
+       partial = FALSE,
+       rug = FALSE,
+       xlab = "Stress scores",
+       ylab = "Predicted Positive Affect")
+
+```
+
+
+
+# Summary Table
+
+Here is a little summary of some of the functions used in this
+topic. 
+
+| Function       | What it does                                 |
+|----------------|----------------------------------------------|
+| `aggr()`     | Create  |
+| `marginplot()` | Create  | 

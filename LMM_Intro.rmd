@@ -1,0 +1,444 @@
+---
+title: "Linear Mixed Models (LMMs) - Introduction"
+author: "Joshua F. Wiley"
+date: "`r Sys.Date()`"
+output: 
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+---
+
+Download the raw `R` markdown code here
+[https://jwiley.github.io/MonashHonoursStatistics/LMM_Intro.rmd](https://jwiley.github.io/MonashHonoursStatistics/LMM_Intro.rmd).
+These are the `R` packages we will use.
+
+```{r setup}
+options(digits = 2)
+
+## new packages are lme4, lmerTest, and multilevelTools
+
+library(data.table)
+library(JWileymisc)
+library(lme4)
+library(lmerTest)
+library(multilevelTools)
+library(visreg)
+library(ggplot2)
+library(ggpubr)
+
+```
+
+# Revision to Prepare for Linear Mixed Models
+
+We can model a straight line (linear regression) as
+
+$$ y_i = b_0 + b_1 * x_i + \varepsilon_i $$
+
+where:
+
+- $y_i$ is the outcome variable for the *i*th person
+- $x_i$ is the predictor/explanatory variable value for the *i*th person
+- $\varepsilon$_i is the residual/error term, the difference between the 
+  observed outcome for the *i*th person and their predicted value from the model.
+- $b_0$ is the intercept, the expected (model predicted) value of $y$
+  when $x = 0$, written, $E(Y | x = 0)$
+- $b_1$ is the slope of the line, and captures how much $y$ is
+  expected to change for a one unit change in $x$.
+
+In `R` we can write the linear regression model
+
+$$ y_i = b_0 + b_1 * x_i + \varepsilon_i $$
+
+as follows:
+
+```
+
+lm(y ~ 1 + x, data = your_dataset)
+
+
+``` 
+
+The `lm` stands for a **l**inear **m**odel. $y$ is the outcome. 
+The tilde (~) separates the outcome from the predictors.
+The predictors are $1$ and $x$. One is a constant, which 
+captures the intercept, $b_0$. 
+$x$ is whatever our predictor/explanatory variable is.
+We specify the dataset so `R` knows where to find the variables.
+
+Here is a specific example estimated in `R` using the built in 
+`mtcars` dataset which has data on the horsepower `hp` and 
+miles per gallon `mpg` of 32 difference cars. 
+We predict `hp` from an intercept and `mpg` and 
+get a model summary.
+
+```{r}
+
+m <- lm(hp ~ 1 + mpg, data = mtcars)
+summary(m)
+
+``` 
+
+Visually, we can represent the regression as a straight line 
+where the slope is the coefficient for `mpg`, $b_1$, and the 
+intercept, $b_0$ is the expected `hp` when `mpg` is 0.
+We can see the largest residual here: its the point the furthest
+from the regression line.
+
+```{r, echo = FALSE, fig.cap = "Graph showing regression of hp on mpg with linear regression line and the maximum residual from the regression line."}
+
+ggplot(mtcars, aes(mpg, hp)) +
+  geom_point(size = 3, colour = "grey") +  
+  stat_smooth(method = "lm", formula = y ~ x, size = 1.5) +
+  theme_pubr() +
+  annotate("text", x = 16, y = max(mtcars$hp),
+           label = "max residual = 143.4", hjust = 0) 
+
+``` 
+
+In linear regression, we can conduct statistical inference as
+
+$$ \frac{b}{se} \sim \mathcal{t}(df = N - k) $$
+
+where:
+
+- $b$ = regression coefficient
+- $se$ = standard error
+- $N$ = total sample size
+- $k$ = number of parameters estimates
+- $\mathcal{t}$ is the t-distribution on $df$ degrees of freedom
+
+This approach allows us to calculate p-values and confidence intervals.
+To see what the $t$ distribution looks like for various degrees of 
+freedom and how these impact p-values, look at this demonstration: 
+https://rpsychologist.com/d3/tdist/ 
+
+Linear regression **assumes** that observations are independent of each 
+other. However, this is not always the case. **linear mixed models** are 
+an approach to regression that allows us to relax the assumption that 
+our observations are independent.
+
+# Linear Mixed Models (LMMs) - Introduction
+
+Often, observations are not independent.
+For example:
+
+
+- Repeated measures data, such as in longitudinal studies; 
+  repeated measures experiments, where observations are clustered 
+  within people
+- When individuals are clustered or grouped, such as people within 
+  families, schools, companies, resulting in clustering within the 
+  higher order unit
+
+Clustered data versus repeated measures or longitudinal data may 
+seem quite different, but from a statistical perspective, they 
+post may of the same challenges that are solved in basically the same 
+ways. We will focus on repeated measures for now, but note the 
+statistical methods apply to both contexts.
+
+Here is some hypothetical data on a few people where systolic blood 
+pressure (SBP) was measured at three time points:
+
+| ID | SBP1 | SBP2 | SBP3 |
+|----|------|------|------|
+| 1  | 135  | 130  | 125  |
+| 2  | 120  | 125  | 121  |
+| 3  | 121  | 125  | .    |
+
+This data is stored in "wide" format. That is each repeated 
+measure is stored as a separate variable. For LMMs, we typically 
+want data in a long format, like this
+
+| ID | Time | SBP |
+|----|------|-----|
+| 1  | 1    | 135 |
+| 1  | 2    | 130 |
+| 1  | 3    | 125 |
+| 2  | 1    | 120 |
+| 2  | 2    | 125 |
+| 2  | 3    | 121 |
+| 3  | 1    | 121 |
+| 3  | 2    | 125 |
+
+in a long format, data are stored with each measure in one variable
+and an additional variable to indicate the time point or 
+which specific assessment is being examined.
+In long format, multiple rows may belong to any single unit.
+Not all units (here IDs) have to have the same number of rows.
+For example some people like ID3 may have missed a time point.
+With clustered data, you could have a large or small school with 
+a different number of students (where student is the repeated measure 
+within school rather than time points within a person).
+The `reshape()` function in `R` can be used to reshape data in 
+a wide format to a long format or from a long format to a wide format.
+See the "Working with Data" topic for examples and details
+[http://joshuawiley.com/MonashHonoursStatistics/WorkData.html#reshaping-data](http://joshuawiley.com/MonashHonoursStatistics/WorkData.html#reshaping-data).
+
+Regardless of wide or long format, these data are clearly not 
+independent. The different blood pressure readings within a 
+person are likely more related to each other than to blood pressure 
+readings from a different person.
+
+
+
+
+
+```{r, fig.height = 10, fig.width = 7, fig.cap = "Example showing the difference between high and low between person variance in data."}
+
+set.seed(1234)
+ex.data.1 <- data.table(
+  ID = factor(rep(1:4, each = 10)),
+  time = rep(1:10, times = 4),
+  y = rnorm(40, rep(1:4, each = 10), .2))
+
+ex.data.2 <- data.table(
+  ID = factor(rep(1:4, each = 10)),
+  time = rep(1:10, times = 4),
+  y = rnorm(40, 2.5, 1))
+
+ggarrange(
+  set_palette(ggplot(ex.data.1,
+         aes(time, y, colour = ID, shape = ID)) +
+  stat_smooth(method = "lm", formula = y ~ 1, se=FALSE) +
+  geom_point() +
+  theme_pubr(), "jco"),
+  set_palette(ggplot(ex.data.2,
+         aes(time, y, colour = ID, shape = ID)) +
+  stat_smooth(method = "lm", formula = y ~ 1, se=FALSE) +
+  geom_point() +
+  theme_pubr(), "jco"),
+  ncol = 1,
+  labels = c("High Variance", "Low Variance"))
+
+```
+
+# Data Cleaning
+
+A common data cleaning task is to identify and address extreme values.
+In multilevel / repeated measures data, extreme values may exist at
+the between person level (i.e., a person who is relatively extreme
+compared to other people) or at the within person level (i.e., an
+assessment that is relatively extreme for that person).
+
+## Between Person Cleaning
+
+First we will look at the between person level. To do this, we need to
+create between person variables and then make sure we only have one
+row per person.
+
+```{r}
+
+## make averages
+d[, MeanStress := mean(STRESS, na.rm=TRUE), by = UserID]
+## between person dataset (one row per person)
+d.b <- d[!duplicated(UserID)]
+
+```
+
+Now we can process these between person data as any other dataset. One
+way to look for outliers is using z scores and histograms.
+We can create z scores in `R` using the `scale()` function which can
+scale variables to have mean 0 and standard deviation 1 by default or
+scale to any other values as desired.
+We can see the maximum z score and the graph also suggests that one
+person is a bit extreme with an average stress score above 6.
+
+```{r}
+
+d.b[, ZStress := scale(MeanStress)]
+
+## summary of the data including min and max
+summary(d.b$ZStress)
+
+ggplot(d.b, aes(MeanStress)) +  
+  geom_histogram(bins = 20)
+
+```
+
+One option for extreme values is to winsorize them. Winsorizing
+basically involves setting a cutoff and then setting any scores above
+that cutoff at the cutoff or just slightly above it.
+Sometimes, people use z-scores to determine cut offs. However, these
+are themselves very sensitive to outliers. Percentiles tend to work
+better as they are not influenced by the presence of outliers.
+We can find percentiles in `R` using the `quantile()` function.
+For balance, it is important to winsorize both the top and bottom
+equally. Below we look at the extremes (0th and 100th percentiles),
+1st and 99th percentiles, and median (50th percentile).
+
+```{r} 
+
+quantile(d.b$MeanStress,
+         probs = c(0, .01, .5, .99, 1),
+         na.rm = TRUE)
+
+```
+
+Suppose we wanted to winsorize the top and bottom 1 percent.
+We do it by selecting the extreme rows and altering just those
+values. Remaking the histogram we can see that the most extreme values
+have been pulled in slightly. We can also convert to z-scores again
+using `scale()` now that extreme values have been pulled in and
+summarize. Now the maximum is under 3 as well. Not required, but
+showing the extremes have been reduced.
+
+```{r}
+
+d.b[MeanStress < 0.21, MeanStress := 0.21]
+d.b[MeanStress > 6.31, MeanStress := 6.31]
+
+ggplot(d.b, aes(MeanStress)) +  
+  geom_histogram(bins = 20)
+
+summary(scale(d.b$MeanStress))
+
+```
+
+## Wihin Person Cleaning
+
+Cleaning at the within person level is a bit more complex. First, we
+might create within person z scores. These are made by subtracting
+individuals' own means and dividing by individuals' own standard
+deviations, as different people might be more or less variable.
+Then we can make a summary and histogram. There are some extreme and
+rare values at the tails that we might want to pull in.
+
+```{r}
+
+d[, WZStress := scale(STRESS), by = UserID]
+
+summary(d$WZStress)
+
+ggplot(d, aes(WZStress)) +
+  geom_histogram(bins = 50)
+
+```
+
+Winsorizing at the within level requires different values be applied
+to each person. To do this, we create new variables for each person.
+
+```{r}
+
+d[, LLStress := quantile(STRESS, probs = .05, na.rm = TRUE),
+  by = UserID]
+d[, ULStress := quantile(STRESS, probs = .95, na.rm = TRUE),
+  by = UserID]
+
+```
+
+Now we can select any rows that exceed these values for each person,
+and set to their own person value. In this case, we will be
+winsorizing the top and bottom 5 percent for each person. The reason for
+choosing a higher value is that since each person only has on average
+about 30 observations, the 1st and 99th percentiles will be the
+extremes anyway. 
+Afterward, we must again re-make the z-zscores and check the
+distribution.
+
+```{r}
+
+d[, StressClean := STRESS]
+d[STRESS < LLStress, StressClean := LLStress]
+d[STRESS > ULStress, StressClean := ULStress]
+
+d[, WZStressClean := scale(StressClean), by = UserID]
+
+summary(d$WZStressClean)
+
+ggplot(d, aes(WZStressClean)) +
+  geom_histogram(bins = 50)
+
+```
+
+Even though we checked the between person level first. In general, it
+is better to clean the within person level first, because outliers on
+an individual assessment will bias the average for a person (i.e., the
+between person level).
+
+## Cleaning You Try It (Workbook)
+
+Try to clean the within and between level of Negative Affect. Try
+these steps, as we did above.
+
+- Calculate and plot individual within person z scores for Negative
+  Affect (`NegAff`).
+- Winsorize at the within person level and then re-calculate and plot
+  within person z scores for Negative Affect
+- Calculate average Negative Affect (make sure to use the "clean"
+  version). Create a between person dataset with only one row per
+  person. Examine whether there are between person outliers on
+  negative affect, and if so, winsorize. Then check whether
+  winsorizing at the percentile you chose was enough to remove
+  apparent extreme values.
+  
+```{r trycleaning, error=TRUE}
+
+## within person 
+
+d[,  := scale(   ), by = UserID]
+
+summary(d$   )
+
+ggplot(d, aes(   )) +
+  geom_histogram(bins = 50)
+
+d[,   := quantile(   , probs = .05, na.rm = TRUE),
+  by = UserID]
+d[,    := quantile(   , probs = .95, na.rm = TRUE),
+  by = UserID]
+
+d[, Clean :=   ]
+d[   <   , Clean :=   ]
+d[   >   , Clean :=   ]
+
+d[, WZClean := scale(   ), by = UserID]
+
+summary(d$    )
+
+ggplot(d, aes(    )) +
+  geom_histogram(bins = 50)
+
+
+## between person
+
+## make averages
+d[,     := mean(   , na.rm=TRUE), by = UserID]
+
+## between person dataset (one row per person)
+d.b <- d[!duplicated(UserID)]
+
+d.b[,      := scale(    )]
+
+## summary of the data including min and max
+summary(d.b$   )
+
+ggplot(d.b, aes(   )) +  
+  geom_histogram(bins = 20)
+
+
+quantile(d.b$,
+         probs = c(0, .01, .5, .99, 1),
+         na.rm = TRUE)
+
+d.b[    <   ,     :=   ]
+d.b[    >   ,     :=   ]
+
+ggplot(d.b, aes(    )) +  
+  geom_histogram(bins = 20)
+
+summary(scale(d.b$    ))
+
+```
+
+
+
+# Summary Table
+
+Here is a little summary of some of the functions used in this
+topic. 
+
+| Function       | What it does                                 |
+|----------------|----------------------------------------------|
+| `aggr()`     | Create  |
+| `marginplot()` | Create  | 
+
