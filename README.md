@@ -45,13 +45,13 @@ are changed.
   Please see the [Content](GLM1.html).
   
 - **Week 5** *Generalized Linear Models (Part 2)*.
-  <!-- Please see the [Lecture Content](Data_Pt2.html). -->
-
+  Please see the [Content](GLM2.html).
+  
 - **Week 6** *Visualizing Data (Part 2)*. 
-  <!-- Please see the [Lecture Content](Graphs_Pt2.html). -->
+  Please see the [Content](DataViz2.html).
 
 - **Week 7** *Missing Data*.
-  <!-- Please see the [Lecture Content](Data_Missing.html). -->
+  Please see the [Content](MissingData.html).
 
 - **Week 8** *Introduction to Linear Mixed Models (LMMs)*.
   <!-- Please see the page [LMM Pt1](LMM_Pt1.md). -->
