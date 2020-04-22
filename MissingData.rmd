@@ -1,0 +1,748 @@
+---
+title: "Missing Data"
+author: "Joshua F. Wiley"
+date: "`r Sys.Date()`"
+output: 
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+---
+
+Download the raw `R` markdown code here
+[https://jwiley.github.io/MonashHonoursStatistics/MissingData.rmd](https://jwiley.github.io/MonashHonoursStatistics/MissingData.rmd).
+
+
+```{r setup}
+options(digits = 2)
+
+## There are two new packages: (1) mice (2) VIM
+## both are used for missing data.
+
+## some people have reported also needing the zip pkg
+# install.packages("zip") before the other packages install correctly
+
+library(data.table)
+library(JWileymisc)
+library(mice)
+library(VIM)
+library(ggplot2)
+
+```
+
+# Missing Data:  Multiple Imputation
+
+Missing data are very common, but also problematic
+
+- Results from the non-missing data may be biased
+- Missing data cause a loss of efficiency
+
+The easiest approach to "address" missing data is to only analyse
+complete cases (i.e., list-wise deletion). This often leads to
+inefficiency (e.g., discarding data on X and Z because observation on
+variable Y are missing). Also, list wise deletion may bias results
+unless the data are missing completely at random (MCAR).
+
+Missing data often are classified:
+
+- Missing completely at random (MCAR) when the missingness mechanism
+is completely independent of the estimate of our parameter(s) of
+interest.
+- Missing at random (MAR) when the missingness mechanism is
+*conditionally* independent of the estimate of our parameter(s) of
+interest
+- Missing not at random (MNAR) when the missingness mechanism is
+associated with the estimate of our parameter(s) of interest
+
+**When data are missing completely at random (MCAR)**, listwise
+deletion will yield unbiased estimates of the true parameter(s) if the
+data had not been missing.
+
+**When data are missing at random (MAR)**, 
+it is possible to recover unbiased
+estimates if the right other variables are present. Our lecture
+example is an example of MAR. When people had high stress, we set
+their positive affect values to missing. So the missing data
+mechanism was stress. Now, because stress and positive affect were
+correlated, low positive affect values were more likely to be
+missing. Thus, the complete cases only provide a biased
+sample. However, we DID have stress measured, and this was
+actually the cause of the missingness. So, if we condition on
+stress, we can obtain unbiased results for positive affect. This
+is MAR. The data are biased if using complete cases, but there
+exists some other or combination of other variables that, if
+conditioned correctly on, can recover unbiased estimates from the
+data despite missingness. 
+
+
+**When data are missing not at random (MNAR)**, 
+you cannot recover unbiased estimates. 
+A simple example of this would be if less happy people
+were more likely to be missing. So rather than stress driving
+missingness, its actually the positive affect scores driving
+missingness on positive affect. The data we would need to recover
+unbiased estimates (positive affect) is then itself missing and so
+we have no ability to adjust for it. We often talk about this
+based on whether the parameter(s) we are interested in estimating
+are also causes (or not) of the missingness. If mean positive
+affect is a cause of missingness, then mean positive affect will
+be MNAR. If mean stress is a cause of missingness on mean positive
+affect and we have stress, then mean positive affect will be
+MAR. If age is a cause of missingness on positive affect BUT mean
+age is unrelated to mean positive affect, mean positive affect is
+MCAR because even though data are systematically missing, for the
+parameter we care about (mean positive affect) it is completely
+random relative to the missingness. 
+
+Our parameters may be anything, such as a mean, a standard deviation,
+a regression coefficient, etc. We will explore **multiple imputation
+(MI)** as one robust way to address missing data.
+
+## Multiple Imputation (MI) Theory
+
+Multiple imputation is one robust way to address missing data. It
+involves generate multiple, different datasets where in each one,
+different, plausible values are imputed for the missing data,
+resulting in each imputed dataset have "complete" data since missing
+data are filled in by predictions.
+
+As the problem with missing data is very generic and impacts every
+statistic, even the most basic decriptive statistics, we need a
+general language for talking about it.
+
+- Let $Q$ be some population value (e.g., a mean, a regression
+  coefficient).
+- Let $\hat{Q}$ be an estimate of $Q$ with some estimate of
+  uncertainty due to sampling variation, calculated typically in each
+  imputed dataset.
+- Let $\bar{Q}$ be the average of a set of estimates, $\hat{Q}$ across
+  different imputed datasets, with some estimate of uncertainty both
+  due to sampling variation impacting $\hat{Q}$ and missing data
+  uncertainty (causing variation in $\hat{Q}$ from one imputed dataset
+  to the next.
+
+We will not discuss how to estimate $\hat{Q}$ as this is specific to
+the analysis being performed (e.g., mean, regression coefficient, mean
+difference from t-test, etc.). It does not really matter for the
+purpose of MI. All we need is an estimate and (valid) standard error.
+
+The general steps in MI are as follows:
+
+1. Start with the incomplete data (the raw dataset with missing
+   data).
+2. Generate $m$ datasets with no missingness, by filling in *different*
+   plausible values for any missing data. We will discuss this more
+   later.
+3. Perform the analysis of interest on **each** imputed dataset. That
+   is, the analysis of interest is repeated $m$ times. This generates
+   $m$ different $\hat{Q}$ estimates and associated standard errors.
+4. Pool the results from the analyses run on each imputed dataset to
+   generate an overall estimate, $\bar{Q}$.
+
+
+Previously in statistics, we have grown accustomed to reporting
+$\hat{Q}$, whether that be a mean, correlation, regression
+coefficient, or any other statistic of interest. With missing data
+addressed using MI, we instead report $\bar{Q}$, which is defined as:
+
+$$ \bar{Q} = \frac{1}{m}\sum_{i = 1}^{m}\hat{Q}_{i} $$
+
+This is simply the average of the $\hat{Q}$ estimates from each
+individual imputed dataset. What is more unique and forms an important
+difference between multiple imputation and other simpler methods
+(e.g., single mean imputation) is the variance estimate.
+
+Let $\hat{V}_{i}$ be the variance estimate (e.g., squared standard
+error) for the $ith$ imputed dataset for $\hat{Q}_{i}$. Then:
+
+$$ \bar{V} = \frac{1}{m}\sum_{i = 1}^{m}\hat{V}_{i} $$
+
+$\bar{V}$ is the average uncertainty estimate of $\hat{Q}$ across the
+multiply imputed datasets.
+
+However, there is another source of uncertainty in our estimate of 
+$\bar{Q}$. The between imputed dataset variation, which is:
+
+$$ B = \frac{1}{m - 1}\sum_{i = 1}^{m}(\hat{Q}_{i} - \bar{Q})^2 $$
+
+$B$ captures the variance in the estimates, $\hat{Q}$. Because the
+observed, non-missing data never change from one imputed dataset to
+another, the only reason that $\hat{Q}$ will change is when the
+plausible values imputed for the missing data change. Thus $B$ is an
+estimate of the uncertainty in $\bar{Q}$ due to missing data.
+
+Finally, for practical reasons we do not generate an infinite number
+of imputed datasets. We could simply continue multiply imputing more
+datasets, but this takes additional time. Because of this we do not
+have the *population* of imputed datasets, instead we have a (random)
+sample of all possible multiply imputed datasets. This results in some
+simulation error which is added to the uncertainty in our $\bar{Q}$
+estimate. Specifically, this uncertainty is:
+
+$$\frac{B}{m}$$
+
+Now we finally have all the pieces to determine what the total
+uncertainty in our average estimate, $\bar{Q}$ is:
+
+$$T = \bar{V} + B + \frac{B}{m}$$
+
+Practically, this can be thought of as: the uncertainty in the
+estimate of our statistic of interest from multiply imputed data,
+$\bar{Q}$ is due to: (1) sampling variation $\bar{V}$, (2) uncertainty
+in how we imputed the missing data $B$, and (3) uncertainty because we
+did not generate an infinite number of imputed datasets,
+$\frac{B}{m}$. One implication is that we can reduce the uncertainty
+somewhat, simply by generating more imputed datasets. However, this
+yields diminishing returns and slows analysis (remember, the analysis
+of interest must be run separately **on each imputed dataset**.  100
+imputed datasets would mean running an analysis 100 times, which takes
+more than running it for, say, 20 imputed datasets. In most cases,
+with modern computers, people recommend 25 - 100 imputed datasets now.
+
+## Multiple Imputation Steps
+
+The general process to generate multiply imputed using a robust
+approach: fully conditional specification (FCS) or multiple imputation
+through chained equations (mice) is:
+
+1. Start with a raw dataset with missing data
+2. Fill in the missing data values with **initial** estimates. 
+*The first "fill in" estimates are generally fast and easy
+to generate. For example, fill in missing using the median for each
+variable or even random numbers within the observed data range.*
+3. For each variable that has missing data, build a prediction model
+from other variables.
+*Typically, all other variables in the dataset
+being imputed are used in the prediction model, but it is possible to
+use a subset. The most common case is to use Generalized Linear Models
+(GLMs) as the prediction model, so linear regression for continuous
+outcomes, logistic regression for binary outcomes, etc. However, any
+prediction model can be used, including more complex methods such as
+machine learning.*
+4. Use the model to predict the missing data.
+*At this step, the average / best prediction from the
+model is used without capturing uncertainty. That is because this is
+the dataset used to build the "final" model for actually imputing the
+missing data. While we want uncertainty in our imputations, we do not
+want the uncertainty in the data used to build the imputation model.*
+5. Repeat steps 2 and 3 until the predicted complete dataset does not
+vary within some tolerance from one iteration to the next, indicating
+convergence.
+
+These steps may be easier to understand with a concrete example. Here
+we setup a small dataset with age and inflammation.
+
+```{r}
+set.seed(12345)
+x <- data.frame(Age = sort(round(runif(10, 30, 65))))
+x$Inflammation <-  rnorm(10, x$Age/10, sd = .2)
+x$Missing <- as.logical(rep(FALSE:TRUE, c(9, 1)))
+
+scatterp <- ggplot(x, aes(Age, Inflammation)) +
+    stat_smooth(method = "lm", formula = y ~ x, se=FALSE) + 
+    geom_point(aes(colour = Missing, size = Missing)) +
+    theme_classic() + theme(legend.position = c(.8, .2))
+
+print(scatterp)
+
+## create a missing dataset
+y <- x
+y$Inflammation[y$Missing] <- NA
+
+```
+
+Here is a for loop that iterates through filling in missing values,
+first using the median and then based on linear regression.
+The graphs following show the scatter plots with the filled in missing
+value at the first iteration and then later iterations.
+Watch how the imputed missing value changes from one iteration to the
+next and how with later iterations, the amount of change gets
+smaller and smaller.
+
+The goal behind iterating is to build a prediction
+model to impute the missing data. However, building that model in
+the first place is difficult when the data on which the model
+would be built are (partially) missing. To deal with this, we
+iterate between predicting the missing data and (re)building a
+model on the new dataset, now that missingness has been imputed.
+Multiple iterations are required because every time we generate new
+predictions to fill in the missing data, the dataset on which the
+prediction model was built changes, so we must rebuild the
+prediction model using the latest iteration of the dataset. This
+process is repeated until the change from one iteration to the
+next is very small. At that point, we say the results have
+**converged**.
+
+```{r, fig.show = "animate", animation.hook="gifski", warning = FALSE, message = FALSE}
+
+## create an imputed dataset
+yimp <- y
+p <- vector("list", length = 10)
+imps <- vector("numeric", length = 10)
+
+for (i in 1:10) {
+  if (i == 1) {
+    imps[i] <- median(y$Inflammation, na.rm = TRUE)
+  } else if (i > 1) {
+    m <- lm(Inflammation ~ Age, data = yimp)
+    imps[i] <- fitted(m)[yimp$Missing]
+  }
+  yimp$Inflammation[yimp$Missing == TRUE] <- imps[i]
+  p[[i]] <- scatterp %+% yimp + ggtitle(sprintf("Iteration = %d", i))
+  if (i > 4) {
+    p[[i]] <- p[[i]] + coord_cartesian(xlim = c(55, 66), ylim = c(5.4, 7), expand=FALSE)
+  }
+  print(p[[i]])
+}
+
+```
+
+We can print out the imputed values too and see how those change. This
+highlights how over iterations, there are big changes at first, and
+with more iterations the changes are smaller and smaller. This is what
+is meant by convergence where you converge to a final, stable value.
+We could keep going by at some point we are close enough, we can stop.
+We might decide,say, that once it does not change beyond the 2nd
+decimal place, we stop.
+
+```{r}
+
+print(imps, digits = 5)
+
+```
+
+This gets us through Steps 2 to 5. The final step is to use those
+final models to impute missing data,
+generating the desired number of imputed datasets (e.g., 100).
+
+This can be a rather complex step. Generating the
+average prediction from, say, a linear regression is straight
+forward. However, that average prediction does not take into account
+that the linear regression model is uncertain in its prediction. To
+take uncertainty into account, from parametric models like linear
+regression, we draw random values from the predicted distribution. In
+the case of linear regression that is: a normal distribution with mean
+equal to the average prediction and standard deviation equal to the
+residual standard deviation. This both takes the model into account
+but also by using the residual standard deviation and drawing random
+numbers, we ensure that when generating multiple imputed datasets, we
+don't pretend we can fill in missing data values perfectly. We fill
+them in with some error / uncertainty, which is important for the MI
+to generate accurate standard errors, confidence intervals and
+p-values. For non-parametric models, such as random forest machine
+learning  models, we do not have an assumed distribution so we cannot
+draw random values from a distribution with some mean and standard
+deviation estimate. Instead, uncertainty in predictions must be
+captured in other ways, such as via bootstrapping. However, the
+details of this are beyond the scope of this lecture. Finally, when
+doing Bayesian modeling, the predicted values for missing data are
+very easily drawn from the posterior distribution. A fact that means
+its fairly common for MI to be implemented within a Bayesian
+framework, even if behind the scenes.
+
+Often, the prediction models are generalized linear models (GLMs),
+such as linear regression. GLMs are familiar and fast, but there are
+drawbacks.
+
+- GLMs assume linear relationships on the scale of the link
+function. This can be problematic for MI as if you are imputing, say,
+50 variables it is very time consuming to manually check whether the
+assumption is met.
+- GLMs only include interactions between variables when specified by
+the analyst. Often, analysts do not know which variables should
+interact. If there are, say, 50 variables, the possible number of
+interactions is overwhelming.
+- In small datasets (e.g., 100 people) it is easily possible there may
+be more variables then people. GLMs require that the sample size be
+larger then the number of predictors, making them a poor choice for MI
+in these cases.
+
+We do not discuss it here, but many of these limitations can be
+addressed using alternate prediction models, especially in machine
+learning.
+
+Once multiple imputed datasets are generated, the previously discussed
+steps are performed. The analysis of interest is run on each dataset
+to generate estimates for the parameters of interest, $\hat{Q}$ and
+standard errors and these are combined (pooled) to generate an overall
+estimate and an uncertainty estimate that accounts for sampling
+variation, missing data uncertainty, and simulation error from finite
+number of imputed datasets. These are then reported as usual
+(estimate, standard error, confidence interval, p-value, etc.).
+
+## MI in `R` 
+
+Before we can try MI in `R` we need to make a dataset with missing
+values. It is possible to do multilevel imputation, but it is more
+complicated and outside the scope of this lecture.
+To begin with, we will make a single level dataset. For the sake of
+example, we will take only complete data and then add missing data
+ourselves. This allows us to compare different approaches with the
+"truth" from the non-missing data.
+
+The code below is not important to understand. It just creates three
+datasets:
+
+1. The raw daily diary dataset we've worked with
+2. A complete case, between person dataset with no missing values.
+3. A between person dataset with missing values
+
+```{r}
+
+## read in the dataset
+data(aces_daily)
+d <- as.data.table(aces_daily)
+
+## between person data, no missing
+davg <- na.omit(d[, .(
+  Female = factor(na.omit(Female)[1], levels = 0:1),
+  Age = na.omit(Age)[1],
+  STRESS = mean(STRESS, na.rm = TRUE),
+  PosAff = mean(PosAff, na.rm = TRUE),
+  NegAff = mean(NegAff, na.rm = TRUE)),
+  by = UserID])
+
+## create missing data
+davgmiss <- copy(davg)
+davgmiss[STRESS < 1, NegAff := NA]
+davgmiss[STRESS > 4, PosAff := NA]
+## random missingness on age and Female
+set.seed(1234)
+davgmiss[rbinom(.N, size = 1, prob = .1) == 1, Age := NA_real_]
+davgmiss[rbinom(.N, size = 1, prob = .05) == 1, Female := NA]
+
+## drop unneeded variables to make analysis easier
+davgmiss[, UserID := NULL]
+
+```
+
+Before doing any imputation, it is a good idea to examine data. The
+`VIM` package in `R` has helpful functions for exploring missing
+data. We start by looking at the amount missing on each variable and
+the patterns of missing data using the `aggr()` function. This shows
+us that just over half of cases have complete data on all 
+variables.
+
+The left hand side of this missing data plot shows the 
+proportion of missing data on each individual variable. Variables
+where the bars have no height are variables with no (or very nearly
+no) missing data. Variables with higher bars have a greater proportion
+of missing observations on that variable. 
+The right hand side shows different patterns of missing data. Blue
+indicates present data. Red indicates missing data. About 52% of
+people have all variables present. The next most common pattern is to
+have all variables present but be missing just negative affect, with
+about 17% of people. The next most common pattern is having all
+variable but to be missing positive affect, with about 13% of people.
+Identifying the patterns of missing data can be useful for identifying
+whether there is enough overlap of relevant variables to predict
+missingness and to identify if there are any unexpected patterns that
+might indicate problems with the data.
+
+```{r}
+
+aggr(davgmiss, prop = TRUE,
+     numbers = TRUE)
+
+```
+
+A margin plot is an augmented scatter plot that in the margins shows
+the values on one variable when missing on the other along with a
+boxplot. This shows us that when negative affect is missing, stress
+scores are all low between 0 and 1. There are no missing stress scores
+so there is only one boxplot for negative affect.
+
+The margin plot starts with a scatter plot. Blue dots
+are observed data. Red dots are imputed data. The values of these can
+help to see if imputations fall outside the range of observed data,
+fit with the rest of the trend from the observed data or identify any
+other potential issues. Outside the scatter plot are up to two
+boxplots on each axis. Examining the x axis, here STRESS, the blue
+boxplot shows the distribution of stress when negative affect (the y
+axis) is not missing. The red boxplot shows the distribution of stress
+when negative affect (the y axis) **is** missing. These boxplots make
+it clear that the distribution of stress is very different when
+negative affect is missing or not. On the y axis, there is only a blue
+boxplot, because no stress values are missing. Thus there can only be
+the observed distribution of negative affect when stress is present.
+
+```{r}
+
+marginplot(davgmiss[,.(STRESS, NegAff)])
+
+``` 
+
+We can test whether levels of one variable differ by missing on
+another variable. This is often done with simple analyses, like
+t-tests or chi-square tests.
+
+These tests tell us whether values on one variable
+differ systematically when another variable is missing or present. For
+example, do mean stress levels differ between people who are missing
+negative affect versus people who are not missing negative affect?
+These results can help to identify factors that may be relevant to
+*why* people have missing data. Any variable that is related is worth
+considering as a candidate variable to be included in any missing data
+model (e.g., multiple imputation) even if you do not care about it for
+your research question. These tests do not necessarily indicate
+whether the data are MCAR, MAR, or MNAR.
+
+```{r}
+
+## does stress differ by missing on negative affect?
+t.test(STRESS ~ is.na(NegAff), data = davgmiss)
+
+## does stress differ by missing on positive affect?
+t.test(STRESS ~ is.na(PosAff), data = davgmiss)
+
+## does age differ by missing on negative affect?
+t.test(Age ~ is.na(NegAff), data = davgmiss)
+
+## does age differ by missing on positive affect?
+t.test(Age ~ is.na(PosAff), data = davgmiss)
+
+chisq.test(davgmiss$Female, is.na(davgmiss$PosAff))
+chisq.test(davgmiss$Female, is.na(davgmiss$NegAff))
+
+```
+
+Actually conducting MI in `R` is relatively straight forward. A very
+flexible, robust approach is available using the `mice` package and
+the `mice()` function. You can control almost every aspect of the MI
+in `mice()` but you also can use defaults.
+
+`mice()` takes a dataset, the number of imputed datasets to generate,
+the number of iterations, the random seed (make it reproducible) and
+default imputation methods. The defaults are fine, but you can change
+default imputation methods. Below we ask for all GLMs:
+
+1. "norm" which is linear regression for numeric data
+2. "logreg" which is logistic regression for factor data with 2 levels
+3. "polyreg" which is polytomous or multinomial regression for
+   unordered factor data with 3+ levels
+4. "polr" ordered logistic regression for factor data with 3+ ordered
+   levels
+
+`R` will do the steps discussed to then generate imputed datasets.
+We plot them to see if there is evidence of convergence. From 3
+iterations, it may be too few to see evidence of convergence.
+
+```{r}
+
+mi.1 <- mice(
+  davgmiss,
+  m = 5,   maxit = 3,
+  defaultMethod = c("norm", "logreg", "polyreg", "polr"),
+  seed = 1234, printFlag = FALSE)
+
+## plot convergence diagnostics
+plot(mi.1, PosAff + NegAff + Female ~ .it | .ms)
+
+```
+
+If we are not convinced the model converged, re-run with more
+iterations. Convergence is when there is no clear systematic change
+with additional iterations.
+
+The convergence diagnostics show estimated values of
+descriptive statistics on some of the variables that have missing
+data (note, if no missing data are present on a variable, results will
+be same for each iteration so the plot is not needed and will fail). 
+What we are looking for is no systematic change (e.g., increasing,
+decreasing) with additional iterations. Also, we would hope that the
+random process leads to more or less the same estimates across the
+different imputed datasets. If that is the case, all imputations
+should converge around the same average value. If there is a "split"
+(e.g., if some imputations have high estimates and others, low
+estimates) that would indicate non-convergence. These plots look
+pretty good with the 3 + 20 = 23 iterations.
+
+```{r}
+
+## run an additional iterations
+mi.1 <- mice.mids(
+  mi.1, maxit = 20,
+  printFlag = FALSE)
+
+
+## plot convergence diagnostics
+plot(mi.1, PosAff + NegAff + Female ~ .it | .ms)
+
+```
+
+Once we are satisfied with convergence, we can plot the imputed data
+versus observed data. Imputed data are in red.
+
+These diagnostic plots do not necessarily tell you
+whether the imputation is "right" or "wrong". They show in blue the
+observed density plots and in blue the observed data scatter
+plots. The red lines and points represent the distributions from the
+imputed data. If observed and imputed distributions and values are
+similar, it may suggest that the overall distribution does not change
+much when imputed. This may be indicative of the data being MCAR or
+that the relevant variables are missing from the imputation model.
+Impossible imputed values may warrant changing the imputation model
+(e.g., if ages could only range from 0 to 6 years old, and imputed
+ages are 15 or -4 that may be a sign that the imputation model [e.g.,
+linear] is a poor fit in this instance and a non-linear or other more
+complex model is needed to appropriately capture the data).
+
+```{r}
+
+densityplot(mi.1, ~ PosAff + NegAff + Age)
+
+xyplot(mi.1, NegAff + PosAff ~ STRESS)
+
+```
+
+Once you have created the imputed datasets, you can analyse
+them. Recall that analyses must be repeated on each individual
+dataset. For models that are fitted with a formula interface, you can
+use the special `with()` function which works with multiply imputed
+datasets. It means that the analysis is automatically run on each
+imputed dataset separately. If we view the results, we end up with a
+bunch of separate linear regressions.
+To pool the results from the individual regressions, we use the
+`pool()` function.
+
+The pooled output has several pieces:
+
+- **estimate**: the pooled, average regression coefficients;
+- **ubar**: the average variance (based on the squared standard errors)
+  associated with sampling variation, we called it $\bar{V}$;
+- **b**: the between imputation variance;
+- **t**: the total variance incorporating sampling variation, between
+  imputation variance, and simulation error;
+- **dfcom**: the degrees of freedom for the complete data analysis (i.e.,
+  if there had not been missing data);
+- **df**: the estimated residual degrees of freedom for the model, taking
+  into account missingness;
+- **riv**: the relative increase variance due to missing data;
+- **lambda** or $\lambda$: the proportion of total variance due to
+  missing data, that is: $\lambda = \frac{B + B/m}{T}$;
+- **fmi**: the fraction of missing information
+
+
+```{r}
+
+mi.reg <- with(mi.1, lm(NegAff ~ PosAff + Age))
+
+mi.reg
+
+pool(mi.reg)
+
+```
+
+We can also summarise the pooled results with confidence intervals
+using the `summary()` function on the pooled results.
+Finally, we can get a pooled $R^2$ value using the
+`pool.r.squared()` function on the analyses.
+
+The summary output includes standard regression
+output in this case.
+
+- **estimate**: the pooled, average regression coefficients;
+- **std.error**: the standard error of the estimates incorporating all
+  three sources of MI error, specifically: $se = \sqrt{T}$;
+- **statistic**: $\frac{estimate}{std.error}$;
+- **df**: the estimated degrees of freedom incorporating uncertainty due
+  to missing data, combined with the statistic to calculate p-values;
+- **p.value**: the p-value, the probability of obtaining the estimate or
+  larger in the sample given that the true population value was zero.
+- **2.5%**: the lower limit of the 95% confidence interval;
+- **97.5%**: the upper limit of the 95% confidence interval.
+
+```{r}
+
+m.mireg <- summary(pool(mi.reg), conf.int=TRUE)
+print(m.mireg)
+
+pool.r.squared(mi.reg)
+
+```
+
+In general, you can use any analysis you want with multiple
+imputation, replacing `lm()` with another function, including `glm()`
+and `lmer()`.
+
+Here is an example looking at a logistic regression (albeit a rather
+silly one) predicting Female from negative affect and age.
+We can select the coefficients and confidence intervals and
+exponentiate them to get the odds ratios.
+
+```{r}
+
+mi.reg2 <- with(mi.1, glm(Female ~ NegAff + Age, family = binomial()))
+
+m.mireg2 <- summary(pool(mi.reg2), conf.int=TRUE)
+print(m.mireg2)
+
+## odds ratios
+exp(m.mireg2[, c("estimate", "2.5 %", "97.5 %")])
+
+```
+
+
+## Multiple Imputation Comparison
+
+One thing that often is helpful is to compare results under different
+models or assumptions. The code that follows is a bit complicated
+(don't worry, you don't need to use it yourself), and is used to fit
+the same model in three ways:
+
+1. pooled from the multiple imputations that was already done,
+   labelled "MI Reg".
+2. based on the true, non-missing data, since we made the missing data
+ourselves and have the true data, labelled, "Truth".
+3. Complete case analysis using listwise deletion, labelled "CC".
+
+The graph that follows shows that compared to the true data, the
+multiply imputed results have larger confidence intervals slightly. In
+this case, the multiply imputed results are closer to the truth in the
+absolute estimates (dots in the graph) than are the estimates from the
+complete case analysis.
+
+**In general we do not have the true estimates**. In this
+example, we have the true estimates because we created the missing
+data. In real world settings, all we could do is compare the complete
+case analysis (i.e., using listwise deletion, labelled "CC") with the multiple
+imputation results (labelled "MI Reg"). 
+
+```{r}
+m.true <- lm(NegAff ~ PosAff + Age, data = davg)
+m.cc <- lm(NegAff ~ PosAff + Age, data = davgmiss)
+
+res.true <- as.data.table(cbind(coef(m.true), confint(m.true)))
+res.cc <- as.data.table(cbind(coef(m.cc), confint(m.cc)))
+res.mireg <- as.data.table(m.mireg[, c("estimate", "2.5 %", "97.5 %")])
+setnames(res.true, c("B", "LL", "UL"))
+setnames(res.cc, c("B", "LL", "UL"))
+setnames(res.mireg, c("B", "LL", "UL"))
+
+res.compare <- rbind(
+  cbind(Type = "Truth", Param = names(coef(m.true)), res.true),
+  cbind(Type = "CC", Param = names(coef(m.true)), res.cc),
+  cbind(Type = "MI Reg", Param = names(coef(m.true)), res.mireg))
+
+ggplot(res.compare, aes(factor(""),
+   y = B, ymin = LL, ymax = UL, colour = Type)) +
+  geom_pointrange(position = position_dodge(.4)) +
+  facet_wrap(~Param, scales = "free")
+
+```
+
+
+# Summary Table
+
+Here is a little summary of some of the functions used in this
+topic. 
+
+| Function       | What it does                                 |
+|----------------|----------------------------------------------|
+| `aggr()`     | Create a plot of missingness by variable and patterns of mising data for an entire dataset |
+| `marginplot()` | Create a scatter plot of the non missing data between two continuous variables with the margins showing where missing data are | 
+| `mice()` | Main worker function for multiple imputation through chained equations in `R`. Takes a dataset, the number of imputations and number of iterations as a minimum. |
+| `mice.mids()` | A way to add more iterations to an existing multiply imputed object from `mice()` |
+| `with()` | Function used to run models with a multiply imputed dataset. | 
+| `pool()` | Pool / aggregate results run on multiply imputed data. | 
+| `pool.r.squared()` | Calculate pooled $R^2$ value (only for `lm()` models) in multiply imputed analyses.|
+
