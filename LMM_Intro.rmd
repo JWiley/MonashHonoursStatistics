@@ -502,6 +502,37 @@ Between effects exist **between** units whereas within effects exist
 between effects are differences between people whereas the within
 effects are differences within an individual.
 
+```{marginfigure}
+
+When you subtract the mean from a variable, the new mean will be equal
+to 0. For example, if you have three numbers:
+
+$$ (1, 3, 5) $$
+
+the mean is 3, if you subtract the mean you get:
+
+$$ (-2, 0, +2) $$
+
+and the mean of the deviations are 0.
+
+If you have:
+
+$$ (4, 5, 6) $$
+
+the mean is 5 and if you subtract the mean you get:
+
+$$ (-1, 0, +1) $$
+
+as deviation scores and the mean of these deviations is 0.
+
+It is a fact that the mean of deviations from a mean will always
+be 0. Because of how we normally calcualte a within person variable,
+from a total variable, we separate out the mean into the between
+portion and the within portion has deviations from individuals' own
+means and so the mean of the within portion will be 0.
+
+```
+
 For example, suppose that in one individual, Person A, over three
 days, we observed the following scores on happiness: 1, 3, 5.
 Those total observed scores could be decomposed into one part
@@ -509,7 +540,6 @@ attributable to a stable, between person effect (the mean) and another
 part that purely captures daily fluctuations, the within person effect 
 (deviations from the individuals' own mean). We could break down those
 numbers: 1, 3, 5 as shown in the following figure.
-
 
 ```{r, echo = FALSE, fig.cap = "Decomposing multilevel effects - concrete example"}
 
@@ -562,6 +592,37 @@ these portions are what the ICC captures.
 
 ## Linear Mixed Models
 
+```{marginfigure}
+
+Linear mixed models (LMMs) or mixed effects models are also 
+sometimes called "multilevel models"  or 
+"hierarchical linear models" (HLMs). The multilevel model or 
+hierarchical linear model names both come from the fact that 
+they are used for data with multiple, hierarchical levels,
+like observations nested within people, or kids nested 
+within classrooms. However, all three of these are synonyms 
+for the same statistical model, that includes both fixed and random
+effects, as random effects are the method used to address the
+hierarchical or multilevel nature of the data.
+
+One difference, however, is that HLMs imply a specific hierarchy,
+which may not always be present in data. For example, if all siblings
+from a family were recruited as well as students in the same
+classroom, there would be crossed effects with any given person a
+member of a higher level family unit and a higher level classroom
+unit. HLMs generally are not setup for situations where there is not a
+pure hierarchy. Mixed effects models address this easily as it just
+requires different random effects (one for families, one for
+classrooms, for example). Thus, all HLMs are mixed models, but not all
+mxied models are HLMs. Another example would be if in an experiment,
+we randomly sampled difficulty levels and every participant completed
+all combinations. Difficulty level could be a random effect and
+participant could be a random effect, with observations nested within
+both, but they do not form a clear hierarchy (i.e., difficulty level
+is not above/below participant).
+
+```
+
 Unlike linear regression, which models all regression coefficients as
 fixed effects, mixed effects regression models some coefficients as
 fixed effects and others as random effects (hence the term, "mixed"
@@ -587,7 +648,7 @@ such as students within classrooms, or kids within families, etc.
 
 As before, we assume that:
 
-$$ y_{ij} \sim \mathcal{N}(\boldsymbol{\eta}, \sigma) $$
+$$ y_{ij} \sim \mathcal{N}(\boldsymbol{\eta}, \sigma_{\varepsilon_{ij}}) $$
 
 by convention, we decompose random effects, here the random intercept,
 as follows:
@@ -596,11 +657,13 @@ $$ b_{0j} = \gamma_{00} + u_{0j} $$
 
 where 
 
-- $\gamma_{00}$ is the mean intercept across all people
+- $\gamma_{00}$ is the mean intercept across all people. There are
+  no variable subscripts under it, only numbers, as it does *not* vary 
+  across different people.
 - $u_{0j}$ is the individual unit deviations from the mean
   intercept, $\gamma_{00}$.
   
-Under this decomposition, $ \gamma_{00} $, is a fixed effect, the
+Under this decomposition, $\gamma_{00}$, is a fixed effect, the
 average intercept for all units, and is interpretted akin to what we
 are used to in linear regression, $b_0$. $u_{0j}$ is how much each
 individual units intercept differs from the average, they are
@@ -702,8 +765,35 @@ deviation, which is consistent with the earlier ICC we calculated for
 stress that nearly half the variance in stress is between people with
 the other half occuring within people.
 
+```{marginfigure}
+
+In mixed models we do not technically estimate parameters for each
+individual. That is, we do not directly estimate random effects like
+$b_{0j}$. We estimate the average of the distribution, $\gamma_{00}$
+and the standard deviation fo the distribution, $\sigma_{int}$.
+
+The `coef()` function then does not report estimated coefficients per
+se, but what are called Best Linear Unbiased Predictors (BLUPs).
+
+The BLUPs use the model estimated parameters from the LMM along with
+the data, to basically predict what each person's own, conditional
+mean is. This combines both their actual data and the model. People
+with more data will have a BLUP closer to the observed mean of their
+own data in an intercept only model. People with less data (say only
+1-2 observations) will have a BLUP that is closer to the average mean
+of all people as its assumed that the mean of their 1-2 data points is
+likely very noisy/inaccurate due to small sample size.
+
+*Side note: while many of the concepts from LMMs apply to GLMMs just as
+many concepts from LMs apply to GLMs, the BLUPs or conditional means
+do not quite generalize. In GLMMs we can get conditional modes, but
+not conditional means. This only matters if you would be doing, for
+example, logistic mixed effects regression models.
+
+``` 
+
 We can see the fixed effects coefficients only from the model by using
-the `fixef()` function. If we want to see the estimates of the
+the `fixef()` function. If we want to see the predictions of the
 coefficients for each person, i.e., using the random effects, we can
 use the `coef()` function.
 
