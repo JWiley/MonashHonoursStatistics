@@ -54,18 +54,18 @@ are changed.
   Please see the [Content](MissingData.html).
 
 - **Week 8** *Introduction to Linear Mixed Models (LMMs)*.
-  <!-- Please see the page [LMM Pt1](LMM_Pt1.md). -->
+  Please see the page [LMM Intro](LMM_Intro.html).
 
 - **Week 9** *Linear Mixed Models (LMMs; Part 1)*.
-  <!-- Please see the `R` worksheet [LMM Pt2](LMM_Pt2_worksheet.R). -->
+  Please see the page [LMM1](LMM1.html).
 
 - **Week 10** *Linear Mixed Models (LMMs; Part 2)*.
-  <!-- Please see the `R` worksheet [LMM Synthesis](LMM_Synthesis_worksheet.R). -->
+  Please see the page [LMM2](LMM2.html).
 
 - **Week 11** *Interactions and Moderation for LMMs*.
-  <!-- Please see the `R` worksheet [Moderation](LMM_Moderation_worksheet.R). -->
+  <!-- Please see the page [LMM Moderation](LMM_Moderation.html). -->
 
 -  **Week 12** *Model Comparisons for LMMs*.
-  <!-- Please see the `R` worksheet [Model Comparisons](LMM_Comparison_worksheet.R). -->
+  <!-- Please see the page [LMM Comparison](LMM_Comparison.html). -->
 
 
