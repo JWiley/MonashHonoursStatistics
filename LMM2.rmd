@@ -50,7 +50,7 @@ slope, we will have two random effects. With two (or more) random
 effects, because they are assumed to be a random variable with a
 normal distribution, we can also look at how the random effects
 correlate with each other. That is, just as how you could look at how
-two random varaibles, say age and stress, correlate with each other,
+two random variables, say age and stress, correlate with each other,
 you can look at how any two random effects correlate with each other
 (e.g., how a random intercept and random slope correlate).
 
@@ -111,7 +111,7 @@ $$
 \end{bmatrix}
 $$
 
-The variances are on the diagnonal and the covariance (the
+The variances are on the diagonal and the covariance (the
 unstandardized correlation between the intercept and the slope) is on
 the off diagonal.
 
@@ -173,7 +173,7 @@ approach.
 
 The Mahalanobis distance measures the distance between a point and a
 space defined by a vector of means and a covariance matrix. The
-"point" can be unidimensal or multidimensional and if multidimensional
+"point" can be unidimensional or multidimensional and if multidimensional
 is not limited to only two dimensions. That is, the Mahalanobis
 distance can compute the distance between a multidimensional point and
 a multidimensional distribution. This is very convenient as it scales
@@ -184,8 +184,8 @@ Mahalanobis distance, those squared distances will follow a $\chi^{2}$
 of dimensions ($p$), that is a $\chi^2$ distribution with $df =
 p$ if the raw data were MVN. This allows us to compare our observed
 Mahalanobis distances to a chi-squared distribution and if they are a
-close match, it indicates the data on which the Mahalnobis distances
-were calculated were MVN. Thus, we can use Mahalnobis distances to
+close match, it indicates the data on which the Mahalanobis distances
+were calculated were MVN. Thus, we can use Mahalanobis distances to
 evaluate whether a set of variables have a MVN distribution.
 They also can help identify multivariate outliers. We will see
 examples of this when we look at diagnostics for LMMs with multiple
@@ -200,7 +200,7 @@ with a random intercept and `mood` as a fixed effect only.
 
 ```{r}
 
-## get rid of the haven_labelled class type for stress
+## get rid of the haven_labeled class type for stress
 dm[, stress := as.numeric(stress)]
 
 m0 <- lmer(stress ~ mood + (1 | ID),
@@ -262,12 +262,12 @@ plot(modelDiagnostics(m1), ncol = 2, nrow = 3, ask = FALSE)
 
 In the figure, we see our familiar density and QQ deviates plot for
 the residuals (top left). Univariate density plots (black lines) and
-univariate normal distributiones (blue dashed lines) for the random
+univariate normal distributions (blue dashed lines) for the random
 intercept alone (`ID : (Intercept)`) and the random slope of mood
 alone (`ID : mood`). The naming convention is to include the
 coefficient name, intercept or mood for the mood slope, prefixed by
 what the variable name is for the random effect, here ID. Both of the
-univariate random effect distribution plots can be interpretted as
+univariate random effect distribution plots can be interpreted as
 usual and are shown on the middle row, left and right panels. What is
 technically graphed are the BLUPs and at the bottom we can get a five
 number summary to help see the minimum, 25th percentile, 50th
@@ -281,7 +281,7 @@ between -0.38 and -0.27, giving us a sense of the spread of the random
 slopes.
 
 The new graph is on the bottom row, left side and it evaluates whether
-the random effects by ID follow a MVN or not by using the mahalnobis
+the random effects by ID follow a MVN or not by using the Mahalanobis
 distances. The observed density is the black line. The theoretical
 density again is in dashed blue line. Here the theoretical density
 **is not** a normal density, but a chi-squared density with $df = p =
@@ -293,7 +293,7 @@ being quite a bit higher than the next nearest. Although its not
 flagged as an extreme value, partly because there are only about 50
 people. 
 
-In practice, I may not atually make any changes here. For the sake of
+In practice, I may not actually make any changes here. For the sake of
 illustration, however, and to show how to do it, we will use a more
 stringent criteria for extreme values. Rather than defining an extreme
 value as the top and bottom 0.5% of the theoretical distribution,
@@ -301,10 +301,10 @@ let's use the top and bottom 1% of the theoretical distribution.
 Because I know this will yield some extreme values to remove, I am
 saving the results of `modelDiagnostics()` in an object, `m1.diag`
 which I can plot but I can also use to identify which rows / IDs in
-the dataset are extrme and should / could be dropped.
+the dataset are extreme and should / could be dropped.
 The new figure shows a few extreme values in the random effect
 BLUPs. A low value on the intercept, a couple too high (near 0)
-slopes, and at least one MVN extreme value, the 10.84 mahalanobis
+slopes, and at least one MVN extreme value, the 10.84 Mahalanobis
 distance. 
 
 ```{r, fig.width = 7, fig.height = 10}
@@ -613,7 +613,7 @@ more negative  within person association between mood and stress.
 
 ## Solving Convergence/Estimation Issues
 
-We have talked before some about convergance, where algorithms iterate
+We have talked before some about convergence, where algorithms iterate
 through cycles and try to find the best parameter estimates. Sometimes
 this process fails or runs into problems, which we may broadly call
 convergence or estimation issues.
@@ -625,7 +625,7 @@ to address and resolve them before being confidence in the model
 results.
 
 Let's create a between and within version of the daily variable,
-`energy` and look at a fixed and random slope LMM predicting stresss
+`energy` and look at a fixed and random slope LMM predicting stress
 from energy.
 
 ```{r}
@@ -704,7 +704,7 @@ if you run into convergence problems.
 
 ```{r}
 
-## use the control function to picka  different algorithm
+## use the control function to pick a  different algorithm
 ## and adjust the options to be a bit stricter
 ## may take longer but also may have a better chance of converging
 strictControl <- lmerControl(optCtrl = list(
@@ -749,7 +749,7 @@ the estimates could be far off. If you cannot get a model that
 converges, though, you have no comparison so its hard to know if the
 non convergence was an issue or not. That is why its generally the
 best idea to always resolve a non convergence issue if possible and be
-very cautious about interpretting a model that did not converge.
+very cautious about interpreting a model that did not converge.
 
 # Graphing LMMs
 
@@ -771,7 +771,7 @@ build the model. Marginal predictions could be made for new data,
 though to answer a question like, what would the model predict, on
 average, the stress score would be if mood was 2 points above average
 on a day? That would not tell you how any single individual is
-predicted to be, but does indiate what, on average, the prediction
+predicted to be, but does indicate what, on average, the prediction
 would be from the model. Additionally, because conditional predictions
 will vary by ID, we can get different conditional predictions for each
 participant in the dataset.
@@ -782,7 +782,7 @@ We will look at examples of both of these briefly.
 Graphs based off the marginal predictions from the model are probably
 the default and most common approach. These graphs show the average
 association or predictions from the model and basically graph the
-fixed effects part of the model. They are interpretted nearly
+fixed effects part of the model. They are interpreted nearly
 identically to linear regression graphs.
 
 To start, we will use our model with between person and within person
@@ -813,10 +813,10 @@ str(dm[, .(stress, Bmood, Wmood, ID)])
 
 ```
 
-Here we can see that `Wmood` has the class haven labelled. As this is
+Here we can see that `Wmood` has the class haven labeled. As this is
 not a common class (common classes in `R` are logical, integer,
 factor, numeric, character), its a reasonable guess that is causing
-the trouble. `visreg()` may not know how to work with haven labelled
+the trouble. `visreg()` may not know how to work with haven labeled
 type variables. We don't need the labels so we can convert `Wmood` to
 a numeric variable and try again. Since we are using a model, after
 updating `Wmood` we need to re-run our LMM. The results will not
@@ -1016,7 +1016,7 @@ visreg(m2, xvar = "Wmood", by = "ID",
 ``` 
 
 What this figure helps show is how both the random intercept and slope
-influence the results and the indvidiaul differences in both level of
+influence the results and the individual differences in both level of
 stress and slope of stress on within person mood in the data. In this
 case, for example, it seems that the individual differences in level
 of stress may be larger than the individual differences in slope. With
@@ -1034,9 +1034,9 @@ you tried). Make a conditional graph of your results.
 Here are the basic steps.
 
 1. Create a between and within person stress variable
-2. Since we know `visreg()` does not like haven labelled type
+2. Since we know `visreg()` does not like haven labeled type
    variables, check if any of your stress variables or the `energy`
-   variable is haven labelledand if so, convert them to numeric.
+   variable is haven labeled and if so, convert them to numeric.
 3. Fit a LMM using `lmer()` with both `Bstress` and `Wstress` as fixed
    effects and a random intercept and random `Wstress` slope by ID.
 4. Check model diagnostics and where appropriate remove extreme
@@ -1053,9 +1053,9 @@ Here are the basic steps.
 #### here's a start:
 ## dm[, meanDeviations() ] 
 
-## 2. Since we know `visreg()` does not like haven labelled type
+## 2. Since we know `visreg()` does not like haven labeled type
 ##    variables, check if any of your stress variables or the `energy`
-##    variable is haven labelledand if so, convert them to numeric.
+##    variable is haven labeled and if so, convert them to numeric.
 
 #### here's a start:
 ## str(dm[, .(ID, energy,       ) ])
