@@ -12,7 +12,7 @@
 
 <meta name="author" content="Joshua F. Wiley" />
 
-<meta name="date" content="2020-05-13" />
+<meta name="date" content="2020-05-26" />
 
 <title>Linear Mixed Models (LMMs) - Part 2</title>
 
@@ -282,7 +282,7 @@ if (window.hljs) {
 
 <h1 class="title toc-ignore">Linear Mixed Models (LMMs) - Part 2</h1>
 <h4 class="author">Joshua F. Wiley</h4>
-<h4 class="date">2020-05-13</h4>
+<h4 class="date">2020-05-26</h4>
 
 
 <div id="TOC">
@@ -315,27 +315,16 @@ if (window.hljs) {
 
 ## new packages are lme4, lmerTest, and multilevelTools
 
-library(data.table)</code></pre>
-<pre><code>## data.table 1.12.8 using 24 threads (see ?getDTthreads).  Latest news: r-datatable.com</code></pre>
-<pre class="r"><code>library(JWileymisc)
+library(data.table)
+library(JWileymisc)
 library(extraoperators)
-library(lme4)</code></pre>
-<pre><code>## Loading required package: Matrix</code></pre>
-<pre class="r"><code>library(lmerTest)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;lmerTest&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:lme4&#39;:
-## 
-##     lmer</code></pre>
-<pre><code>## The following object is masked from &#39;package:stats&#39;:
-## 
-##     step</code></pre>
-<pre class="r"><code>library(multilevelTools)
+library(lme4)
+library(lmerTest)
+library(multilevelTools)
 library(visreg)
 library(ggplot2)
-library(ggpubr)</code></pre>
-<pre><code>## Loading required package: magrittr</code></pre>
-<pre class="r"><code>library(haven)
+library(ggpubr)
+library(haven)
 
 ## load data collection exercise data
 ## merged is a a merged long dataset of baseline and daily
@@ -957,7 +946,7 @@ plot(m2.diag, ncol = 2, nrow = 3, ask=FALSE)</code></pre>
 <p>The profile likelihood confidence intervals take a few seconds to complete and generate a few warnings related to the fact that the lower bound for the intercept-slope correlation is -1, the lowest possible correlation.</p>
 <div id="sample-write-up" class="section level3" number="1.2.1">
 <h3 number="1.2.1"><span class="header-section-number">1.2.1</span> Sample Write Up</h3>
-<p>A linear mixed model was fit to 183 stress scores from 50 people. The intraclass correlation coefficient of stress, the outcome, was 0.4118 and of mood, the predictor was 0.3261, indicating that about 40$ of the total variance in stress and about 30% of the total variance in mood exists between people with the remaining due to daily fluctuations within people. The fixed effect intercept revealed that the average [95% CI] stress was 5.7455 [4.12, 7.35]. However, there were individual differences, with the standard deviation for the random intercept being 0.8788 indicating that there are individual differences in the mean stress. Assuming the random intercepts follow a normal distribution, we expect most people to fall within one standard deviation of the mean, which in these data would be somewhere between: 4.8668, 6.6243. There was also a significant fixed effect of average mood on stress, such that each one unit higher average mood people had was associated with -0.3955 95% CI = [-0.71, -0.07].</p>
+<p>A linear mixed model was fit to 183 stress scores from 50 people. The intraclass correlation coefficient of stress, the outcome, was 0.4118 and of mood, the predictor was 0.3261, indicating that about 40$ of the total variance in stress and about 30% of the total variance in mood exists between people with the remaining due to daily fluctuations within people. The fixed effect intercept revealed that the estimated average [95% CI] stress was 5.7455 [4.12, 7.35], when <code>Bmood</code> and <code>Wmood</code> are zero. However, there were individual differences, with the standard deviation for the random intercept being 0.8788 indicating that there are individual differences. Assuming the random intercepts follow a normal distribution, we expect most people to fall within one standard deviation of the mean, which in these data would be somewhere between: 4.8668, 6.6243. There was also a significant fixed effect of average mood on stress, such that each one unit higher average mood people had was associated with -0.3955 95% CI = [-0.71, -0.07].</p>
 <p>There was also a significant fixed effect of within person mood on stress, such that on days where people were one unit higher on mood than their own average, people were expected to have -0.3301 95% CI = [-0.54, -0.13] lower stress that same day, on average. However, there were individual differences, with the standard deviation for the random slope being 0.3431 indicating that there are individual differences in the slope of within person mood on stress. Assuming the random slope follow a normal distribution, we expect most people to fall within one standard deviation of the mean, which in these data would indicate that most people are expected to have a within person slope of stress on mood between: -0.6732, 0.013. Finally, there was a negative correlation between the random intercept and slope, -0.4416 indicating that compared to the population averages, people who had a relatively higher stress when mood was 0 also tended to have a more negative within person association between mood and stress.</p>
 </div>
 </div>

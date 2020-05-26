@@ -572,14 +572,15 @@ indicating that about 40$ of the total variance in stress and about
 30% of the total variance in mood exists between people with the
 remaining due to daily fluctuations within people.
 The fixed effect intercept revealed that the
-average [95% CI] stress was 
+estimated average [95% CI] stress was 
 `r fixef(m2)[["(Intercept)"]]`
-`r sprintf("[%0.2f, %0.2f]", m2.ci[5, 1], m2.ci[5, 2])`.
+`r sprintf("[%0.2f, %0.2f]", m2.ci[5, 1], m2.ci[5, 2])`, when `Bmood`
+and `Wmood` are zero.
 However, there were individual differences, with the standard
 deviation for the random intercept being
 `r as.data.table(VarCorr(m2))[1, sdcor]`
-indicating that there are individual differences in the mean
-stress. Assuming the random intercepts follow a normal distribution,
+indicating that there are individual differences. Assuming the random
+intercepts follow a normal distribution, 
 we expect most people to fall within one standard deviation of the
 mean, which in these data would be somewhere between:
 `r fixef(m2)[["(Intercept)"]] + c(-1, 1) *  as.data.table(VarCorr(m2))[1, sdcor]`. 
