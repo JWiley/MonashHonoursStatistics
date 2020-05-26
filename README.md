@@ -63,9 +63,9 @@ are changed.
   Please see the page [LMM2](LMM2.html).
 
 - **Week 11** *Interactions and Moderation for LMMs*.
-  <!-- Please see the page [LMM Moderation](LMM_Moderation.html). -->
+  Please see the page [LMM Moderation](LMM_Moderation.html).
 
 -  **Week 12** *Model Comparisons for LMMs*.
-  <!-- Please see the page [LMM Comparison](LMM_Comparison.html). -->
+  Please see the page [LMM Comparison](LMM_Comparison.html).
 
 
