@@ -1,200 +1,1067 @@
-#### 1. Setup (You Try It) ####
+---
+title: "Linear Mixed Models (LMMs) - Moderation"
+author: "Joshua F. Wiley"
+date: "`r Sys.Date()`"
+output: 
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+---
 
-## to start with, we will load a package for data management
-## and load a package for fitting Linear Mixed effects Models (LMMs)
+Download the raw `R` markdown code here
+[https://jwiley.github.io/MonashHonoursStatistics/LMM_Moderation.rmd](https://jwiley.github.io/MonashHonoursStatistics/LMM_Moderation.rmd).
+These are the `R` packages we will use.
 
-## recall that loading a package is like opening an app
-## and you need to repeat this process each time you start up R
-## if everything installed successfully already
-## this code should work and return no errors
-## if this does not work, try to install it first
-## by uncommenting the install packages code
+```{r setup}
+options(digits = 4)
 
-# install.packages("data.table", dependencies = TRUE)
-# install.packages("lme4", dependencies = TRUE)
-# install.packages("ggplot2", dependencies = TRUE)
-# install.packages("visreg", dependencies = TRUE)
+## emmeans is a new package
+
 library(data.table)
+library(JWileymisc)
+library(extraoperators)
 library(lme4)
-library(ggplot2)
-## new package, makes interaction graphs easy
-## if not installed, uncomment and run the install packages for visreg above
+library(lmerTest)
+library(multilevelTools)
 library(visreg)
+library(ggplot2)
+library(ggpubr)
+library(haven)
+library(emmeans)
 
-## load the data (note this is already an R dataset)
-## so we use a new function readRDS()
-## make sure that the data file is located in
-## your project directory
-d <- readRDS("aces_daily_sim_processed.RDS")
+## load data collection exercise data
+## merged is a a merged long dataset of baseline and daily
+dm <- as.data.table(read_sav("Merged.sav"))
 
-## see the dimenions of the data (rows   columns)
-## should be: 6927   56
-dim(d)
+```
 
-## see the names of the variables in the dataset
-names(d)
+# LMM Notation
 
+Let's consider the formula for a relatively simple LMM:
 
-#### 1. Interpreting LMMs (Demonstration) ####
+$$
+y_{ij} = b_{0j} + b_1 * x_{1j} + b_2 * x_{2ij} + \varepsilon_{ij}
+$$
 
-## basic LMM with random intercept and slope (correlated)
-m.random <- lmer(PosAff ~ STRESS + (1 + STRESS | UserID), data = d)
-summary(m.random)
+Here as before, the *i* indicates the *i*th observation for a specific
+unit (e.g., person but the unit could also be classrooms, doctors,
+etc.) and the *j* indicates the *j*th unit (in psychology usually
+person).
 
-confint(m.random) ## profile confidence intervals slow here
-confint(m.random, method = "Wald") ## Wald faster if CIs for random effects not needed
+Regression coefficients, the $b$s with a *j* subscript indicate a
+fixed and random effect. That is, the coefficient is allowed to vary
+across the units, *j*. As before, these coefficients in practice are
+decomposed into a fixed and random part:
 
-## ## Sample Write up
+$$
+b_{0j} = \gamma_{00} + u_{0j}
+$$
 
-## A total of 6,399 observations from 191 unique people were included
-## in the analyses. Overall, when people were not experiencing stress, the model
-## estimated their positive affect as b [95% CI] = 3.04 [2.93, 3.16].
-## However, the random effects revealed substantial differences between
-## individual (Random Effect SD = 0.81) such that although the average was 3.04, most people
-## fell between 2.23 and 3.86 (i.e., 3.044085 +/- .81104).
-## Examining the association of stress with positive affect, on average
-## a one unit higher perceived stress score was associated with
-## a -0.16 [-0.17, -0.15] difference in positive affect. Again, there were
-## differences between individuals (Random effect SD = 0.08) with most people estimated
-## to have an association between -0.24 and -0.08 (i.e., -0.160623 +/- 0.07855).
-## The random intercept and stress slope were correlated at -0.64 indicating that
-## people who had an above average intercept also tended to have a more negative
-## association between stress and positive affect. This may indicate that people who are
-## generally happier are more sensitive to the effects of stress on mood or
-## conversely that people who are generally unhappy simply have less room to worsen
-## in response to stress (a floor effect).
+and we estimate in our LMM the fixed effect part, $\gamma_{00}$, and
+the variance / standard deviation of the random effect or the
+covariance matrix if there are multiple random effects, $\mathbf{G}$: 
 
-## we can check some of the ranges of random effects
-## to get random effects with the fixed effects already added (i.e., NOT deviations)
-## use coef() instead of ranef()
-m.blups <- coef(m.random)$UserID
-View(m.blups)
+$$
+u_{0j} \sim \mathcal{N}(0, \mathbf{G})
+$$
 
-## summarise BLUPs for the random intercept
-summary(m.blups[["(Intercept)"]])
+Regression coefficients without any *j*
+subscript indicate fixed only effects, effects that do not vary across
+units, *j*. These are fixed effects and get estimated directly.
 
-## summarise BLUPs for the random slope
-summary(m.blups[["STRESS"]])
+Predictors / explanatory variables, the $x$s with an *i* subscript
+indicate that the variable varies within a unit. Note that the
+outcome, $y$ **must** vary within units to be used in a LMM.
 
-## if we wanted, instead of using mean +/- SD to give a range of the estimates for
-## the random intercept and slope, we could use the 25th and 75th percentiles
-## (i.e., 1st and 3rd quartiles of the BLUPs)
+In this case, the notation tells us the following:
 
-## we also can visualise the correlation between the BLUPs for
-## the random intercept and slope
-ggplot(m.blups, aes(`(Intercept)`, STRESS)) +
-  geom_point()
+- $y_{ij}$ the outcome variable, which varies both within and between
+  people
+- $b_{0j}$ the intercept regression coefficient, which is both a fixed
+  and random effect
+- $b_1$ the regression coefficient, slope, for the first predictor,
+  which is a fixed effect only
+- $x_{1j}$ the first predictor/explanatory variable, this is a between
+  unit variable only, as the lack of an *i* subscript indicates it
+  does not vary within units. It could not have a random slope.
+- $b_2$ the regression coefficient, slope, for the second predictor,
+  which is a fixed effect only
+- $x_{2ij}$ the second predictor/explanatory variable, this variable
+  varies within individuals as shown by its *i* subscript. It could
+  have a random slope, although in this model, it only has a fixed
+  effect slope.
+- $\varepsilon_{ij}$ the residuals, these vary within and between
+  units.
 
-## looking at this we see one person actually has a positive slope
-## suggesting that for higher stress they actually have higher positive affect
-## that BLUP also appears to be a bit of an outlier.
-## its worth investigating such cases a bit to try to understand why
-## first, find the case -- #123
-subset(m.blups, STRESS > 0)
+The following decision tree provides some guide to when a predictor /
+explanatory variable can be a fixed and random effect.
 
-## now lets investigate the raw data
-## use d[UserID == 123] to subset data to only rows where UserID == 123
-## make a scatter plot of stress and pos affect for this person
-## and no clear signs of outliers or other issues and there
-## is a positive association, so may not worry about it, although unusual
-ggplot(d[UserID == 123], aes(STRESS, PosAff)) +
-  geom_point()
+```{r, echo = FALSE, fig.cap = "Type of effect decision tree"}
 
+DiagrammeR::grViz('
+digraph "Type of effect decision tree" {
+  graph [overlap = true, fontsize = 12]
+  node [fontname = Helvetica, shape = rectangle]
 
-#### 2. Interactions in Linear Regression (Activity) ####
+  variable [ label = "What level does your variable vary at?" ];
+  between [ label = "Between Variable" ];
+  within [ label = "Within Variable" ];
 
-## remember the graphs in this section need the visreg package
-## install / load if not already (top of this script)
+  fixed [ label = "Fixed Effect Only" ];
+  random [ label = "Fixed & Random Effect" ];
+  type [ label = "Do you want a fixed effect only?" ];
 
-## main effects multiple regression
-m.main <- lm(hp ~ mpg + vs, data = mtcars)
-summary(m.main)
+  variable -> between [ label = "only between units" ];
+  variable -> within [ label = "varies within (+/- between) units" ];
+  between -> fixed ;
+  within -> type ;
+  type -> fixed [ label = "yes" ];
+  type -> random [ label = "no" ];
+}
+')
 
-## interaction model with an interaction (moderation)
-## of mpg and vs
-m.int <- lm(hp ~ mpg * vs, data = mtcars)
-summary(m.int)
+```
 
-## Visualize results
+Let's see two examples of putting this basic model into practice.
+
+$$
+mood_{ij} = b_{0j} + b_1 * age_{j} + b_2 * stress_{ij} + \varepsilon_{ij}
+$$
+
+The corresponding `R` code is:
+
+```{r}
+
+summary(lmer(mood ~ age + stress + (1 | ID), data = dm))
+
+``` 
+
+Here is another example decomposing stress into a between and within component.
+
+$$
+mood_{ij} = b_{0j} + b_1 * Bstress_{j} + b_2 * Wstress_{ij} + \varepsilon_{ij}
+$$
+
+```{r}
+
+dm[, c("Bstress", "Wstress") := meanDeviations(stress), by = ID]
+
+summary(lmer(energy ~ Bstress + Wstress + (1 | ID), data = dm))
+
+``` 
+
+We can make more effects random effects. For example, taking our
+earlier example and just changing $b_2$ into $b_{2j}$:
+
+$$
+mood_{ij} = b_{0j} + b_1 * age_{j} + b_{2j} * stress_{ij} + \varepsilon_{ij}
+$$
+
+The corresponding `R` code is:
+
+```{r}
+
+summary(lmer(mood ~ age + stress + (stress | ID), data = dm))
+
+``` 
+
+technically note now with two random effects, we assume that the
+random effects, $u_{0j}$ and $u_{2j}$, which we collectively denote
+$\mathbf{u}_{j}$ follow a multivariate normal distribution with
+covariance matrix $\mathbf{G}$.
+
+$$
+\mathbf{u}_{j} \sim \mathcal{N}(0, \mathbf{G})
+$$
+
+Based on the little decision chart, between unit only variables, like
+$age_j$ and $Bstress_j$ *cannot* be random effects. Also, while it is
+technically possible for something to only be a random effect without
+a corresponding fixed effect, its not common and not recommended as it
+would be equivalent to assuming that the fixed effect, the mean of the
+distribution, is 0, which is rarely appropriate.
+
+# Interactions in LMMs
+
+Interactions in LMMs work effectively the same way that interactions
+in GLMs do, although there are a few nuances in options and possible
+interpretations.
+Using the notation from above, let's consider a few different possible
+interactions. 
+
+## Cross Level (Between and Within Unit) Interactions
+
+First, let's take our model with age and stress and
+include an interaction. Here is the model without an interaction.
+
+$$
+mood_{ij} = b_{0j} + b_1 * age_{j} + b_2 * stress_{ij} + \varepsilon_{ij}
+$$
+
+The corresponding `R` code is:
+
+```{r}
+
+summary(lmer(mood ~ age + stress + (1 | ID), data = dm))
+
+``` 
+
+Now let's add the interaction, as a fixed effect.
+
+$$
+mood_{ij} = b_{0j} + b_1 * age_{j} + b_2 * stress_{ij} + 
+  b_3 * (age_{j} * stress_{ij}) + 
+  \varepsilon_{ij}
+$$
+
+The corresponding `R` code is:
+
+```{r}
+
+## long way
+summary(lmer(mood ~ age + stress + age:stress + (1 | ID), data = dm))
+
+## short hand in R for simple main effect + interaction
+## identical, but shorter to the above
+summary(lmer(mood ~ age * stress + (1 | ID), data = dm))
+
+``` 
+
+The relevant, new, part is the interaction term, $b_3$, a fixed effect
+in this case. If we focus just on that one term, we see that the
+coefficient, $b_3$ is applied to the arithmetic product of two
+variables, here age and stress. As it happens, one of them, age,
+varies only between units whereas the other, stress, varies within
+units. You will sometimes see this termed as "cross level" interaction
+between it involves a between and within varying variable.
+
+$$
+b_3 * (age_{j} * stress_{ij})
+$$
+
+As with interactions for regular GLMs, interactions in LMMs can be
+interpretted in different ways. The two common interpretations are
+easiest to see by factoring the regression equation.
+Here are three equal equations that highlight different ways of
+viewing the interaction.
+
+In the latter two formats, it highlights how the simple effect of
+stress varies by age and how the simple effect of age varies by
+stress. 
+
+$$
+\begin{array}{lcl}
+mood_{ij} & = & b_{0j} + b_1 * age_{j} + b_2 * stress_{ij} + 
+  b_3 * (age_{j} * stress_{ij}) + \varepsilon_{ij} \\
+          & = & b_{0j} + b_1 * age_{j} + 
+		  (b_2 + b_3 * age_j) * stress_{ij} + \varepsilon_{ij} \\
+          & = & b_{0j} + (b_1 + b_3 * stress_{ij}) * age_{j} + 
+		  b_2 * stress_{ij} + \varepsilon_{ij} \\  
+\end{array}
+$$
+
+The nuance in LMMs comes in because some variables vary only between
+units and others within units. For example, when interpretting the
+interaction with respect to the simple effect of stress, we could say
+that the association between daily stress and mood on the same day
+depends on the age of a participant. Conversely, when interpretting
+with respect to the simple effect of age, we could say that the
+association of participant age and average mood depends on how
+stressed someone is feeling on a given day. Age varies only between
+people, stress varies within people, so that must be taken into
+account in the interpretation.
+
+## Between Unit Interactions
+
+The same approach would work with other type of variables in LMMs. For
+example, here we have a model with age and female as predictors. Both
+vary only between units.
+
+$$
+\begin{array}{lcl}
+mood_{ij} & = & b_{0j} + b_1 * age_{j} + b_2 * female_{j} + 
+  b_3 * (age_{j} * female_{j}) + \varepsilon_{ij} \\
+          & = & b_{0j} + b_1 * age_{j} + 
+		  (b_2 + b_3 * age_j) * female_{j} + \varepsilon_{ij} \\
+          & = & b_{0j} + (b_1 + b_3 * female_{j}) * age_{j} + 
+		  b_2 * female_{j} + \varepsilon_{ij} \\  
+\end{array}
+$$
+
+When interpretting the
+interaction with respect to the simple effect of female, we could say
+that the association between participant sex and average mood
+depends on the age of a participant. Conversely, when interpretting
+with respect to the simple effect of age, we could say that the
+association of participant age and average mood depends on participant
+sex.
+
+## Within Unit Interactions
+
+Finally, both variables could vary within units.
+
+$$
+\begin{array}{lcl}
+mood_{ij} & = & b_{0j} + b_1 * energy_{ij} + b_2 * stress_{ij} + 
+  b_3 * (energy_{ij} * stress_{ij}) + \varepsilon_{ij} \\
+          & = & b_{0j} + b_1 * energy_{ij} + 
+		  (b_2 + b_3 * energy_{ij}) * stress_{ij} + \varepsilon_{ij} \\
+          & = & b_{0j} + (b_1 + b_3 * stress_{ij}) * energy_{ij} + 
+		  b_2 * stress_{ij} + \varepsilon_{ij} \\  
+\end{array}
+$$
+
+When interpretting the interaction with respect to the simple effect
+of stress, we could say that the association between daily stress and
+mood on the same day depends on same day energy level. 
+Conversely, when interpretting with respect to the simple effect of
+energy, we could say that the association of daily energy and same day
+mood depends on how stressed someone is feeling on a given day. 
+
+## 'Prediction' Interpretation of Interactions
+
+When one variable in an interaction varies within units and
+particularly when it is a random effect, another way that people
+sometimes interpret interactions is that the other variable is
+'predicting' the random effect. This occurs most often when the
+moderator variable varies between units only. An example may be
+clearer than words.
+
+First, we fit a model with age and stress as fixed effects predictors
+and a random slope as well for stress, stored in `m1`. Then we fit the
+same model but adding a fixed effect interaction between stress
+(within) and age (between). Calculating the difference in the variance
+of the random stress slope yields a sort of $R^2$ measure of the
+variance in the random slope explained by the stress x age
+interaction. 
+
+The corresponding `R` code is:
+
+```{r}
+
 ## main effects only
-## different intercepts, same slope (parallel lines)
-visreg(
-  fit = m.main,
-  xvar = "mpg",
-  by = "vs",
-  overlay = TRUE)
+m1 <- lmer(mood ~ age + stress + (1 + stress | ID), data = dm, REML=FALSE)
 
-## interaction results
-## different intercept, different slopes
-visreg(
-  fit = m.int,
-  xvar = "mpg",
-  by = "vs",
-  overlay = TRUE)
+## interaction model
+m2 <- lmer(mood ~ age * stress + (1 + stress | ID), data = dm, REML=FALSE)
 
+## summary of both models, get random slope for stress variance
+summary(m1)
+summary(m2)
 
-#### 3. Interactions in LMMs (Demonstration) ####
+## variance in random stress slope explained by age
+(.0587 - .0497) / .0587
 
+``` 
 
-lmm.main <- lmer(PosAff ~ STRESS + Female +
-                   (1 | UserID),
-                   data = d)
+Because age and stress interact in the model (as a fixed effect), the
+average stress slope no longer has to be the same for everyone. It can
+differ depending on their age. Specifically, the predicted average
+(fixed effects) stress slope for the *j*th person is 
+$b_{2j} + b_3 * age_j$. Recall that we normally break up random slopes
+into a fixed and random part:
 
-lmm.int1 <- lmer(PosAff ~ STRESS * Female +
-                   (1 | UserID),
-                   data = d)
+$$
+b_{2j} = \gamma_{20} + u_{2j}
+$$
 
-lmm.int2 <- lmer(PosAff ~ STRESS * Female +
-                   (1 + STRESS | UserID),
-                   data = d)
+Without the interaction by age, any participant level differences
+*must* go into the $u_{2j}$ component, on which the variance/standard
+deviation of the slope is calculated. Now the simple stress slope for
+a given participant is:
 
+$$
+\gamma_{20} + b_3 * age_j + u_{2j} 
+$$
 
-## note the warning mssages --- this model failed to converge
-## do not trust the results, there are a few approaches that might
-## let such a model be estimated, but those are beyond this class
-## generally, the easiest approach is to simplify
-## here, we would use the simpler model, lmm.int2
-lmm.int3 <- lmer(PosAff ~ STRESS * Female +
-                   (1 + STRESS + STRESS:Female | UserID),
-                   data = d)
+so now the $u_{2j}$ component, on which the variance/standard
+deviation of the slope is calculated, captures deviations from the
+fixed part, which includes both the average stress slope and a
+modification based on participant age. To the extent that $b_3$ is
+different from 0, this will essentially reduce some differences that
+otherwise go into the $u_{2j}$ component and thus will explain some of
+the variance in the random slope.
 
-
-## summaries of the models
-summary(lmm.main)
-summary(lmm.int1)
-
-## test whether adding the random stress slope helps
-anova(lmm.int1, lmm.int2, test = "LRT")
-
-summary(lmm.int2)
-
-## rounded coefficient table
-## note that although coef() on a model gives the individual estimates
-## calling coef() after summary() just gives fixed effects table
-## which we can round
-round(coef(summary(lmm.int2)), 2)
-
-## confidence intervals (also rounded to 2 decimal points)
-round(confint(lmm.int2, method = "Wald",
-              oldNames = FALSE), 2)
+This is always true, in a way, with an interaction, but outside of
+LMMs we do not have random effects and so when we allow slopes to
+differ for different groups people, we do not know what an individual
+person's slope was without the interaction so have no reference
+point. Put differently, outside of LMMs, in regular GLMs, we always
+assume that $u_{2j} = 0$ so we wouldn't really think about
+'predicting' it when it is fixed at 0. In GLMs we only focus on how we
+allow the average slope to differ by level of the moderator. In LMMs
+we can interpret it the same way *or* we can interpret the moderator
+as 'predicting' the random slope.
 
 
-## calculate and graph the simple slopes of stress
-## at different levels of female
-visreg(
- fit = lmm.int2,
- xvar = "STRESS",
- by = "Female",
- overlay = TRUE)
+# Continuous Interactions in `R`
 
-## calculate and graph the mean difference between women and men
-## at different levels of stress, specifically, using breaks, we
-## ask for simple slope of female at stress of 0, 5, and 10
-## partial = FALSE removes the residual data points
-visreg(
- fit = lmm.int2,
- xvar = "Female",
- by = "STRESS",
- breaks = c(0, 5, 10),
- partial = FALSE,
- overlay = TRUE)
+Aside from the notes about some minor interpretation differences, in
+general interactions in LMMs are analysed, graphed, and interpretted
+the same way as for GLMs.
+
+First to avoid any issues around diagnostics etc. from haven labeled
+type data, we will convert the variable we are going to work with to
+numeric. Then we fit a LMM with an interaction between stress and
+neuroticism, mood as the outcome and a random intercept as the only
+random effect.
+
+```{r}
+
+dm[, mood := as.numeric(mood)]
+dm[, stress := as.numeric(stress)]
+dm[, neuroticism := as.numeric(neuroticism)]
+
+m <- lmer(mood ~ neuroticism * stress + (1 | ID), data = dm)
+
+```
+
+A quick check of the model diagnostics suggests that there may be an
+outlier on the residuals, but it is not too extreme and otherwise the
+data look fairly good. The residuals do not appear to follow a normal
+distribution that closely, partly due to the long left tail.
+
+```{r}
+
+plot(modelDiagnostics(m), nrow = 2, ncol = 2, ask = FALSE)
+
+```
+
+Applying transformations to left skewed data is more difficult as
+generally transformations work on long right tails. A solution is to
+reverse the variable, apply the transformation and then again reverse
+it so that the direction is the same as it originally was. We could
+try a square root transformations which is milder than a log
+transformation. To reverse it, we subtract the variable from the sum
+of its minimum and maximum. Next we take its square root, then we
+reverse by again subtracting from the sum of its minimum and maximum,
+but square root transformed.
+
+```{r}
+
+max(dm$mood) + min(dm$mood)
+
+## transform
+dm[, moodtrans := sqrt(8) - sqrt(8 - mood)]
+
+m <- lmer(moodtrans ~ neuroticism * stress + (1 | ID), data = dm)
+
+md <- modelDiagnostics(m) 
+plot(md, nrow = 2, ncol = 2, ask = FALSE)
+
+``` 
+
+The transformation appears to have modestly helped the distribution of
+residuals. Its not that clear whether it was bad enough to begin with
+and whether the transformation improved it enough that it is worth the
+difficulty in interpretation (mood is now square root transformed and
+that must be incorporated into its interpretation). For the lecture,
+we will proceed with the transformation, but in practice, consider
+whether this is worth it or only adds difficulty in understanding
+without improving / changing results much.
+We still see an extreme value present. We can remove that, as we have
+discussed in depth in previous lectures, update the model, and re-run
+diagnostics.
+
+```{r}
+
+dmnoev <- dm[-md$extremeValues$Index]
+mnoev <- update(m, data = dmnoev)
+md <- modelDiagnostics(mnoev)
+plot(md, nrow = 2, ncol = 2, ask = FALSE)
+
+```
+
+After removing one extreme value, another point is classified as an
+extreme value. We could remove that too. Note that its important that
+we remove it from the `dmnoev` dataset, not the original `dm` dataset,
+because the row numbers from these two datasets do not match and we
+are only removing the additional "new" extreme value found. It is
+relatively rare to actually iterate through this process of
+identifying and removing extreme values multiple times, but I do it to
+show how it woudl work if you wanted to.
+
+After removing the additional extreme value, we would update the model
+again, and check diagnostics again.
+
+```{r}
+
+dmnoev <- dmnoev[-md$extremeValues$Index]
+mnoev <- update(mnoev, data = dmnoev)
+md <- modelDiagnostics(mnoev)
+plot(md, nrow = 2, ncol = 2, ask = FALSE)
+
+``` 
+
+Finally no extreme values are identified and the distributions are
+approximately normal. In practice it could take additional rounds of
+extreme value removal or you may decide to stop at one round.
+
+At this point, we have a "clean" model and we can look at a summary of
+it. Although we have used `summary()` a lot in the past, we'll
+introduce another function to help look at `lmer()` model results,
+`modelTest()`. In this lecture, we will only learn and interpret part
+of its output, with the rest of the output from `modelTest()` covered
+later. In addition to get nicely formatted results rather than a set
+of datasets containing the results, we use the `APAStyler()`
+function.
+
+```{r}
+
+APAStyler(modelTest(mnoev))
+
+``` 
+
+The results show the regression coefficients, asterisks for p-values,
+and 95% confidence intervals in brackets for the fixed effects, the
+standard deviations of the random effects, the model degrees of
+freedom, which is how many parameters were estimated in the model
+total, and the number of people and observations. For now, we will
+ignore all the output under row 9, N (Observations). In the case of
+this model we can see the following.
+
+A LMM was fit with 181 observations from 50 people. There was a
+significant neuroticism x stress interaction, b [95% CI] = -0.02
+[-.04, .00], p < .05.
+
+We can also pass multiple model results in a list together, which puts the
+results side by side. This is particularly helpful for comparing
+models with and without covariates or to evaluate whether removing
+extreme values changed the results substantially.
+
+```{r}
+
+APAStyler(list(
+  EV = modelTest(m),
+  NOEV = modelTest(mnoev) ))
+
+``` 
+
+These results show us that we have effectively the same results with
+or without those two extreme values we omitted. Indeed the only
+changes really observed are small changes in the 95% confidence
+intervals and a slight decrease in the residual standard deviation,
+sigma, with the extreme values removed (outside, of course of the
+models being based on 181 instead of 183 people). In a case like this,
+it will not make any real difference to the interpretation if the
+model with extreme values or without extreme values is used.
+
+We can understand what the interaction means in the same way as for
+GLMs. The following 3D figure shows the slight warp in the regression
+plane between stress and neuroticism with (transformed) mood. The
+warping is because of the interaction.
+
+```{r, echo = FALSE}
+
+## this package only used for demo purposes
+library(plotly)
+
+stress <- seq(from = min(dm$stress, na.rm=TRUE),
+              to = max(dm$stress, na.rm=TRUE),
+              length.out = 100)
+neuroticism <- seq(from = min(dm$neuroticism, na.rm=TRUE),
+             to = max(dm$neuroticism, na.rm=TRUE),
+             length.out = 100)
+mood <- expand.grid(stress = stress, neuroticism = neuroticism)
+mood$mood <- predict(mnoev, newdata = mood, re.form = ~ 0)
+mood <- as.matrix(
+  reshape(mood, v.names = "mood", timevar = "neuroticism",
+          idvar = "stress", direction = "wide")[, -1])
+plot_ly(x = ~ stress, y = ~ neuroticism, z = ~ mood) %>% add_surface()
+
+``` 
+
+## Plotting
+
+Typically, 3D graphs are not used to plot interactions. Instead, a few
+exemplar lines are graphed showing the slope of one variable with the
+outcome at different values of the moderator. 
+As with GLMs, we can use the `visreg()` function.
+Here, we'll use
+neuroticism as the moderator. A common approach to picking level of
+the moderator is to use the Mean - 1 SD and Mean + 1 SD. To do that,
+we first need the mean and standard deviation of neuroticism, which we
+can get using `egltable()` after excluding duplicates by ID, since
+neuroticism only varies between units.
+
+```{r}
+
+egltable("neuroticism", data = dmnoev[!duplicated(ID)])
+
+visreg(mnoev, xvar = "stress",
+       by = "neuroticism", overlay=TRUE,
+       breaks = c(7.2 - 2.08, 7.20 + 2.08),
+       partial = FALSE, rug = FALSE)
+
+```
+
+The results show, in an easier to interpret way, what the negative
+interaction coefficient of $b = -.02$ means, people with higher levels
+of neuroticism are more sensitive to the effects of stress. People
+lower in neuroticism are relatively less sensitive to the effects of
+stress, although in both cases, higher stress is associated with lower
+(transformed) mood.
+
+Another common way of picking some exemplar values is to use the 25th
+and 75th percentiles. These work particularly well for very skewed
+distributions where the mean +/- SD could be outside the observed
+range of the data. Again we exclude duplicates by ID and then use the
+`quantile()` function to get the values, 6, and 9 for the 25th and
+75th percentiles.
+
+```{r}
+
+quantile(dmnoev[!duplicated(ID), neuroticism], na.rm = TRUE)
+
+visreg(mnoev, xvar = "stress",
+       by = "neuroticism", overlay=TRUE,
+       breaks = c(6, 9),
+       partial = FALSE, rug = FALSE)
+
+``` 
+
+## Simple Effects
+
+When working with models that have interactions, a common aid to
+interpretation is to test the simple effects / slopes from the
+model. For example, previously we graphed the association between
+stress and transformed mood at M - 1 SD and M + 1 SD on
+neuroticism. However, although visually both lines appeared to have a
+negative slope, we do not know from the graph alone whether there is a
+significant association betwee stress and transformed mood at both the
+low (M - 1 SD) and high (M + 1 SD) levels of neuroticism. To answer
+that, we need to test the simple slope of stress at specific values of
+neuroticism. Our default model does actually give us one simple slope:
+it is the simple slope of stress when $neuroticism = 0$. However, as
+we can tell from the mean and standard deviation of neuroticism, 0 is
+very far outside the plausible range of values so that simple slope
+given to us by default from the model is not too useful. We could
+either center neuroticism and re-run the model, which would get us a
+different simple slope, or use post hoc functions to calculate simple
+slopes.
+
+We will use the `emtrends()` function from the `emmeans` package to
+test the simple slopes. This function also works with GLMs, for your
+reference.
+
+The `emtrends()` function take a model as its first argument, then the
+variable that you want to calculate a simple slope for, here `stress`,
+the argument `at` requires a list of specific values of the moderator,
+and then we tell it how we want degrees of freedom calculated (note
+this only applies to `lmer` models). We store the results in an `R`
+object, `mem` and then call `summary()` to get a summary table. The
+`infer = TRUE` argument is needed to `summary()` if you want
+p-values. 
+
+```{r}
+
+mem <- emtrends(mnoev, var = "stress",
+                at = list(neuroticism = c(7.2 - 2.08, 7.2 + 2.08)),
+                lmer.df = "satterthwaite")
+
+summary(mem, infer=TRUE)
+
+```
+
+The relevant parts of the output, for us, are the columsn for
+`stress.trend` which are the simple slopes, the values of
+`neuroticism` which tell us at what values of neuroticism we have
+calculated simple slopes, the confidence intervals, `lower.CL` and
+`upper.CL`, 95% by default, and the p-value. From these results, we
+can see that when $neuroticism = 5.12$ there is no significant
+association between stress and transformed mood, but there is when
+$neuroticism = 9.28$.
+
+## Sample Write Up
+
+With all of this information, we can plan out some final steps for a
+polished write up of the results. First, let's get exact p-values for
+all our results. We can do this through options to `pcontrol` in
+`APAStyler()`. We also re-print the simple slopes here.
+
+```{r}
+
+APAStyler(list(
+  EV = modelTest(m),
+  NOEV = modelTest(mnoev)),
+  pcontrol = list(digits = 3, stars = FALSE, includeP = TRUE,
+                  includeSign = TRUE, dropLeadingZero = TRUE))
+
+summary(mem, infer=TRUE)
+
+``` 
+
+Now we will make a polished, finalized figure. I have customized the
+colours, and turned off the legends. In place of legends, I have
+manually added text annotations including the simple slopes and
+confidence intervals and p-values for the simple slopes^[For your
+reference, it took about 6 trial and errors of different x and y
+values and angles to get the text to line up about right. I did not
+magically get the values to use to get a graph that I thought looked
+nice. That is why I think sometimes it is easier to add this sort of
+text after the fact in your slides of papers rather than building it
+into the code.].
+
+```{r}
+
+visreg(m, xvar = "stress",
+       by = "neuroticism", overlay=TRUE,
+       breaks = c(7.2 - 2.08, 7.20 + 2.08),
+       partial = FALSE, rug = FALSE, gg=TRUE,
+       xlab = "Daily Stress",
+       ylab = "Predicted Daily Mood") +
+  scale_color_manual(values = c("5.12" = "black", "9.28" = "grey70")) +
+  theme_pubr() +
+  guides(colour = FALSE, fill = FALSE) +
+  annotate(geom = "text", x = 4.2, y = 1.21, label = "High Neuroticism: b = -.03 [-.09, .02], p = .26",
+           angle = -10) + 
+  annotate(geom = "text", x = 4.4, y = 1.045, label = "Low Neuroticism: b = -.12 [-.17, -.07], p < .001",
+           angle = -33.8)
+
+```
+
+A linear mixed model using restricted maximum likelihood was used to
+test whether the association of daily stress on daily mood is
+moderated by baseline neuroticism scores. All predictors were included
+as fixed effects and a random intercept by participant was included.
+Visual diagnostics showed that mood was not normally distributed, so
+it was square root transformed, referred to as transformed mood
+hereafter. Additionally, two outliers were identified on the residuals
+and these were excluded leaving a total of 181 observations from 50
+people.
+
+There was a significant daily stress x neuroticism interaction, such
+that higher neuroticism scores were associated with a more negative
+association between daily stress and same day transformed mood, 
+b [95% CI] = -0.02 [-0.04, 0.00], p = .017. To help interpret the
+interaction, the simple slopes of daily stress on transformed mood
+were tested and graphed at low (M - 1 SD) and high (M + 1 SD) values
+of neuroticism (see Figure XX). The results revealed that there was a
+significant, negative association between daily stress and same day
+transformed mood at high, but not low levels of neuroticism.
+
+Sensitivity analyses not excluding outliers revealed that results
+remained unchanged.
+
+
+
+# Continuous x Categorical Interactions in `R`
+
+Continuous x Categorical interactions are conducted much as continuous
+x continuous interactions. Typically with continuous x categorical
+interactions, simple slopes for the continuous variable are calculated
+at all levels of the categorical variable.
+
+Here we will work with a three level, dummy coded variable, stress
+with low being the reference and two dummy codes, one for mid and one
+for high stress. The outcome is transformed mood we used earlier.
+
+
+```{r}
+
+## create a "categorical" stress variable
+dm[, stress3 := cut(stress, breaks = quantile(stress, probs = c(0, 1/3, 2/3, 1), na.rm=TRUE),
+                    labels = c("Low", "Mid", "High"),
+                    include.lowest = TRUE)]
+
+m <- lmer(moodtrans ~ neuroticism * stress3 + (1 | ID), data = dm)
+
+```
+
+The model diagnostics look relatively good, albeit not perfect.
+
+```{r}
+
+plot(modelDiagnostics(m), nrow = 2, ncol = 2, ask = FALSE)
+
+```
+
+With reasonable diagnostics, we can look at a summary.
+
+We have a "clean" model and we can look at a summary of
+it. 
+
+```{r}
+
+summary(m)
+
+```
+
+Factor variables in interactions do not work currently with 
+`modelTest()`, so if we wanted to use it, we'd need to manually dummy
+code the categorical variable. The results are identical.
+
+```{r}
+
+dm[, stressHigh := as.integer(stress3 == "High")]
+dm[, stressMid := as.integer(stress3 == "Mid")]
+
+malt <- lmer(moodtrans ~ neuroticism * (stressMid + stressHigh) + (1 | ID), data = dm)
+
+APAStyler(modelTest(malt))
+
+``` 
+
+## Plotting
+
+These interactions are not significant, so often we would simply drop
+the interaction term and report main effects. For the sake of example
+only, we will plot anyways.
+
+With continuous x categorical interactions, the easiest approach is to
+plot the simple slope of the continuous variable by the categorical
+one as shown in the following.
+
+```{r}
+
+visreg(m, xvar = "neuroticism",
+       by = "stress3", overlay=TRUE,
+       partial = FALSE, rug = FALSE)
+
+```
+
+## Simple Effects
+
+These interactions are not significant, so often we would simply drop
+the interaction term and report main effects. For the sake of example
+only, we will continue to look at simple effects anyways.
+
+When working with models that have interactions, a common aid to
+interpretation is to test the simple effects / slopes from the
+model. For example, previously we graphed the association between
+neuroticism and transformed mood at each level of the categorical
+`stress3` variable.
+However, we cannot tell from the graph whether neuroticism is
+significantly associated with transformed mood for any specific level
+of stress.
+To answer that, we need to test the simple slope of neuroticism at specific
+values of neuroticism. Our default model does actually give us one simple slope:
+it is the simple slope of neuroticism when stress3 = low$, but we
+might want more.
+
+We will use the `emtrends()` function from the `emmeans` package to
+test the simple slopes. 
+
+The `emtrends()` function take a model as its first argument, then the
+variable that you want to calculate a simple slope for, here `stress`,
+the argument `at` requires a list of specific values of the moderator,
+and then we tell it how we want degrees of freedom calculated (note
+this only applies to `lmer` models). We store the results in an `R`
+object, `mem` and then call `summary()` to get a summary table. The
+`infer = TRUE` argument is needed to `summary()` if you want
+p-values. 
+
+```{r}
+
+mem <- emtrends(m, var = "neuroticism",
+                at = list(stress3 = c("Low", "Mid", "High")),
+                lmer.df = "satterthwaite")
+
+summary(mem, infer=TRUE)
+
+```
+
+The relevant parts of the output, for us, are the columsn for
+`neuroticism.trend` which are the simple slopes, the values of
+`stress3` which tell us at what values of stress3 we have
+calculated simple slopes, the confidence intervals, `lower.CL` and
+`upper.CL`, 95% by default, and the p-value. From these results, we
+can see that neuroticism is not significantly associated with
+transformed mood for any stress category, although its closest for
+high stress.
+
+# Categorical x Categorical Interactions in `R`
+
+
+Categorical x Categorical interactions are conducted comparably,
+although more contrasts / simple effect follow-ups are possible.
+
+Here we will work with a three level, dummy coded variable, stress
+with low being the reference and two dummy codes, one for mid and one
+for high stress. The outcome is transformed mood we used earlier.
+We also work with a three level neuroticism variable.
+
+
+```{r}
+
+## create a categorical neuroticism variable
+dm[, neuro3 := cut(neuroticism, breaks = quantile(neuroticism, probs = c(0, 1/3, 2/3, 1), na.rm=TRUE),
+                    labels = c("Low", "Mid", "High"),
+                    include.lowest = TRUE)]
+
+m <- lmer(moodtrans ~ neuro3 * stress3 + (1 | ID), data = dm)
+
+```
+
+The model diagnostics look relatively good, albeit not perfect, with
+only one modest extreme value.
+
+```{r}
+
+plot(modelDiagnostics(m), nrow = 2, ncol = 2, ask = FALSE)
+
+```
+
+With reasonable diagnostics, we can look at a summary.
+
+```{r}
+
+summary(m)
+
+```
+
+## Plotting
+
+With categorical x categorical interactions, `visreg()` produces OK
+but not great figures as shown in the following. We can see the means
+of transformed mood for all 9 cells (the cross of 3 level of
+neuroticism x 3 levels of stress).
+
+```{r}
+
+visreg(m, xvar = "neuro3",
+       by = "stress3", overlay=TRUE,
+       partial = FALSE, rug = FALSE)
+
+```
+
+## Simple Effects
+
+When working with two categorical interactions (or, as an aside, with
+a categorical predictor with >2 levels where you want to test various
+group differences), the `emmeans()` function from the `emmeans`
+package is helpful. We can get the means of each neuroticism group by
+stress group and get confidence intervals and p-values. These p-values
+test whether each mean is different from zero, by default.
+
+```{r}
+
+em <- emmeans(m, "neuro3", by = "stress3",
+              lmer.df = "satterthwaite")
+summary(em, infer = TRUE)
+
+```
+
+A nice plot, with confidence intervals for the fixed effects, can be
+obtained by using the `emmip()` function from the `emmeans`
+package. It takes as input the results from `emmeans()`, not the
+`lmer()` model results directly. Here is a simple plot showing the
+categorical interactions. Note that with this approach, you could
+basically fit the same model(s) that you would with a repeated
+measures or mixed effects ANOVA model, with the advantage that LMMs do
+not require balanced designs and allow both categorical and continuous
+predictors (e.g., you could include continuous covariates
+easily). GLMs and (G)LMMs can do everything that t-tests and various
+ANOVAs can, but with greater flexibility.
+
+```{r}
+
+emmip(em, stress3 ~ neuro3, CIs = TRUE) +
+  theme_pubr() +
+  ylab("Predicted Transformed Mood")
+
+```
+
+If you want pairwise comparisons, you can get all possible pairwise
+comparisons between neuroticism levels by stress or stress levels by
+neuroticism using the `pairs()` function.
+
+
+```{r}
+
+## pairwise comparisons of neuroticism by stress
+pairs(em, by = "stress3")
+
+## pairwise comparisons of stress by neuroticism
+pairs(em, by = "neuro3")
+
+``` 
+
+You can also get custom contrasts. For example, if we wanted to
+compare high neuroticism to the average of low and mid neuroticism at
+each level of stress (H1) and secondly see if low and mid neuroticism
+differ (H2). The list gives the specific contrast weights, which are
+directly applied to the means we saw earlier from `emmeans()`.
+
+```{r}
+
+contrast(em,
+         list(
+           H1 = c(.5, .5, -1),
+           H2 = c(1, -1, 0)),
+         by = "stress3")
+
+``` 
+
+To help you see directly how the contrast weights are applied, we can
+apply them directly to the estimated means.
+
+```{r}
+
+## all the means
+as.data.frame(em)
+
+## just the first three, all for stress3 = low
+as.data.frame(em)$emmean[1:3]
+
+## apply H1 weights
+sum(as.data.frame(em)$emmean[1:3] * c(.5, .5, -1))
+
+## apply H2 weight
+sum(as.data.frame(em)$emmean[1:3] * c(1, -1, 0))
+
+```
+
+You could get even more specific hypotheses about group differences,
+if you wanted using `by = NULL` all the means are in a row of 9 and we
+can apply weights to each. For example, here we contrast the average
+of low neuroticism at low stress and low neuroticism at mid stress to
+high neuroticism and high stress (H1).
+For more examples of weighting schemes for many different possible
+specific contrasts, wee:
+https://stats.idre.ucla.edu/spss/faq/how-can-i-test-contrasts-and-interaction-contrasts-in-a-mixed-model/
+.
+
+```{r}
+
+## all the means
+as.data.frame(em)
+
+
+contrast(em,
+         list(
+           H1 = c(.5, 0, 0, .5, 0, 0, 0, 0, -1)),
+         by = NULL)
+
+
+``` 
+
+
+# Summary
+
+## Conceptual
+
+Key points to take away conceptually are:
+
+- How to include interactions/moderation in LMMs
+- How to understand whether there is a significant interaction or
+  notation
+- How to test and interpret interactions 
+- How to test simple slopes / simple effects from different kinds of
+  interactions 
+
+## Code
+
+
+| Function       | What it does                                 |
+|----------------|----------------------------------------------|
+| `lmer()`     | estimate a LMM  |
+| `confint()` | calculate confidence intervals for a LMM  | 
+| `visreg()` | create marginal or conditional graphs from a LMM  | 
+| `modelDiagnostics()` | evaluate model diagnostics for LMMs including of multivariate normality  | 
+| `summary()` | get a summary of model results
+| `modelTest()` | along with `APAStyler()` get a nicely formatted summary of a model results. | 
+| `emmeans()` | test specific means from a model. | 
+| `emtrends()` | test simple slopes from a model. | 
+| `contrast()` | test custom contrasts on a set of means from `emmeans()`. | 
+
