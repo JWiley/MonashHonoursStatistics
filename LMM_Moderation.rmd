@@ -250,14 +250,11 @@ stress varies by age and how the simple effect of age varies by
 stress. 
 
 $$
-\begin{array}{lcl}
-mood_{ij} & = & b_{0j} + b_1 * age_{j} + b_2 * stress_{ij} + 
-  b_3 * (age_{j} * stress_{ij}) + \varepsilon_{ij} \\
-          & = & b_{0j} + b_1 * age_{j} + 
-		  (b_2 + b_3 * age_j) * stress_{ij} + \varepsilon_{ij} \\
-          & = & b_{0j} + (b_1 + b_3 * stress_{ij}) * age_{j} + 
-		  b_2 * stress_{ij} + \varepsilon_{ij} \\  
-\end{array}
+\begin{align}
+mood_{ij} &= b_{0j} + b_1 * age_{j} + b_2 * stress_{ij} + b_3 * (age_{j} * stress_{ij}) + \varepsilon_{ij} \\
+          &= b_{0j} + b_1 * age_{j} + (b_2 + b_3 * age_j) * stress_{ij} + \varepsilon_{ij} \\
+          &= b_{0j} + (b_1 + b_3 * stress_{ij}) * age_{j} + b_2 * stress_{ij} + \varepsilon_{ij} \\
+\end{align}
 $$
 
 The nuance in LMMs comes in because some variables vary only between
@@ -278,14 +275,11 @@ example, here we have a model with age and female as predictors. Both
 vary only between units.
 
 $$
-\begin{array}{lcl}
-mood_{ij} & = & b_{0j} + b_1 * age_{j} + b_2 * female_{j} + 
-  b_3 * (age_{j} * female_{j}) + \varepsilon_{ij} \\
-          & = & b_{0j} + b_1 * age_{j} + 
-		  (b_2 + b_3 * age_j) * female_{j} + \varepsilon_{ij} \\
-          & = & b_{0j} + (b_1 + b_3 * female_{j}) * age_{j} + 
-		  b_2 * female_{j} + \varepsilon_{ij} \\  
-\end{array}
+\begin{align}
+mood_{ij} &= b_{0j} + b_1 * age_{j} + b_2 * female_{j} + b_3 * (age_{j} * female_{j}) + \varepsilon_{ij} \\
+          &= b_{0j} + b_1 * age_{j} + (b_2 + b_3 * age_j) * female_{j} + \varepsilon_{ij} \\
+          &= b_{0j} + (b_1 + b_3 * female_{j}) * age_{j} + b_2 * female_{j} + \varepsilon_{ij} \\
+\end{align}
 $$
 
 When interpretting the
@@ -301,14 +295,11 @@ sex.
 Finally, both variables could vary within units.
 
 $$
-\begin{array}{lcl}
-mood_{ij} & = & b_{0j} + b_1 * energy_{ij} + b_2 * stress_{ij} + 
-  b_3 * (energy_{ij} * stress_{ij}) + \varepsilon_{ij} \\
-          & = & b_{0j} + b_1 * energy_{ij} + 
-		  (b_2 + b_3 * energy_{ij}) * stress_{ij} + \varepsilon_{ij} \\
-          & = & b_{0j} + (b_1 + b_3 * stress_{ij}) * energy_{ij} + 
-		  b_2 * stress_{ij} + \varepsilon_{ij} \\  
-\end{array}
+\begin{align}
+mood_{ij} &= b_{0j} + b_1 * energy_{ij} + b_2 * stress_{ij} + b_3 * (energy_{ij} * stress_{ij}) + \varepsilon_{ij} \\
+          &= b_{0j} + b_1 * energy_{ij} + (b_2 + b_3 * energy_{ij}) * stress_{ij} + \varepsilon_{ij} \\
+          &= b_{0j} + (b_1 + b_3 * stress_{ij}) * energy_{ij} + b_2 * stress_{ij} + \varepsilon_{ij} \\
+\end{align}
 $$
 
 When interpretting the interaction with respect to the simple effect
