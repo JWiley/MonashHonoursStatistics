@@ -1,4 +1,5 @@
 # [Home](README.md)
+Acknowledgements: This MonashHonoursStatistics git repo is forked from Josh Wiley's original repo. Dr. Wiley created this course and much of the material remains his original work, with a few updates (mostly R related) for the current 2021 course.
 
 The vision of this unit is to train you in applied statistics and data
 science for Psychology. These skills are useful not only for
@@ -7,30 +8,13 @@ skills. With industry and modern, agile teams in mind, we will be
 using several tools that are common tools used in industry. Some of
 these you may have used, some may be new. We'll introduce each.
 
-# 1. Slack -- team communication
+# 1. Microsoft Teams -- team communication
 
-Slack is an instant messaging / chat platform. It is used in many
-large companies and allows easier, real time communication, sharing
-code, files, and images than email. A workspace just for this unit
-this year has been created.
+Teams is an instant messaging / chat platform. It allows easier, real time communication, sharing
+code, files, and images than email. A channel that sits under the "PSY Honours 2021" Team called "PSY4210 - Data Science Forum" has been created, and if you are enrolled in the unit, you will automatically be added to the channel.
 
-Go [here](https://join.slack.com/t/psy42102020/shared_invite/enQtOTM5MDYzNTQ0MzkxLTFiMjhmY2JjODRkYzJiMTgxNzUxZGRmNDY5YzUwNjY1ZTRlNjMwMmE4YjRkZGY1ZDMxNTZiNzZmNTBlMWI3NWI)
-and then create a Slack account using your Monash email address
-(i.e., @monash.edu or @student.monash.edu) and
-join the PSY42102020 workspace. You should see a few channels:
 
-- `setup` this channel is for any questions around issues installing
-  and setting up software on your computer. Please DO post
-  screenshots, etc. to help us help you.
-- `stats` this channel is for any questions around statistical theory
-  or interpretation of output, etc.
-- `duringlecture` this channel will be used during live lectures for
-  real time questions and answers, sharing any extra code /
-  information (e.g., if to answer a question during lecture, some code
-  example is needed).
-- `general` Any other questions not covered by another channel.
-
-Although Moodle forums also will be available, Slack provides easier
+Although Moodle forums also will be available (and all official announcements will be made on both Teams and Moodle), Teams provides easier
 real time interactions that are closer to how real teams work and
 operate. Please feel free to chat openly, ask and answer questions
 with each other in this space. If you need specific help from one of
@@ -95,7 +79,7 @@ understand this and it is normal.*
 
 1.  **Download `R`** by going [here](https://cloud.r-project.org/) and
     clicking on "Download R for Windows" then click on "install R for the
-	first time" which should let you "Download R **3.6.3** for Windows". 
+	first time" which should let you "Download R **4.0.4** for Windows". 
 	If you are having difficulty finding it, this link may help get you
 	[straight there](https://cloud.r-project.org/bin/windows/base/).
 	
