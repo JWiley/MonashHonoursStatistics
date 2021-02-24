@@ -364,8 +364,8 @@ checklist.
 - [ ] RStudio is installed and you can open and use it to add numbers
 - [ ] You have watched/read the basics about RStudio
 - [ ] You are registered and can access DataCamp and/or have posted to
-  Slack so we can make sure you have access to DataCamp
+  Teams so we can make sure you have access to DataCamp
 - [ ] You bring your laptop to every lecture and have RStudio open
   ready to follow along any activities.
 - [ ] Packages have been installed and/or you have posted
-  problems/errors to Slack
+  problems/errors to Teams
