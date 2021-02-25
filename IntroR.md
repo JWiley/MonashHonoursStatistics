@@ -42,7 +42,7 @@ GitHub. To use GitHub for this unit, follow these steps:
 	
 3.  Go to the repository (a collection of files and folders in GitHub)
     for PSY4210, located
-    [here](https://github.com/JWiley/MonashHonoursStatistics).
+    [here](https://github.com/michellebyrne1/MonashHonoursStatistics).
 	Then click on "Clone or download" to get all the files synced to
     your own computer.
 	
