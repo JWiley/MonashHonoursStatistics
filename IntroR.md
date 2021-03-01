@@ -233,17 +233,20 @@ If you want something for future reference on RStudio,
 try this 
 [cheat sheet](https://github.com/rstudio/cheatsheets/raw/master/rstudio-ide.pdf).
 
-# 6. DataCampe: Learn about `R`
+# 6. DataCamp: Learn about `R`
 
 To begin learning `R` we are going to be using the online platform,
-DataCamp. Follow the instructions on Moodle for getting your account
-setup. Then head over to [DataCamp](https://www.datacamp.com/), sign
-in with your Monash account, and go to "My Class". Note the first 1-2
+DataCamp. Follow the instructions on Moodle (under Assessments) for getting your account
+setup and use the Invite Link there. You should be added to the Organization called "Statistics and Data Science for Psychology 2021". Under "My assignments" you can see a list of chapters. Follow the schedule in the Table on Moodle.
+
+Note the first 1-2
 weeks will be fairly intense as to follow the class, you need to get
 up to a basic ability to read and follow `R` code.
 
+
+
 **The DataCamp activities are official homework and are assessed,
-based on the number completed (full marks if all completed).**
+based on the number completed (and you must have minimum 10,000 XP before you lose marks - see Moodle for grading explanation).**
 
 
 
