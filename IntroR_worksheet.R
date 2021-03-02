@@ -107,31 +107,36 @@ summary(mtcars)
 # install.packages("data.table", dependencies = TRUE)
 library(data.table)
 
-## read in a sample data set from the internet
-d <- fread("https://raw.githubusercontent.com/JWiley/MonashHonoursStatistics/master/IntroR_sample.csv")
+## import CSV - first insert your working directory
+setwd("C:/Users/mbyr0010/Documents/Teaching/PSY4210")
+d <- read.csv("IntroR_sample.csv")
 
+# (When you have more time, also install package "tidyverse"
+# - it takes a while)
 
 ## get a summary of the data
 summary(d)
 
 ## load package to read Excel files (.xls or .xlsx)
 ## if not installed please uncomment and run code below
-# install.packages("readxl", dependencies = TRUE)
-library(readxl)
+ install.packages("xlsx", dependencies = TRUE)
+library("xlsx")
 
 ## make sure you saved this Excel data to your R project folder
-## names of all the Excel sheets
-excel_sheets("actigraph_scored_31.xlsx")
 
 ## read in the "Sleep" sheet
-d.acti <- read_excel("actigraph_scored_31.xlsx", sheet = "Sleep")
+d.acti <- read.xlsx2("actigraph_scored_31.xlsx", sheetName = "Sleep")
 
 ## view the variable names in the dataset
 names(d.acti)
 
 ## calculate the mean sleep duration (total sleep time; TST)
 mean(d.acti$TST)
-
+# what error did you get?
+str(d.acti)
+d.acti$TST <- as.numeric(d.acti$TST)
+str(d.acti)
+mean(d.acti$TST)
 
 #### 4b. You Try It ####
 
