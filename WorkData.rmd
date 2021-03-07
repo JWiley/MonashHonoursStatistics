@@ -1,6 +1,6 @@
 ---
 title: "Working with Data"
-author: "Joshua F. Wiley"
+author: "Joshua F. Wiley - last updated Michelle Byrne 7 Mar 2021"
 date: "`r Sys.Date()`"
 output:
   tufte::tufte_html: 
@@ -13,15 +13,12 @@ library(tufte)
 
 # Intro
 
-Monash has asked that we watch 
-[this video](https://www.youtube.com/watch?v=pIWEMSoDUZY&feature=youtu.be).
-
 `r margin_note("Core ideas and code are in the main document. Extra information that may help understanding but is not the big picture I will go in margin notes, like this. Remember that if you use GitHub desktop, you should already have the Rmarkdown file on your computer (see Week 1).")`
 
 To start off the lecture, please make sure that you:
 
-Have downloaded the `R`markdown file for the lectuere here
-[https://jwiley.github.io/MonashHonoursStatistics/WorkData.rmd](https://jwiley.github.io/MonashHonoursStatistics/WorkData.rmd)
+Have downloaded the `R`markdown file for the lecture by pulling the most recent git repo
+[https://github.com/michellebyrne1/MonashHonoursStatistics/edit/master/WorkData.rmd](https://github.com/michellebyrne1/MonashHonoursStatistics/edit/master/WorkData.rmd)
 and that you have RStudio open and have opened the project you are using for
 this class and have the `R`markdown file for this lecture open on
 your own laptop (or are following along with someone else).
