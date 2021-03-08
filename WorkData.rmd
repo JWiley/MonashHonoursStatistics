@@ -8,6 +8,7 @@ output:
     number_sections: true
 ---
 ```{r, include=FALSE, echo=FALSE}
+#install.packages("tufte",repos = "http://cran.us.r-project.org")
 library(tufte)
 ```
 
