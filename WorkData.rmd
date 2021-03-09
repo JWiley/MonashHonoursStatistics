@@ -178,7 +178,7 @@ the `extraoperators` package.
 ## Subsetting Data
 
 A common task in analyses is to subset the data. There are many
-reasons for this, from ecluding outliers to selecting only
+reasons for this, from excluding outliers to selecting only
 participants who meet some criteria you want to use.
 Sometimes, the order you choose to subset matters too.
 
@@ -222,10 +222,10 @@ You can chain conditions together using the operators:
 
 ```{r}
 
-## select only women who are 18y
+## select only female participants who are 18y
 d[Age == 18 & Female == 1, .(UserID, Age)]
 
-## select anyone who is either a woman OR 18y
+## select anyone who is either a female participant OR 18y
 d[Age == 18 | Female == 1, .(UserID, Age)]
 
 ```
@@ -246,7 +246,7 @@ parentheses. Operations occur within parentheses first.
 
 ```{r}
 
-## 19 year old women or 18 year old men
+## 19 year old female participants or 18 year old male participants
 d[(Age == 19 & Female == 1) | (Age == 18 & Female == 0),
   .(UserID, Age)]
 
@@ -336,8 +336,7 @@ adding more brackets as below. This accomplishes the same as the above.
 
 ```{r}
 
-d2 <- d[!is.na(STRESS)][, Count := .N, by = UserID][
-  Count >= 30][STRESS > 3]
+d2 <- d[!is.na(STRESS)][, Count := .N, by = UserID][Count >= 30][STRESS > 3]
 
 d2[, .(UserID, STRESS)] ## IDs and number of obs
 
@@ -352,8 +351,7 @@ fewer people.
 
 ```{r}
 
-d2 <- d[!is.na(STRESS)][STRESS > 3][, 
-        Count := .N, by = UserID][Count >= 30]
+d2 <- d[!is.na(STRESS)][STRESS > 3][, Count := .N, by = UserID][Count >= 30]
 
 d2[, .(UserID, STRESS)] ## IDs and number of obs
 
@@ -455,7 +453,7 @@ d1 <- as.Date(x1, format = "%Y-%m-%d")
 ## look at the class once converted
 class(d1)
 
-## arithmtic on dats
+## arithmtic on dates
 d1 + 5 ## addition
 d1 - 7 ## subtract a week
 d1 * 5 ## multiplication does not work: error
