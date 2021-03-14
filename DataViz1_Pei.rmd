@@ -1,6 +1,6 @@
 ---
 title: "Data Visualization 1"
-author: "Joshua F. Wiley - last update Michelle Byrne"
+author: "Joshua F. Wiley; adapted with slight modifications by Pei Hwa Goh"
 date: "`r Sys.Date()`"
 output: 
   tufte::tufte_html: 
@@ -8,12 +8,8 @@ output:
     number_sections: true
 ---
 
-Download the `R`markdown file for the lecture by pulling the most recent git repo
-[https://github.com/michellebyrne1/MonashHonoursStatistics/edit/master/DataViz1.rmd](https://github.com/michellebyrne1/MonashHonoursStatistics/edit/master/DataViz1.rmd)
-
-
 ```{r loadpackages}
-options(digits = 2)
+options(digits = 3)
 
 ## load relevant packages
 library(tufte)
@@ -33,8 +29,8 @@ knitr::opts_chunk$set(message = FALSE)
 # Data
 
 To start with, we'll load some data. Here we are going to use the data
-from the data collection exercise. For this code to work, you need to
-download the datasets from Moodle and save them into the same
+from the data collection exercise (yay!). For this code to work, you need to
+download the datasets from the moodle and save them into the same
 directory as this `R`markdown file. You also may need to properly have
 an RStudio project set up, otherwise `R` may be looking in the wrong
 directory.
@@ -47,14 +43,8 @@ for the daily data.
 ```{r loaddata}
 
 ## read in data
-db <- as.data.table(read_sav("B 19032020.sav")) # baseline
-dd <- as.data.table(read_sav("DD 19032020.sav")) # daily
-
-
-## create a categorical age variable
-db[age < 22, AgeCat := "< 22y"]
-db[age >= 22, AgeCat := ">= 22y"]
-db[, AgeCat := factor(AgeCat, levels = c("< 22y", ">= 22y"))]
+db <- as.data.table(read_sav("[2021] PSY4210 BL.sav")) # baseline
+dd <- as.data.table(read_sav("[2021] PSY4210 DD.sav")) # daily
 
 ```
 
@@ -64,11 +54,12 @@ When we are working with our own data, often we have to perform some
 data management. For example the Positive and Negative Affect Schedule
 (PANAS) has different items (adjectives) capturing words related to
 positive and negative emotions. However, we do not typically analyze
-these individually. The indivdiual items are scored into two
+these individually. The individual items are scored into two
 subscales: positive and negative affect. We may use digital (e.g.,
 Qualtrics, REDCap) or paper and pencil surveys, but those typically
 only provide us with the scores on each item. We have to create the
-subscales.
+subscale scores on our own. Put simply, we compute variable scores 
+from item scores.
 
 Almost always in psychology, scales/subscales are scored in one of two
 ways: either the individual items are simply added together
@@ -90,7 +81,7 @@ Let's look at a few ways of doing this in `R`.
   someone completed 18 / 20 items and only missed 2 / 20 items, is
   probably a good idea).
 * If you want to deal with missing data but need a total score, you
-  can use `rowMeans()` but muliply the results by the number of items
+  can use `rowMeans()` but multiply the results by the number of items
   that *should* have been completed (e.g., 10 if a scale has 10
   items).
   
@@ -102,10 +93,10 @@ and most the time is sensible in my experience with raw data.
 
 `r margin_note("Often in R, you will see short and long ways of doing the same thing. This may seem confusing at first, but you get used to it. The reason is that there are some circumstances where you really do need the long way, but mostly the short way is quicker and easier. For example, if you have a group of friends, but only one 'Jane' in the group, you probably just say 'Jane'. However, if your friend group grows and you end up with two 'Janes' then you might call one 'Jane T' or 'new Jane' or find some other way to indicate which 'Jane' you are talking about. The same applies in R. There are usually shortcuts which are the default, but now and then you will get in a situation where you need a longer or more specific way of referring to a function or of accomplishing a specific task that cannot be managed with the short simple way.")`
 
-Let's look at each of these for the positive affect subscale from the
-PANAS. Finally, its standard to report the internal consistency
-reliability of a scale. A common measure is Cronbach's alpha, which we
-can get by using the `alpha()` function from the `psych` package.
+Let's look at each of these for the variable perceived stress from the
+baseline questionnaire of our data collection exercise. Finally, its 
+standard to report the internal consistency or reliability of a scale. 
+A common measure is Cronbach's alpha, which we can get by using the `alpha()` function from the `psych` package.
 We do something new here by writing: `psych::alpha()` that is a long
 way of typing it and tells `R` that we want to use the `alpha()`
 function from the `psych` package. Mostly we don't need to do
@@ -121,46 +112,75 @@ necessary.
 
 ```{r scoring} 
 
-## add items together, if missing any item, missing PosAffADD
-db[, PosAffADD := PANAS1 + PANAS3 + PANAS5 + PANAS9 + PANAS10 +
-       PANAS12 + PANAS14 + PANAS16 + PANAS17 + PANAS19]
+## add items together, if missing any item, missing Stress
+db[, StressADD := PSS1 + (6-PSS2r) + (6-PSS3r) + PSS4]
+
+## Or I could recode the variables PSS2r and PSS3r first
+db [, PSS2 := 6- PSS2r]
+db [, PSS3 := 6- PSS3r] 
 
 ## average items
-db[, PosAffAVG := rowMeans(.SD, na.rm = TRUE),
-   .SDcols = c("PANAS1", "PANAS3", "PANAS5", "PANAS9",
-               "PANAS10", "PANAS12", "PANAS14", "PANAS16",
-               "PANAS17", "PANAS19")]
+db[, StressAVG := rowMeans(.SD, na.rm = TRUE),
+   .SDcols = c("PSS1", "PSS2", "PSS3", "PSS4")]
 
-## average items then muliply to get back to "sum" scale
-db[, PosAff := rowMeans(.SD, na.rm = TRUE) * 10,
-   .SDcols = c("PANAS1", "PANAS3", "PANAS5", "PANAS9",
-               "PANAS10", "PANAS12", "PANAS14", "PANAS16",
-               "PANAS17", "PANAS19")]
+## average items then multiply to get back to "sum" scale
+db[, Stress := rowMeans(.SD, na.rm = TRUE) * 4,
+   .SDcols = c("PSS1", "PSS2", "PSS3", "PSS4")]
+
+## Let's look at how stressed people in PSY4210 are in general
+summary(db$StressAVG)
 
 ## calculate Cronbach's alpha
-psych::alpha(as.data.frame(db[, .(PANAS1, PANAS3, PANAS5, PANAS9, PANAS10,
-       PANAS12, PANAS14, PANAS16, PANAS17, PANAS19)]))
+psych::alpha(as.data.frame(db[, .(PSS1, PSS2, PSS3, PSS4)]))
+
+## let's try with out the reverse-coded items for PSS 2 and 3
+## Pay attention to the warnings provided
+psych::alpha(as.data.frame(db[, .(PSS1, PSS2r, PSS3r, PSS4)]))
+
+## Let's do the same thing with an additional 'check.keys=TRUE' option 
+psych::alpha(as.data.frame(db[, .(PSS1, PSS2r, PSS3r, PSS4)]), check.keys = TRUE)
+
+## create a categorical stress variable
+db[StressAVG < 3, StrCat := "low"]
+db[StressAVG >= 3, StrCat := "high"]
+db[, StrCat := factor(StrCat, levels = c("low", "high"))]
+
+## wouldn't be a bad idea to also let R know that sex and relsta are factors
+db[, relsta := factor(
+  relsta, levels = c(1,2,3), 
+  labels = c("single", "in a committed exclusive relationship", "in a committed nonexclusive relationship"))]
+
+db[, sex := factor(
+  sex,
+  levels = c(1,2),
+  labels = c("male", "female"))]
+
 
 ``` 
 
 
 ## Try It - Scoring and Reliability
 
-Now its your turn to score the negative affect subscale. 
-The negative affect subscale comprises PANAS items 2, 4, 6, 7, 8, 11, 13, 15,
-18, and 20. The overall scores can range from 10 to 50, with lower
-scores representing lower levels of negative affect.
+Now its your turn to score the some other scales in the baseline questionnaire! 
+Four items from the Sternberger's Trait Anxiety scale (STAI; items STAI1-STAI4)
+were used in to measure anxiety levels. The short-form of the UCLA Loneliness 
+Scale (ULS-8; items ULS1-ULS8) was used to capture loneliness. The Lifespan Self-Esteem Scale (items LSE1-LSE4) was used to measure self-esteem or how one 
+feels about themselves. The 10-item version of the Big Five inventory was used
+to capture your openness, conscientiousness, extraversion, agreeableness and 
+neuroticism (e.g. BFI_E1r needs to be reverse-coded and then added to or 
+averaged with BFI_E2 to form the Extraversion score).
+
 Calculate Cronbach's alpha measure of internal consistency reliability
-for the negative affect subscale as well.
+for the self-esteem score.
 
 ```{r tryit_scoring}
 
-## create a variable for negative affect
+## create a variable for self-esteem and name it SE, and others if you like! 
+## Go on, have fun with this :)
 
 
 ## calculate the internal consistency reliability
-## for negative affect
-
+## for self-esteem
 
 ```
 
@@ -194,7 +214,7 @@ different graphs.
 
 ```{r}
 
-pb <- ggplot(data = db, aes(x = stress))
+pb <- ggplot(data = db, aes(x = Stress))
 
 ```
 
@@ -219,6 +239,7 @@ want to change your histogram.")`
 
 pb + geom_histogram()
 
+## looks like we have a pretty normal distribution based on this
 ```
 
 
@@ -270,7 +291,7 @@ points would fall on if they were perfectly normally distributed.
 
 ```{r, fig.width = 5, fig.height = 5, fig.cap = "A QQ plot for stress"}
 
-ggplot(db, aes(sample = scale(stress))) +
+ggplot(db, aes(sample = scale(Stress))) +
   geom_qq() +
   geom_abline(intercept = 0, slope = 1)
 
@@ -278,7 +299,7 @@ ggplot(db, aes(sample = scale(stress))) +
 
 ## Checking Distributions
 
-`r margin_note('We do not have to assume a normal distribution. The testDistribution() function supports many other types of distributions. For example this code would test whether the data followed a chi-squared distribution: </br> plot(testDistribution(db$PosAff, distr = "chisq", starts = list(df = 5),
+`r margin_note('We do not have to assume a normal distribution. The testDistribution() function supports many other types of distributions. For example this code would test whether the data followed a chi-squared distribution: </br> plot(testDistribution(db$Stress, distr = "chisq", starts = list(df = 5),
   extremevalues = "theoretical", ev.perc = .005))
 </br>
 The log likelihood value is outputed for each graph, and this can be used to empirically pick the better fitting distribution as whichever distribution provides the highest log likelihood for the data. We do not get into different distributions too much in this unit, but as you go on, you may find that many variables do not follow a normal distribution and there are many statistical models that do not require outcome variables to follow a normal distribution.
@@ -307,7 +328,7 @@ number summary of the data, they show:
 * 3rd quartile (75th percentile)
 * Maximum (100th percentile)
 
-We also get a rug plot (the little verticle lines between the axis and
+We also get a rug plot (the little vertical lines between the axis and
 the density plot) which are lines where there is raw data. That helps
 see where the raw data fall.
 
@@ -318,23 +339,24 @@ exactly where a theoretical normal distribution would be.
 
 Finally, if we assume a variable follows a normal distribution, we may
 use z scores to identify extreme values or outliers. Z scores make
-sense when we assume a theoretical distribution, like the nromal
+sense when we assume a theoretical distribution, like the normal
 distribution. We can have outliers identified automatically by
 specifying `extremevalues = "theoretical"` and then specifying the
 percentage of the theoretical distribution in each tail we consider
 extreme. For example `ev.perc = .005` means that we consider any score
 that is in the bottom 0.5% or top 0.5% of a normal distribution with
 the mean and standard deviation we observed for our data to be an
-"extreme" value and these will be identified in black while th erest
+"extreme" value and these will be identified in black while the rest
 of points are a light grey. There are no fixed guidelines on what
 threshold to use, many people use the top and bottom 0.1% as well
 (`ev.perc = .001`).
 
-```{r, fig.width = 5, fig.height = 5, fig.cap = "A distribution checking plot of positive affect"}
+```{r, fig.width = 5, fig.height = 5, fig.cap = "A distribution checking plot of stress"}
 
-plot(testDistribution(db$PosAff,
+plot(testDistribution(db$Stress,
   extremevalues = "theoretical", ev.perc = .005))
 
+## looks like one guy could be a deviant!
 ```
 
 ## Mapping Additional Variables
@@ -349,37 +371,53 @@ data.")`
 We can map additional variables to aesthetics such as the colour to
 include more information. 
 For density plots, separating by colour is easy, by adding another
-variable, say `AgeCat` as an additional aesthetic. For categorical
-aesthetics like color, if it had not already been a factor, 
+variable, say `StrCat`or `sex` or `relsta` as an additional aesthetic. 
+For categorical aesthetics like color, if it had not already been a factor, 
 its a good idea to convert it to a factor first so `R` knows
 that it is discrete and to order levels in the desired order we want,
 not the default alphabetical order (unless that is what you want).
 
 
-```{r, fig.width = 6, fig.height = 5, fig.cap = "Density plot coloured by age for stress"}
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Density plot coloured by sex (and others) for stress"}
 
-ggplot(db, aes(stress, colour = AgeCat)) +
-  geom_density()
+ggplot(db, aes(Stress, colour = sex)) +
+  geom_density() ## continuous stress scores by sex
+
+##To remove the NAs for sex
+ggplot(db[!is.na(sex)], aes(Stress, colour = sex)) +
+  geom_density() ## continuous stress scores by sex
+
+##Let's try with other categories
+ggplot(db[!is.na(relsta)], aes(Stress, colour = relsta)) +
+  geom_density() ## continuous stress scores by relationship status
+
+##Let's try to see how self-esteem varies by stress categories
+
+db[, SE:= rowMeans(.SD, na.rm = TRUE),
+   .SDcols = c("LSE1", "LSE2", "LSE3", "LSE4")]
+
+ggplot(db, aes(SE, colour = StrCat)) +
+  geom_density() ## Self-esteem by high vs low stress
 
 ```
 
 For histograms, rather than control the colour of the lines, it is
 more helpful to control the fill colour. By default, overlapping bars
 are stacked on top of each other. So that there is not an `NA` group
-we remove anyone who is missing female.
+we remove anyone who is missing sex
 
-```{r, fig.width = 6, fig.height = 5, fig.cap = "Histogram coloured by age for stress"}
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Histogram coloured by sex for stress"}
 
-ggplot(db[!is.na(AgeCat)], aes(stress, fill = AgeCat)) +
+ggplot(db[!is.na(sex)], aes(Stress, fill = sex)) +
   geom_histogram()
 
 ```
 
 Overlapping bars also can be dodged instead of stacked.
 
-```{r, fig.width = 6, fig.height = 5, fig.cap = "Dodged histogram coloured by female for stress"}
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Dodged histogram coloured by sex for stress"}
 
-ggplot(db[!is.na(AgeCat)], aes(stress, fill = AgeCat)) +
+ggplot(db[!is.na(sex)], aes(Stress, fill = sex)) +
   geom_histogram(position = "dodge")
 
 ```
@@ -392,7 +430,7 @@ Using the `db` baseline dataset:
 2. use `testDistribution()` to examine whether `selfesteem` follows a
    normal distribution and whether it has any extreme values.
 3. Make a dotplot for: `openness` *separated* (e.g., by colour and/or fill)
-   by `AgeCat`:
+   by `sex`:
    
 ```{r tryunivariate, error=TRUE}
 
@@ -400,7 +438,7 @@ Using the `db` baseline dataset:
 
 ## distribution check code here (selfesteem)
 
-## dotplot code here (openness by AgeCat)
+## dotplot code here (openness by sex)
 
 
 ```
@@ -414,8 +452,8 @@ y-axis. For a scatter plot, we use point geometric objects.
 
 ggplot(db,
        aes(
-         x = stress,
-         y = selfesteem)) +
+         x = Stress,
+         y = SE)) +
   geom_point()
 
 ```
@@ -428,12 +466,12 @@ Compared to a scatter plot, we only change point to line geometric objects.
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Line plot of day and mood"}
 
 dsum <- dd[, .(
-  mood = mean(mood, na.rm = TRUE),
-  energy = mean(energy, na.rm = TRUE)),
-  by = day]
+  mood = mean(dMood, na.rm = TRUE),
+  energy = mean(dEnergy, na.rm = TRUE)),
+  by = SurveyDay]
 
 
-ggplot(dsum, aes(day, mood)) +
+ggplot(dsum, aes(SurveyDay, mood)) +
   geom_line()
 
 ```
@@ -445,7 +483,7 @@ bar height, we set `set = "identity"`.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of day and mood"}
 
-ggplot(dsum, aes(day, mood)) +
+ggplot(dsum, aes(SurveyDay, mood)) +
   geom_bar(stat = "identity")
 
 ```
@@ -466,17 +504,44 @@ changing the specific arguments we want changed from defaults.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of day and energy"}
 
+ggplot(dsum, aes(SurveyDay, energy)) +
+  geom_bar(stat = "identity")
+
+
+# Create a numeric version of Survey Day in dsum and name it nday
+dsum[,nday:= as.numeric(SurveyDay)]
+
+# Create a factor version of Survey Day in dsum and name it fday
+dsum[,fday:= as.factor(SurveyDay)]
+
+# Now let's create a pretty plot with colours! And with some lines and points.
 ggplot(data = dsum,
-       mapping = aes(x = day,  y = energy)) +
-  geom_bar(mapping = aes(fill = day),
+       mapping = aes(x = nday,  y = energy)) +
+  geom_bar(mapping = aes(fill = nday),
+           stat = "identity") +
+  geom_line(size = 2) + 
+  geom_point(size = 6) 
+## note the continuous colour scale when your x is continuous
+
+# Now let's do the same thing but with the factor version of SurveyDay
+ggplot(data = dsum,
+       mapping = aes(x = fday,  y = energy)) +
+  geom_bar(mapping = aes(fill = fday),
            stat = "identity") +
   geom_line(size = 2) + 
   geom_point(size = 6)
 
-ggplot(dsum, aes(day, energy)) +
-  geom_bar(aes(fill = day), stat = "identity") +
+# Alternatively you can also present your code as follows
+ggplot(dsum, aes(fday, energy)) +
+  geom_bar(aes(fill = fday), stat = "identity") +
   geom_line(size = 2) + 
   geom_point(size = 6)
+
+# If you want to be even more extra
+ggplot(dsum, aes(nday, energy)) +
+  geom_bar(aes(fill = fday), stat = "identity") +
+  geom_line(size = 5, colour="green") + 
+  geom_point(size = 3, colour = "orange")
 
 ```
 
@@ -505,7 +570,7 @@ programs (Excel, etc.) tend to make barplots.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of day and energy - Step 1"}
 
-ggplot(dsum, aes(day, energy)) +
+ggplot(dsum, aes(SurveyDay, energy)) +
   geom_bar(stat = "identity")
 
 ``` 
@@ -516,7 +581,7 @@ theme.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of day and energy - Step 2"}
 
-ggplot(dsum, aes(day, energy)) +
+ggplot(dsum, aes(SurveyDay, energy)) +
   geom_bar(stat = "identity") + 
   theme_pubr()
 
@@ -527,7 +592,7 @@ loss of data, but reducing the ink.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of day and energy - Step 2"}
 
-ggplot(dsum, aes(day, energy)) +
+ggplot(dsum, aes(SurveyDay, energy)) +
   geom_bar(stat = "identity") +
   theme_pubr() + 
   theme(axis.line = element_blank())
@@ -543,7 +608,7 @@ data-to-ink ratio as it is stripped back nearly to just the data.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Dot plot of day and energy - Step 3"}
 
-ggplot(dsum, aes(day, energy)) +
+ggplot(dsum, aes(SurveyDay, energy)) +
   geom_point(size = 4) +
   theme_pubr() + 
   theme(axis.line = element_blank())
@@ -560,7 +625,7 @@ results.
 
 ```{r, fig.width = 5, fig.height = 4, fig.cap = "Dot plot of day and energy - Step 4"}
 
-ggplot(dsum, aes(day, energy)) +
+ggplot(dsum, aes(SurveyDay, energy)) +
   geom_point(size = 4) +
   geom_text(aes(y = energy + .04, label = round(energy, 2))) +
   theme_pubr() +   
@@ -578,7 +643,7 @@ already have relatively high data to ink ratios.
 
 ```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 1"}
 
-ggplot(db, aes(stress, selfesteem)) +
+ggplot(db, aes(Stress, SE)) +
   geom_point()
 
 ``` 
@@ -587,7 +652,7 @@ However, "normal" axes don't convey data, so they can be removed.
 
 ```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 2"}
 
-ggplot(db, aes(stress, selfesteem)) +
+ggplot(db, aes(Stress, SE)) +
   geom_point() +
   theme_pubr() + 
   theme(axis.line = element_blank())
@@ -602,7 +667,7 @@ maximum of each variable.
 
 ```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 3"}
 
-ggplot(db, aes(stress, selfesteem)) +
+ggplot(db, aes(Stress, SE)) +
   geom_point() +
   theme_pubr() +   
   theme(axis.line = element_blank()) +
@@ -636,10 +701,10 @@ range as well.
 
 ```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 4"}
 
-ggplot(db, aes(stress, selfesteem)) +
+ggplot(db, aes(Stress, SE)) +
   geom_point() +
-  scale_x_continuous(breaks = as.numeric(quantile(db$stress))) + 
-  scale_y_continuous(breaks = as.numeric(quantile(db$selfesteem))) +   
+  scale_x_continuous(breaks = as.numeric(quantile(db$Stress))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(db$SE))) +   
   theme_pubr() +   
   theme(axis.line = element_blank()) +
   geom_rangeframe() 
@@ -662,10 +727,10 @@ this.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with shapes"}
 
-ggplot(db[!is.na(AgeCat)], aes(stress, selfesteem, shape = AgeCat)) +
+ggplot(db[!is.na(sex)], aes(Stress, SE, shape = sex)) +
   geom_point() +
-  scale_x_continuous(breaks = as.numeric(quantile(db$stress))) + 
-  scale_y_continuous(breaks = as.numeric(quantile(db$selfesteem))) +   
+  scale_x_continuous(breaks = as.numeric(quantile(db$Stress))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(db$SE))) +   
   theme_pubr() +   
   theme(axis.line = element_blank()) +
   geom_rangeframe() 
@@ -679,20 +744,20 @@ However, although the shapes are distinguishable, they are
 visually difficult. Cleveland did some studies around shape
 perception, particularly when points may be partially overlapping and
 on this basis suggested other shaped. We can manually specify the
-number for which shape we want applied to which value of `AgeCat` using
+number for which shape we want applied to which value of `sex` using
 the `scale_shape_manual()` function. We also use the
 `name = ` argument so that instead of getting the legend labelled
-`AgeCat` it is labelled `Age Groups`. 
+`sex` it is labelled `Sex` (yes, with a capital S). 
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with shapes"}
 
-ggplot(db[!is.na(AgeCat)], aes(stress, selfesteem, shape = AgeCat)) +
+ggplot(db[!is.na(sex)], aes(Stress, SE, shape = sex)) +
   geom_point() +
   scale_shape_manual(
-    name = "Age Groups",
-    values = c("< 22y" = 1, ">= 22y" = 3)) +   
-  scale_x_continuous(breaks = as.numeric(quantile(db$stress))) + 
-  scale_y_continuous(breaks = as.numeric(quantile(db$selfesteem))) +   
+    name = "Sex",
+    values = c("male" = 1, "female" = 3)) +   
+  scale_x_continuous(breaks = as.numeric(quantile(db$Stress))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(db$SE))) +   
   theme_pubr() +   
   theme(axis.line = element_blank()) +
   geom_rangeframe() 
@@ -726,20 +791,20 @@ We will go through these fairly briefly and they serve largely as a
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Boxplot with raw data shown"}
 
-ggplot(dd, aes(factor(day), energy)) +
+ggplot(dd, aes(factor(SurveyDay), dEnergy)) +
   geom_boxplot() +
   geom_jitter(colour = "lightgrey") +
   theme_pubr() +
   scale_y_continuous(
     "Daily Energy Ratings",
-    breaks = as.numeric(quantile(dd$energy))) +
+    breaks = as.numeric(quantile(dd$dEnergy))) +
   xlab("Days")
 
 ```
 
-```{r, fig.width = 6, fig.height = 4, fig.cap = "Mean and 95 percent confidence intervale"}
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Mean and 95 percent confidence interval"}
 
-ggplot(dd, aes(factor(day), energy)) +
+ggplot(dd, aes(factor(SurveyDay), dEnergy)) +
   stat_summary(fun.data = mean_cl_normal) +  
   theme_pubr() +
   ylab("Average (95% CI) Energy") + 
@@ -747,9 +812,9 @@ ggplot(dd, aes(factor(day), energy)) +
 
 ```
 
-```{r, fig.width = 6, fig.height = 4, fig.cap = "Chartjunk mean and 95 percent confidence intervale"}
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Chartjunk mean and 95 percent confidence interval"}
 
-ggplot(dd, aes(factor(day), energy)) +
+ggplot(dd, aes(factor(SurveyDay), dEnergy)) +
   stat_summary(fun.data = mean_cl_normal, geom = "bar") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = .3) +    
   theme_pubr() +
@@ -758,49 +823,44 @@ ggplot(dd, aes(factor(day), energy)) +
 
 ```
 
-```{r, fig.width = 6, fig.height = 4, fig.cap = "Mean and 95 percent confidence intervale"}
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Mean and 95 percent confidence intervals"}
 
-ggplot(db[!is.na(AgeCat)], aes(AgeCat, stress)) +
+ggplot(db[!is.na(sex)], aes(sex, Stress)) +
   stat_summary(fun.data = mean_cl_normal, size = 1) +
   theme_pubr() +
   ylab("Average (95% CI) Stress") + 
-  xlab("Age Group")
+  xlab("Sex")
 
 ```
 
-```{r, fig.width = 5, fig.height = 3.5, fig.cap = "Mean and 95 percent confidence intervale with data"}
+```{r, fig.width = 5, fig.height = 3.5, fig.cap = "Mean and 95 percent confidence interval with data"}
 
-ggplot(db[!is.na(AgeCat)], aes(AgeCat, stress)) +
+ggplot(db[!is.na(sex)], aes(sex, Stress)) +
   geom_jitter(colour = "lightgrey", width = .1) +   
   stat_summary(fun.data = mean_cl_normal, size = 1) +
   theme_pubr() +
   ylab("Average (95% CI) Stress") + 
-  xlab("Age Group")
+  xlab("Sex")
 
 ```
 
-**This plot temporarily does not work. There seems to have been a bug
-introduced in `ggplot2` version 3.3.0 which was released earlier in
-March. Until that is fixed ignore this plot (you can track it here:
-https://github.com/tidyverse/ggplot2/issues/3910).**
-
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Likert plot of means showing anchors"}
 
-## view the labels for one of the PANAS variables
-attr(db$PANAS20, "labels")
+## view the labels for one of the ULS items
+attr(db$ULS1, "labels")
 
 ## make a summarised dataset with the means and labels
 sumdat <- melt(db[, .(ID,
-            Attentive = PANAS17, Jittery = PANAS18,
-            Active = PANAS19, Afraid = PANAS20)], id.vars = "ID")[,
+            LackCompanionship = ULS1, LeftOut = ULS4,
+            Isolated = ULS5, NoOneToTurnTo = ULS2)], id.vars = "ID")[,
   .(Mean = mean(value, na.rm = TRUE)), by = variable]
-sumdat[, Low := paste0(variable, "\nNot at all")]
-sumdat[, High := paste0(variable, "\nExtremely")]
+sumdat[, Never := paste0(variable, "\nNever")]
+sumdat[, Often := paste0(variable, "\nOften")]
 
 ## make a likert plot
-gglikert("Mean", "variable", "Low", "High", data = sumdat,
+gglikert("Mean", "variable", "Never", "Often", data = sumdat,
          xlim = c(1, 5),
-         title = "Average Affect Ratings")
+         title = "Average Loneliness Ratings")
 
 ```
 
