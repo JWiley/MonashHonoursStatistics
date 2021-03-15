@@ -30,7 +30,7 @@ knitr::opts_chunk$set(message = FALSE)
 
 To start with, we'll load some data. Here we are going to use the data
 from the data collection exercise (yay!). For this code to work, you need to
-download the datasets from the moodle and save them into the same
+download the datasets from the moodle page under General and save them into the same
 directory as this `R`markdown file. You also may need to properly have
 an RStudio project set up, otherwise `R` may be looking in the wrong
 directory.
@@ -74,7 +74,7 @@ Let's look at a few ways of doing this in `R`.
   approach if a participant misses *any* single item, they will be
   missing on the entire subscale.
 * Another approach is to use the `rowMeans()` function. This function
-  allow you to perform the calculation (take the mean for a row of
+  allows you to perform the calculation (take the mean for a row of
   data) excluding missing data if desired, which equates to imputing
   the mean for an individual for any missing items. This is commonly
   done and if there are small amounts of missing data (e.g., if
@@ -108,7 +108,7 @@ function to be explicit about which one to use. If we were only using
 the `psych` or only using the `ggplot2` package, this would not be
 necessary.
 
-`r margin_note("You might have noticed something new, we used .SD, thats also a special symbol in data.table that means, the currently selected data. Well what IS the currently selected data? Whatever rows we picked and whichever columns specified by .SDcols, which we also listed at the end. That is needed because rowMeans() expects to be given a data set, not individual variables, but we are calling it already within db, a dataset, so we need some way of referring to a subset of the dataset within the data.table and the way we do that is with .SD. Its okay if that doesn't make sense right now, just copy and paste the code and know where to change variable names is enough for this unit.")`
+`r margin_note("You might have noticed something new, we used .SD, thats also a special symbol in data.table that means, the currently selected data. Well what IS the currently selected data? Whatever rows we picked and whichever columns specified by .SDcols, which we also listed at the end. That is needed because rowMeans() expects to be given a data set, not individual variables, but we are calling it already within db, a dataset, so we need some way of referring to a subset of the dataset within the data.table and the way we do that is with .SD. Its okay if that doesn't make sense right now, just copy and paste the code and know where to change variable names is enough for this unit. More: https://cran.r-project.org/web/packages/data.table/vignettes/datatable-sd-usage.html")`
 
 ```{r scoring} 
 
@@ -119,7 +119,7 @@ db[, StressADD := PSS1 + (6-PSS2r) + (6-PSS3r) + PSS4]
 db [, PSS2 := 6- PSS2r]
 db [, PSS3 := 6- PSS3r] 
 
-## average items
+## average items 
 db[, StressAVG := rowMeans(.SD, na.rm = TRUE),
    .SDcols = c("PSS1", "PSS2", "PSS3", "PSS4")]
 
@@ -288,9 +288,10 @@ instead of values on just the x-axis. We use the `scale()` function to
 z-score the data on the fly. Finally, we add a line with an intercept
 (`a`) and slope (`b`) using `geom_abline()` which is the line all the
 points would fall on if they were perfectly normally distributed.
+Remember: z=(x−mean)/SD
 
 ```{r, fig.width = 5, fig.height = 5, fig.cap = "A QQ plot for stress"}
-
+# "sample" is z-scores of Stress, geom_qq makes "theoretical" Z-scores of a standard normal distribution
 ggplot(db, aes(sample = scale(Stress))) +
   geom_qq() +
   geom_abline(intercept = 0, slope = 1)
@@ -315,7 +316,7 @@ likely learned to date, we will be assuming variables follow a normal
 distribution. We can use the `testDistribution()` function combined
 with `plot()` to create a plot that helps us examine both the
 distribution and outliers. There are two parts to this graph. First,
-it make a density plot of the raw data as a solid black line. A dashed
+it makes a density plot of the raw data as a solid black line. A dashed
 blue line superimposed shows what a normal distribution would look
 like with the same mean and standard deviation as the observed
 data. If these two densities are close, that indicates the variable is
@@ -479,7 +480,7 @@ ggplot(dsum, aes(SurveyDay, mood)) +
 With relatively discrete x axis, we can use a barplot for bivariate
 data. By default, `geom_bar()` calculates the count of observations
 that occur at each x value, so if we want our values to be the actual
-bar height, we set `set = "identity"`.
+bar height, we set `stat = "identity"`.
 
 ```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of day and mood"}
 
@@ -537,7 +538,7 @@ ggplot(dsum, aes(fday, energy)) +
   geom_line(size = 2) + 
   geom_point(size = 6)
 
-# If you want to be even more extra
+# If you want to be even more extra (note use of both fday and nday)
 ggplot(dsum, aes(nday, energy)) +
   geom_bar(aes(fill = fday), stat = "identity") +
   geom_line(size = 5, colour="green") + 
@@ -743,7 +744,7 @@ ggplot(db[!is.na(sex)], aes(Stress, SE, shape = sex)) +
 However, although the shapes are distinguishable, they are
 visually difficult. Cleveland did some studies around shape
 perception, particularly when points may be partially overlapping and
-on this basis suggested other shaped. We can manually specify the
+on this basis suggested other shapes. We can manually specify the
 number for which shape we want applied to which value of `sex` using
 the `scale_shape_manual()` function. We also use the
 `name = ` argument so that instead of getting the legend labelled
