@@ -10,9 +10,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<meta name="author" content="Joshua F. Wiley - last updated Michelle Byrne 7 Mar 2021" />
+<meta name="author" content="Joshua F. Wiley - last updated Michelle Byrne" />
 
-<meta name="date" content="2021-03-08" />
+<meta name="date" content="2021-03-15" />
 
 <title>Working with Data</title>
 
@@ -278,8 +278,8 @@ if (window.hljs) {
 
 
 <h1 class="title toc-ignore">Working with Data</h1>
-<h4 class="author">Joshua F. Wiley - last updated Michelle Byrne 7 Mar 2021</h4>
-<h4 class="date">2021-03-08</h4>
+<h4 class="author">Joshua F. Wiley - last updated Michelle Byrne</h4>
+<h4 class="date">2021-03-15</h4>
 
 
 <div id="TOC">
@@ -464,7 +464,7 @@ d &lt;- as.data.table(aces_daily)</code></pre>
 </div>
 <div id="subsetting-data" class="section level2">
 <h2><span class="header-section-number">3.2</span> Subsetting Data</h2>
-<p>A common task in analyses is to subset the data. There are many reasons for this, from ecluding outliers to selecting only participants who meet some criteria you want to use. Sometimes, the order you choose to subset matters too.</p>
+<p>A common task in analyses is to subset the data. There are many reasons for this, from excluding outliers to selecting only participants who meet some criteria you want to use. Sometimes, the order you choose to subset matters too.</p>
 <p>Most often, we subset data by using logical operators to pick specific rows of a dataset or specific values from a single variable. Below, we select cases/observations where Age = 18, this is done using the logical operator <code>==</code>. <code>R</code> tests if the variable “Age” is equal to 18 and if it is returns TRUE and otherwise FALSE. Rows where the test returns TRUE are returned. So we don’t see a giant dataset, we just pick two variables: UserID and Age.</p>
 <pre class="r"><code>d[Age == 18, .(UserID, Age)]</code></pre>
 <pre><code>##      UserID Age
@@ -497,7 +497,7 @@ head(d.noout)</code></pre>
 ## 5:      1  21
 ## 6:      1  21</code></pre>
 <p>Sometimes, a single variable is not sufficient. You can chain conditions together using the operators: <code>&amp;</code> and <code>|</code> which represent “and” and “or”, respectively.</p>
-<pre class="r"><code>## select only women who are 18y
+<pre class="r"><code>## select only female participants who are 18y
 d[Age == 18 &amp; Female == 1, .(UserID, Age)]</code></pre>
 <pre><code>##      UserID Age
 ##   1:     20  18
@@ -511,7 +511,7 @@ d[Age == 18 &amp; Female == 1, .(UserID, Age)]</code></pre>
 ## 193:    163  18
 ## 194:    163  18
 ## 195:    163  18</code></pre>
-<pre class="r"><code>## select anyone who is either a woman OR 18y
+<pre class="r"><code>## select anyone who is either a female participant OR 18y
 d[Age == 18 | Female == 1, .(UserID, Age)]</code></pre>
 <pre><code>##       UserID Age
 ##    1:      2  23
@@ -541,7 +541,7 @@ d[Age %in% c(18, 19, 20), .(UserID, Age)]</code></pre>
 ## 2143:    189  19
 ## 2144:    189  19</code></pre>
 <p>You can chain even more logical requirements together by using parentheses. Operations occur within parentheses first.</p>
-<pre class="r"><code>## 19 year old women or 18 year old men
+<pre class="r"><code>## 19 year old female participants or 18 year old male participants
 d[(Age == 19 &amp; Female == 1) | (Age == 18 &amp; Female == 0),
   .(UserID, Age)]</code></pre>
 <pre><code>##      UserID Age
@@ -639,8 +639,7 @@ d2[, .(UserID, STRESS)] ## IDs and number of obs</code></pre>
 ## 1611:    191      4
 ## 1612:    191      4</code></pre>
 <p>This whole sequence could be collapsed or chained together to write less code. In data tables in <code>R</code> you can chain operations by just adding more brackets as below. This accomplishes the same as the above.</p>
-<pre class="r"><code>d2 &lt;- d[!is.na(STRESS)][, Count := .N, by = UserID][
-  Count &gt;= 30][STRESS &gt; 3]
+<pre class="r"><code>d2 &lt;- d[!is.na(STRESS)][, Count := .N, by = UserID][Count &gt;= 30][STRESS &gt; 3]
 
 d2[, .(UserID, STRESS)] ## IDs and number of obs</code></pre>
 <pre><code>##       UserID STRESS
@@ -656,8 +655,7 @@ d2[, .(UserID, STRESS)] ## IDs and number of obs</code></pre>
 ## 1611:    191      4
 ## 1612:    191      4</code></pre>
 <p><label for="tufte-mn-6" class="margin-toggle">⊕</label><input type="checkbox" id="tufte-mn-6" class="margin-toggle"><span class="marginnote">Here, the order is: first, remove missing stress observations, second take only surveys/rows where stress scores &gt; 3, third, count how many observations are not missing by ID.</span> Now look what happens if we first take stress values greater than 3. That is we change the order of the operations. We end up with much fewer people.</p>
-<pre class="r"><code>d2 &lt;- d[!is.na(STRESS)][STRESS &gt; 3][, 
-        Count := .N, by = UserID][Count &gt;= 30]
+<pre class="r"><code>d2 &lt;- d[!is.na(STRESS)][STRESS &gt; 3][, Count := .N, by = UserID][Count &gt;= 30]
 
 d2[, .(UserID, STRESS)] ## IDs and number of obs</code></pre>
 <pre><code>##      UserID STRESS
@@ -756,7 +754,7 @@ d1 &lt;- as.Date(x1, format = &quot;%Y-%m-%d&quot;)
 ## look at the class once converted
 class(d1)</code></pre>
 <pre><code>## [1] &quot;Date&quot;</code></pre>
-<pre class="r"><code>## arithmtic on dats
+<pre class="r"><code>## arithmtic on dates
 d1 + 5 ## addition</code></pre>
 <pre><code>## [1] &quot;2019-03-17&quot; &quot;2017-09-20&quot;</code></pre>
 <pre class="r"><code>d1 - 7 ## subtract a week</code></pre>
@@ -1147,14 +1145,11 @@ anyDuplicated(acti2$ID)</code></pre>
 <pre class="r"><code>## there are no duplicated sleep values
 anyDuplicated(acti2$Sleep)</code></pre>
 <pre><code>## [1] 0</code></pre>
-<pre class="r"><code>## there are duplicated IDs here too
-anyDuplicated(acti$ID)</code></pre>
-<pre><code>## [1] 0</code></pre>
 <pre class="r"><code>## however if we paste / concatenate
-## both ID and time, there are no duplicates
-anyDuplicated(paste0(acti$ID, acti$Time))</code></pre>
+## both ID and Sleep, there are no duplicates
+anyDuplicated(paste0(acti2$ID, acti2$Sleep))</code></pre>
 <pre><code>## [1] 0</code></pre>
-<p>If you do not expect duplciates, it is a good idea to check for them before merging, as <code>R</code> will not tell you if there are duplicates and it impacted the merge.</p>
+<p>If you do not expect duplicates, it is a good idea to check for them before merging, as <code>R</code> will not tell you if there are duplicates and it impacted the merge.</p>
 <p>Relatedly, if there are duplicates, you can count how many there are, using the <code>duplicated()</code> function and making a frequency table using <code>table()</code>.</p>
 <pre class="r"><code>table(duplicated(acti2$ID))</code></pre>
 <pre><code>## 
@@ -1171,7 +1166,7 @@ anyDuplicated(paste0(acti$ID, acti$Time))</code></pre>
 <pre class="r"><code>length(unique(acti2$ID))</code></pre>
 <pre><code>## [1] 3</code></pre>
 <p>You can also check how many IDs from one dataset are in another dataset by combining the <code>unique()</code> function with the <code>%in%</code> logical operator to get a series of TRUE or FALSE values if an ID from one dataset is in another dataset. In large datasets, this may be many results, so instead, we can create a frequency table of the results using <code>table()</code>. Note that which set of IDs is on the left or the right can make a difference. If you expect one dataset to contain all IDs (e.g., you are merging a new variable into a large “master” dataset that you believe has every single one of your participants) this is a very helpful way to check whether that is true.</p>
-<pre class="r"><code>table(unique(surveys2$FirstName) %in% unique(acti$ID))</code></pre>
+<pre class="r"><code>table(unique(surveys2$FirstName) %in% unique(acti$ID)) # why do you think it didn&#39;t say 2 are false?</code></pre>
 <pre><code>## 
 ## FALSE  TRUE 
 ##     1     2</code></pre>
@@ -1182,7 +1177,7 @@ anyDuplicated(paste0(acti$ID, acti$Time))</code></pre>
 </div>
 <div id="checking-data-you-try-it" class="section level2">
 <h2><span class="header-section-number">7.9</span> Checking Data You Try It</h2>
-<p>Using our daily data:</p>
+<p>Using our daily data (aces_daily):</p>
 <ul>
 <li>Count how many unique IDs there are</li>
 <li>Create a frequency table of the number of times <code>UserID</code> is duplicated.</li>
@@ -1251,7 +1246,7 @@ anyDuplicated(paste0(acti$ID, acti$Time))</code></pre>
 <ul>
 <li><code>data</code> this is the dataset to reshape</li>
 <li><code>varying</code> this is a list where each element is a vector of variable names that vary over time that belong to the same overall measure.</li>
-<li><code>timevar</code> this is the name of the variable indicating to which time a measure belong, it will be a new variable in a wide to long reshape.</li>
+<li><code>timevar</code> this is the name of the variable indicating to which time a measure belongs, it will be a new variable in a wide to long reshape.</li>
 <li><code>idvar</code> this is the name of the ID variable in the data and is required.</li>
 <li><code>direction</code> this is the direction to reshape (“long” or “wide”).</li>
 </ul>
@@ -1343,7 +1338,7 @@ print(dlong)</code></pre>
 ## 9:  3    24      2     4</code></pre>
 <div id="complications-in-reshaping" class="section level2">
 <h2><span class="header-section-number">8.1</span> Complications in Reshaping</h2>
-<p>Not all reshaping is straight forward. Here is another wide dataset. Some variables are time varying, others (e.g., Age) are not. Even the time varying variables are not measured at all time points. In this case at the final time point, only Happy was measured and coping only measured twice.</p>
+<p>Not all reshaping is straight forward. Here is another wide dataset. Some variables are time varying, others (e.g., Age in yrs) are not. Even the time varying variables are not measured at all time points. In this case at the final time point, only Happy was measured and coping only measured twice.</p>
 <pre class="r"><code>dwide2 &lt;- data.table(
   ID = 1:3,
   Age = c(18, 19, 22),
@@ -1370,7 +1365,7 @@ print(dlong)</code></pre>
   idvar = &quot;ID&quot;,
   direction = &quot;long&quot;)</code></pre>
 <pre><code>## Error in reshapeLong(data, idvar = idvar, timevar = timevar, varying = varying, : &#39;varying&#39; arguments must be the same length</code></pre>
-<p>This results in an error because we only have two stress and coping measures. To do the reshape, there must be an equal number of each variable. One way to address this is to create a useless “Pad” variable. We can repeat this “Pad” as much as needed (e.g., once for stress, twice for coping). Age is not time varying so we can ignore it. It will be used as a between person variable.</p>
+<p>This results in an error because we only have three stress and two coping measures. To do the reshape, there must be an equal number of each variable. One way to address this is to create a useless “Pad” variable. We can repeat this “Pad” as much as needed (e.g., once for stress, twice for coping). Age is not time varying so we can ignore it. It will be used as a between person variable.</p>
 <pre class="r"><code>dwide2[, Pad := NA]
 
 reshape(

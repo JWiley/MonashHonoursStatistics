@@ -1,6 +1,6 @@
 ---
 title: "Working with Data"
-author: "Joshua F. Wiley - last updated Michelle Byrne 7 Mar 2021"
+author: "Joshua F. Wiley - last updated Michelle Byrne"
 date: "`r Sys.Date()`"
 output:
   tufte::tufte_html: 
@@ -999,16 +999,13 @@ anyDuplicated(acti2$ID)
 ## there are no duplicated sleep values
 anyDuplicated(acti2$Sleep)
 
-## there are duplicated IDs here too
-anyDuplicated(acti$ID)
-
 ## however if we paste / concatenate
-## both ID and time, there are no duplicates
-anyDuplicated(paste0(acti$ID, acti$Time))
+## both ID and Sleep, there are no duplicates
+anyDuplicated(paste0(acti2$ID, acti2$Sleep))
 
 ```
 
-If you do not expect duplciates, it is a good idea to check for them
+If you do not expect duplicates, it is a good idea to check for them
 before merging, as `R` will not tell you if there are duplicates and
 it impacted the merge.
 
@@ -1060,7 +1057,7 @@ this is a very helpful way to check whether that is true.
 
 ```{r}
 
-table(unique(surveys2$FirstName) %in% unique(acti$ID))
+table(unique(surveys2$FirstName) %in% unique(acti$ID)) # why do you think it didn't say 2 are false?
 
 table(unique(acti$ID) %in% unique(surveys2$FirstName))
 
@@ -1068,7 +1065,7 @@ table(unique(acti$ID) %in% unique(surveys2$FirstName))
 
 ## Checking Data You Try It
 
-Using our daily data:
+Using our daily data (aces_daily):
 
 - Count how many unique IDs there are
 - Create a frequency table of the number of times `UserID` is
@@ -1121,7 +1118,7 @@ five arguments to `reshape()`.
 - `varying` this is a list where each element is a vector of variable
   names that vary over time that belong to the same overall measure.
 - `timevar` this is the name of the variable indicating to which time
-  a measure belong, it will be a new variable in a wide to long
+  a measure belongs, it will be a new variable in a wide to long
   reshape.
 - `idvar` this is the name of the ID variable in the data and is
   required.
@@ -1209,7 +1206,7 @@ print(dlong)
 ## Complications in Reshaping
 
 Not all reshaping is straight forward. Here is another wide
-dataset. Some variables are time varying, others (e.g., Age) are
+dataset. Some variables are time varying, others (e.g., Age in yrs) are
 not. Even the time varying variables are not measured at all time
 points. In this case at the final time point, only Happy was
 measured and coping only measured twice.
@@ -1250,7 +1247,7 @@ reshape(
 
 ```
 
-This results in an error because we only have two stress and coping
+This results in an error because we only have three stress and two coping
 measures. To do the reshape, there must be an equal number of each
 variable. One way to address this is to create a useless "Pad"
 variable. We can repeat this "Pad" as much as needed (e.g., once for
