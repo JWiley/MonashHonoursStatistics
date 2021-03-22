@@ -1,5 +1,5 @@
 ---
-title: "PSY4210 Lab Report"
+title: "PSY4210 Lab Report - 2021"
 author: "Your Monash ID Number -- Your Full Name"
 date: "`r Sys.Date()`"
 output:
@@ -21,7 +21,7 @@ library(visreg)
 
 
 ## read in data
-db <- as.data.table(read_sav("B 19032020.sav")) # baseline data
+db <- as.data.table(read_sav("[2021] PSY4210 BL.sav")) # baseline data
 
 ```
 
@@ -29,11 +29,11 @@ db <- as.data.table(read_sav("B 19032020.sav")) # baseline data
 
 Fit **one** moderated, multiple linear regression. Pick from:
 
-- Outcome: positive or negative affect at baseline
-- Predictors: `female` and any other variable of your choosing
-- Make sure that you include the interaction between your predictor and `female`.
+- Outcome: Anxiety at baseline
+- Predictors: `sex` and any other variable of your choosing
+- Make sure that you include the interaction between your predictor and `sex`.
 
-Note: you will need to score positive or negative affect. For a
+Note: you will need to score Anxiety from the STAI. For a
 refresher, see the content for Data Visualization 1.
 
 ```{r glm1reg}
