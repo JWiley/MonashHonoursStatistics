@@ -14,8 +14,8 @@ library(tufte)
 
 # Setup
 
-You can download the `R`markdown file for this content here
-[https://jwiley.github.io/MonashHonoursStatistics/GLM1.rmd](https://jwiley.github.io/MonashHonoursStatistics/GLM1.rmd).
+You can view, download or pull the `R`markdown file for this content here
+https://github.com/michellebyrne1/MonashHonoursStatistics/blob/master/GLM1_Michelle.rmd
 
 We will be using a few packages for this content and also the baseline
 data only from the data collection exercise.
