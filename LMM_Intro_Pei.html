@@ -2092,7 +2092,7 @@ class(dd$dStress)</code></pre>
 <pre><code>## [1] &quot;haven_labelled&quot;</code></pre>
 <pre class="r"><code>## convert stress in R to a numeric class
 dd[, dStress := as.numeric(dStress)]</code></pre>
-<p>Now, we can refit our model and calculate diagnostics. The plot of the residuals and the residuals versus predicted values plots are familiar and are used to assess the same two assumptions for LMMs as for linear regression models. We also get a density plot for <code>ID : (Intercept)</code> the random effect for intercepts. This is to assess the assumption that the random effects, the random intercept coefficients are also about normally distributed. In this case, all the assumptions appear reasonably well met, with only one relatively extreme stress residual noted at 3.21.</p>
+<p>Now, we can refit our model and calculate diagnostics. The plot of the residuals and the residuals versus predicted values plots are familiar and are used to assess the same two assumptions for LMMs as for linear regression models. We also get a density plot for <code>ID : (Intercept)</code> the random effect for intercepts. This is to assess the assumption that the random effects, the random intercept coefficients are also about normally distributed. In this case, all the assumptions appear reasonably well met, with only one relatively extreme stress residual noted at -3.13.</p>
 <pre class="r"><code>## refit model
 m  &lt;- lmer(dStress ~ 1 + (1 | ID), data = dd)
 

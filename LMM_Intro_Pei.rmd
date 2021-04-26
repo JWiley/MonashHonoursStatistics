@@ -906,7 +906,7 @@ the random effect for intercepts. This is to assess the assumption
 that the random effects, the random intercept coefficients are also
 about normally distributed. In this case, all the assumptions appear
 reasonably well met, with only one relatively extreme stress residual
-noted at 3.21.
+noted at -3.13.
 
 ```{r}
 
