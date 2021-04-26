@@ -8,8 +8,7 @@ output:
     number_sections: true
 ---
 
-Download the raw `R` markdown code here
-[https://jwiley.github.io/MonashHonoursStatistics/LMM_Intro.rmd](https://jwiley.github.io/MonashHonoursStatistics/LMM_Intro.rmd).
+
 These are the `R` packages we will use.
 
 ```{r setup}
