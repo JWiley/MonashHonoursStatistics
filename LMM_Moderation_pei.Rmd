@@ -1,0 +1,1056 @@
+---
+title: "Linear Mixed Models (LMMs) - Moderation"
+author: "Joshua F. Wiley - updated for 2021 by Pei"
+date: "`r Sys.Date()`"
+output: 
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+---
+
+These are the `R` packages we will use.
+
+```{r setup}
+options(digits = 4)
+
+## emmeans is a new package
+
+library(data.table)
+library(JWileymisc)
+library(extraoperators)
+library(lme4)
+library(lmerTest)
+library(multilevelTools)
+library(visreg)
+library(ggplot2)
+library(ggpubr)
+library(haven)
+library(emmeans)
+
+## load data collection exercise data
+## merged is a a merged long dataset of baseline and daily
+dm <- as.data.table(read_sav("[2021] PSY4210 merged.sav"))
+
+## Remind R which of our variables are factors
+
+dm[, sex := factor(
+  sex,
+  levels = c(1,2),
+  labels = c("male", "female"))]
+
+dm[, relsta := factor(
+  relsta, levels = c(1,2,3), 
+  labels = c("single", "in a committed exclusive relationship", "in a committed nonexclusive relationship"))]
+
+```
+
+# LMM Notation
+
+Let's consider the formula for a relatively simple LMM:
+
+$$
+y_{ij} = b_{0j} + b_1 * x_{1j} + b_2 * x_{2ij} + \varepsilon_{ij}
+$$
+
+Here as before, the *i* indicates the *i*th observation for a specific
+unit (e.g., person but the unit could also be classrooms, doctors,
+etc.) and the *j* indicates the *j*th unit (in psychology usually
+person).
+
+Regression coefficients, the $b$s with a *j* subscript indicate a
+fixed and random effect. That is, the coefficient is allowed to vary
+across the units, *j*. As before, these coefficients in practice are
+decomposed into a fixed and random part:
+
+$$
+b_{0j} = \gamma_{00} + u_{0j}
+$$
+
+and we estimate in our LMM the fixed effect part, $\gamma_{00}$, and
+the variance / standard deviation of the random effect or the
+covariance matrix if there are multiple random effects, $\mathbf{G}$: 
+
+$$
+u_{0j} \sim \mathcal{N}(0, \mathbf{G})
+$$
+
+Regression coefficients without any *j*
+subscript indicate fixed only effects, effects that do not vary across
+units, *j*. These are fixed effects and get estimated directly.
+
+Predictors / explanatory variables, the $x$s with an *i* subscript
+indicate that the variable varies within a unit. Note that the
+outcome, $y$ **must** vary within units to be used in a LMM.
+
+In this case, the notation tells us the following:
+
+- $y_{ij}$ the outcome variable, which varies both within and between
+  people
+- $b_{0j}$ the intercept regression coefficient, which is both a fixed
+  and random effect
+- $b_1$ the regression coefficient, slope, for the first predictor,
+  which is a fixed effect only
+- $x_{1j}$ the first predictor/explanatory variable, this is a between
+  unit variable only, as the lack of an *i* subscript indicates it
+  does not vary within units. It could not have a random slope.
+- $b_2$ the regression coefficient, slope, for the second predictor,
+  which is a fixed effect only
+- $x_{2ij}$ the second predictor/explanatory variable, this variable
+  varies within individuals as shown by its *i* subscript. It could
+  have a random slope, although in this model, it only has a fixed
+  effect slope.
+- $\varepsilon_{ij}$ the residuals, these vary within and between
+  units.
+
+The following decision tree provides some guide to when a predictor /
+explanatory variable can be a fixed and random effect.
+
+```{r, echo = FALSE, fig.cap = "Type of effect decision tree"}
+
+DiagrammeR::grViz('
+digraph "Type of effect decision tree" {
+  graph [overlap = true, fontsize = 12]
+  node [fontname = Helvetica, shape = rectangle]
+
+  variable [ label = "What level does your variable vary at?" ];
+  between [ label = "Between Variable" ];
+  within [ label = "Within Variable" ];
+
+  fixed [ label = "Fixed Effect Only" ];
+  random [ label = "Fixed & Random Effect" ];
+  type [ label = "Do you want a fixed effect only?" ];
+
+  variable -> between [ label = "only between units" ];
+  variable -> within [ label = "varies within (+/- between) units" ];
+  between -> fixed ;
+  within -> type ;
+  type -> fixed [ label = "yes" ];
+  type -> random [ label = "no" ];
+}
+')
+
+```
+
+Let's see two examples of putting this basic model into practice.
+
+$$
+energy_{ij} = b_{0j} + b_1 * loneliness_{j} + b_2 * stress_{ij} + \varepsilon_{ij}
+$$
+
+The corresponding `R` code is:
+
+```{r}
+
+summary(lmer(dEnergy ~ loneliness + dStress + (1 | ID), data = dm))
+
+``` 
+
+Here is another example decomposing stress into a between and within component.
+
+$$
+energy_{ij} = b_{0j} + b_1 * Bstress_{j} + b_2 * Wstress_{ij} + \varepsilon_{ij}
+$$
+
+```{r}
+
+dm[, c("Bstress", "Wstress") := meanDeviations(dStress), by = ID]
+
+summary(lmer(dEnergy ~ Bstress + Wstress + (1 | ID), data = dm))
+
+``` 
+
+We can make more effects random effects. For example, taking our
+earlier example and just changing $b_2$ into $b_{2j}$:
+
+$$
+energy_{ij} = b_{0j} + b_1 * loneliness_{j} + b_{2j} * stress_{ij} + \varepsilon_{ij}
+$$
+
+The corresponding `R` code is:
+
+```{r}
+
+summary(lmer(dEnergy~ loneliness + dStress + (dStress | ID), data = dm))
+
+``` 
+
+Now with two random effects, we assume that the random effects,
+$u_{0j}$ and $u_{2j}$, which we collectively denote
+$\mathbf{u}_{j}$ follow a multivariate normal distribution with
+covariance matrix $\mathbf{G}$.
+
+$$
+\mathbf{u}_{j} \sim \mathcal{N}(0, \mathbf{G})
+$$
+
+Based on the little decision chart, between unit only variables, like
+$loneliness_j$ and $Bstress_j$ *cannot* be random effects. In the
+data collection exercise, we measured loneliness at baseline and also
+in the daily diary questionnaires. In this example we are using the 
+baseline (trait) loneliness and not the daily one. Also, while it is
+technically possible for something to only be a random effect without
+a corresponding fixed effect, its not common and not recommended as it
+would be equivalent to assuming that the fixed effect, the mean of the
+distribution, is 0, which is rarely appropriate.
+
+# Interactions in LMMs
+
+Interactions in LMMs work effectively the same way that interactions
+in GLMs do, although there are a few nuances in options and possible
+interpretations.
+Using the notation from above, let's consider a few different possible
+interactions. 
+
+## Cross Level (Between and Within Unit) Interactions
+
+First, let's take our model with loneliness and stress and
+include an interaction. Here is the model without an interaction.
+
+$$
+energy_{ij} = b_{0j} + b_1 * loneliness_{j} + b_2 * stress_{ij} + \varepsilon_{ij}
+$$
+
+The corresponding `R` code is:
+
+```{r}
+
+summary(lmer(dEnergy ~ loneliness + dStress + (1 | ID), data = dm))
+
+``` 
+
+Now let's add the interaction, as a fixed effect.
+
+$$
+energy_{ij} = b_{0j} + b_1 * loneliness_{j} + b_2 * stress_{ij} + 
+  b_3 * (loneliness_{j} * stress_{ij}) + 
+  \varepsilon_{ij}
+$$
+
+The corresponding `R` code is:
+
+```{r}
+
+## long way
+summary(lmer(dEnergy ~ loneliness + dStress + loneliness:dStress + (1 | ID), data = dm))
+
+## short hand in R for simple main effect + interaction
+## identical, but shorter to the above
+summary(lmer(dEnergy ~ loneliness * dStress + (1 | ID), data = dm))
+
+``` 
+
+The relevant, new, part is the interaction term, $b_3$, a fixed effect
+in this case. If we focus just on that one term, we see that the
+coefficient, $b_3$ is applied to the arithmetic product of two
+variables, here loneliness and stress. As it happens, one of them, loneliness,
+varies between units whereas the other, stress, varies within
+units. You will sometimes see this termed as "cross level" interaction
+between it involves a between and within varying variable.
+
+$$
+b_3 * (loneliness_{j} * stress_{ij})
+$$
+
+As with interactions for regular GLMs, interactions in LMMs can be
+interpretted in different ways. The two common interpretations are
+easiest to see by factoring the regression equation.
+Here are three equal equations that highlight different ways of
+viewing the interaction.
+
+In the latter two formats, it highlights how the simple effect of
+stress varies by loneliness and how the simple effect of loneliness varies by
+stress. 
+
+$$
+\begin{align}
+energy_{ij} &= b_{0j} + b_1 * loneliness_{j} + b_2 * stress_{ij} + b_3 * (loneliness_{j} * stress_{ij}) + \varepsilon_{ij} \\
+          &= b_{0j} + b_1 * loneliness_{j} + (b_2 + b_3 * loneliness_j) * stress_{ij} + \varepsilon_{ij} \\
+          &= b_{0j} + (b_1 + b_3 * stress_{ij}) * loneliness_{j} + b_2 * stress_{ij} + \varepsilon_{ij} \\
+\end{align}
+$$
+
+The nuance in LMMs comes in because some variables vary only between
+units and others within units. For example, when interpretting the
+interaction with respect to the simple effect of stress, we could say
+that the association between daily stress and energy on the same day
+depends on the loneliness of a participant. Conversely, when interpretting
+with respect to the simple effect of loneliness, we could say that the
+association of participant loneliness and average energy depends on how
+stressed someone is feeling on a given day. Loneliness varies between
+people, stress varies within people, so that must be taken into
+account in the interpretation.
+
+## Between Unit Interactions
+
+The same approach would work with other type of variables in LMMs. For
+example, here we have a model with loneliness and sex as predictors. Both
+vary only between units.
+
+$$
+\begin{align}
+energy_{ij} &= b_{0j} + b_1 * loneliness_{j} + b_2 * sex_{j} + b_3 * (loneliness_{j} * sex_{j}) + \varepsilon_{ij} \\
+          &= b_{0j} + b_1 * loneliness_{j} + (b_2 + b_3 * loneliness_j) * sex_{j} + \varepsilon_{ij} \\
+          &= b_{0j} + (b_1 + b_3 * sex_{j}) * loneliness_{j} + b_2 * sex_{j} + \varepsilon_{ij} \\
+\end{align}
+$$
+
+When interpretting the interaction with respect to the simple effect of
+sex, we could say that the association between participant sex and 
+average energy depends on the loneliness of a participant. Conversely, 
+when interpretting with respect to the simple effect of loneliness, we
+could say that the association of participant loneliness and average 
+energy depends on participant's sex.
+
+## Within Unit Interactions
+
+Finally, both variables could vary within units.
+
+$$
+\begin{align}
+energy_{ij} &= b_{0j} + b_1 * selfesteem_{ij} + b_2 * stress_{ij} + b_3 * (selfesteem_{ij} * stress_{ij}) + \varepsilon_{ij} \\
+          &= b_{0j} + b_1 * selfesteem_{ij} + (b_2 + b_3 * selfesteem_{ij}) * stress_{ij} + \varepsilon_{ij} \\
+          &= b_{0j} + (b_1 + b_3 * stress_{ij}) * selfesteem_{ij} + b_2 * stress_{ij} + \varepsilon_{ij} \\
+\end{align}
+$$
+
+When interpretting the interaction with respect to the simple effect
+of stress, we could say that the association between daily stress and
+energy on the same day depends on same day self-esteem level. 
+Conversely, when interpretting with respect to the simple effect of
+self-esteem, we could say that the association of daily self-esteem 
+and same day energy depends on how stressed someone is feeling on a 
+given day. 
+
+## 'Prediction' Interpretation of Interactions
+
+When one variable in an interaction varies within units and
+particularly when it is a random effect, another way that people
+sometimes interpret interactions is that the other variable is
+'predicting' the random effect. This occurs most often when the
+moderator variable varies between units only. An example may be
+clearer than words.
+
+First, we fit a model with conscientiousness and presence of interaction
+with stranger (Int_Str) as fixed effects predictors
+and a random slope as well for Int_Str, stored in `m1`. Then we fit the
+same model but adding a fixed effect interaction between Int_Str
+(within) and conscientiousness (between). Calculating the difference in
+the variance of the random Int_Str slope yields a sort of $R^2$ measure 
+of the variance in the random slope explained by the 
+Int_Str x conscientiousness interaction. 
+
+The corresponding `R` code is:
+
+```{r}
+
+## main effects only
+m1 <- lmer(dEnergy ~ conscientiousness + Int_Str + (1 + Int_Str | ID), data = dm, REML=FALSE)
+
+## interaction model
+m2 <- lmer(dEnergy ~ conscientiousness * Int_Str + (1+ Int_Str | ID), data = dm, REML=FALSE)
+
+## summary of both models, get random slope for stress variance
+summary(m1)
+summary(m2)
+
+## variance in random Int_Str slope explained by conscientiousness
+(0.2779 - 0.1246) / 0.2779
+
+``` 
+
+Because conscientiousness and Int_str interact in the model (as a 
+fixed effect), the average Int_Str slope no longer has to be the 
+same for everyone. It can differ depending on their conscientiousness.
+Specifically, the predicted average (fixed effects) Int_Str slope for 
+the *j*th person is $b_{2j} + b_3 * conscientiousness_j$. Recall that
+we normally break up random slopes into a fixed and random part:
+
+$$
+b_{2j} = \gamma_{20} + u_{2j}
+$$
+
+Without the interaction by conscientiousness, any participant level 
+differences *must* go into the $u_{2j}$ component, on which the 
+variance/standard deviation of the slope is calculated. Now the 
+simple Int_Str slope for a given participant is:
+
+$$
+\gamma_{20} + b_3 * conscientiousness_j + u_{2j} 
+$$
+
+So now the $u_{2j}$ component, on which the variance/standard
+deviation of the slope is calculated, captures deviations from the
+fixed part, which includes both the average Int_Str slope and a
+modification based on participant conscientiousness To the extent 
+that $b_3$ is different from 0, this will essentially reduce some 
+differences that otherwise go into the $u_{2j}$ component and thus 
+will explain some of the variance in the random slope.
+
+This is always true, in a way, with an interaction, but outside of
+LMMs we do not have random effects and so when we allow slopes to
+differ for different groups people, we do not know what an individual
+person's slope was without the interaction so have no reference
+point. Put differently, outside of LMMs, in regular GLMs, we always
+assume that $u_{2j} = 0$ so we wouldn't really think about
+'predicting' it when it is fixed at 0. In GLMs we only focus on how we
+allow the average slope to differ by level of the moderator. In LMMs
+we can interpret it the same way *or* we can interpret the moderator
+as 'predicting' the random slope.
+
+
+# Continuous Interactions in `R`
+
+Aside from the notes about some minor interpretation differences, in
+general interactions in LMMs are analysed, graphed, and interpretted
+the same way as for GLMs.
+
+First to avoid any issues around diagnostics etc. from haven labeled
+type data, we will convert the variable we are going to work with to
+numeric. Then we fit a LMM with an interaction between stress and
+neuroticism, mood as the outcome and a random intercept as the only
+random effect.
+
+```{r}
+
+dm[, dSE := as.numeric(dSE)]
+dm[, dMood := as.numeric(dMood)]
+dm[, dEnergy := as.numeric(dEnergy)]
+dm[, dStress := as.numeric(dStress)]
+dm[, neuroticism := as.numeric(neuroticism)]
+
+m <- lmer(dEnergy ~ neuroticism * dStress + (1 | ID), data = dm)
+
+```
+
+A quick check of the model diagnostics suggests that the
+data look fairly good. The intercepts do not appear to 
+follow a normal distribution that closely, partly due to 
+the long left tail.
+
+```{r}
+
+plot(modelDiagnostics(m), nrow = 2, ncol = 2, ask = FALSE)
+
+```
+
+## Extra (in case you ever want to fix left skews)
+
+Applying transformations to left skewed data is more difficult as
+generally transformations work on long right tails. A solution is to
+reverse the variable, apply the transformation and then again reverse
+it so that the direction is the same as it originally was. We could
+try a square root transformations which is milder than a log
+transformation. To reverse it, we subtract the variable from the sum
+of its minimum and maximum. Next we take its square root, then we
+reverse by again subtracting from the sum of its minimum and maximum,
+but square root transformed.
+
+Let's sidetrack a little and try this out with an example using a 
+more skewed outcome variable, dMood.
+
+```{r}
+
+## First let's see how the model looks like with original dMood scores
+
+mtest1 <- lmer(dMood ~ neuroticism * dStress + (1 | ID), data = dm)
+
+mt1 <- modelDiagnostics(mtest1) 
+plot(mt1, nrow = 2, ncol = 2, ask = FALSE)
+
+## Now let's try to fix the very mild left skew just for the sake
+## of demonstration
+
+max(dm$dMood) + min(dm$dMood)
+
+## transform
+dm[, moodtrans := sqrt(8) - sqrt(8 - dMood)]
+
+mtest <- lmer(moodtrans ~ neuroticism * dStress + (1 | ID), data = dm)
+
+mt <- modelDiagnostics(mtest) 
+plot(mt, nrow = 2, ncol = 2, ask = FALSE)
+
+``` 
+
+The transformation appears to have modestly helped the distribution of
+residuals. Its not that clear whether it was bad enough to begin with
+and whether the transformation improved it enough that it is worth the
+difficulty in interpretation (dMood is now square root transformed and
+that must be incorporated into its interpretation). For the lecture,
+we did this for demonstration purposes, but in practice, consider
+whether this is worth it or only adds difficulty in understanding
+without improving / changing results much.
+
+Enough sidetracking, let's go back to our original model, *m*.
+No extreme value are present. If there were any, we can remove that, 
+as we have discussed in depth in previous lectures, update the model,
+and re-run diagnostics. In practice it could take a few rounds of 
+extreme value removal or you may decide to stop at one round.
+
+Let's look at the summary of our model, *m*. Although we have used 
+`summary()` a lot in the past, we'll introduce another function to 
+help look at `lmer()` model results, `modelTest()`. In this lecture,
+we will only learn and interpret part of its output, with the rest 
+of the output from `modelTest()` covered later. In addition to get
+nicely formatted results rather than a set of datasets containing 
+the results, we use the `APAStyler()` function.
+
+```{r}
+
+APAStyler(modelTest(m))
+
+``` 
+
+The results show the regression coefficients, asterisks for p-values,
+and 95% confidence intervals in brackets for the fixed effects, the
+standard deviations of the random effects, the model degrees of
+freedom, which is how many parameters were estimated in the model
+total, and the number of people and observations. For now, we will
+ignore all the output under row 9, N (Observations). In the case of
+this model we can see the following.
+
+A LMM was fit with 283 observations from 88 people. There was no
+significant neuroticism x stress interaction, b [95% CI] = 0.07
+[-0.03, 0.16], p = .160.
+
+We can also pass multiple model results in a list together, which puts the
+results side by side. This is particularly helpful for comparing
+models with and without covariates, to evaluate whether removing
+extreme values changed the results substantially, or to compare models
+with different outcomes.
+
+```{r}
+
+APAStyler(list(
+  Energy = modelTest(m),
+  Mood = modelTest(mtest1) ))
+
+``` 
+
+These results show us that we have similar results when predicting
+daily energy and daily mood from stress and neuroticism. The 
+relationship between daily stress and daily mood, and daily stress
+and daily energy did not vary by individual differences in 
+neuroticism. In this case, it would make sense to re-run these
+models without the interaction term to test the main effects
+of daily stress and neuroticism.
+
+```{r}
+mmain <- lmer(dEnergy ~ neuroticism + dStress + (1 | ID), data = dm)
+mtest1main <- lmer(dMood ~ neuroticism + dStress + (1 | ID), data = dm)
+
+APAStyler(list(
+  Energy = modelTest(mmain),
+  Mood = modelTest(mtest1main) ))
+
+```
+
+Results are indeed similar for daily mood and energy as outcomes. 
+There are significant negative associations between daily stress
+and both outcome variables, and also neuroticism and both outcome
+variables.
+
+
+## Plotting
+
+Typically, to plot our significant interaction, a few exemplar 
+lines are graphed showing the slope of one variable with the
+outcome at different values of the moderator. 
+As with GLMs, we can use the `visreg()` function.
+Here, we'll use neuroticism as the moderator. A common 
+approach to picking level of the moderator is to use the 
+Mean - 1 SD and Mean + 1 SD. To do that, we first need the mean
+and standard deviation of neuroticism, which we can get using 
+`egltable()` after excluding duplicates by ID, since 
+neuroticism only varies between units. Note that we are doing
+this for the sake of example only since our interaction was
+not signficant.
+
+```{r}
+
+egltable(c("neuroticism"), data = dm[!duplicated(ID)])
+
+visreg(m, xvar = "dStress",
+       by = "neuroticism", overlay=TRUE,
+       breaks = c(3.46-1.11, 3.46+1.11),
+       partial = FALSE, rug = FALSE)
+
+```
+
+The results show, in an easier to interpret way, what the positive
+interaction coefficient of $b = 0.07$ means, people with higher levels
+of neuroticism are less sensitive to the (negative) effects of stress. 
+People higher in neuroticism are relatively less sensitive to the 
+effects of stress, although in both cases, higher stress is associated 
+with lower energy levels. Keep in mind again that we are interpreting
+this as though the interaction was signficant for the sake of example
+only.
+
+Another common way of picking some exemplar values is to use the 25th
+and 75th percentiles. These work particularly well for very skewed
+distributions where the mean +/- SD could be outside the observed
+range of the data. Again we exclude duplicates by ID and then use the
+`quantile()` function to get the values, 3, and 4.5 for the 25th and
+75th percentiles.
+
+```{r}
+
+quantile(dm[!duplicated(ID), neuroticism], na.rm = TRUE)
+
+visreg(m, xvar = "dStress",
+       by = "neuroticism", overlay=TRUE,
+       breaks = c(3, 4.5),
+       partial = FALSE, rug = FALSE)
+
+``` 
+
+## Simple Effects
+
+When working with models that have interactions, a common aid to
+interpretation is to test the simple effects / slopes from the
+model. For example, previously we graphed the association between
+stress and energy at M - 1 SD and M + 1 SD on neuroticism. 
+However, although visually both lines appeared to have a
+negative slope, we do not know from the graph alone whether there is a
+significant association between stress and energy at both the
+low (M - 1 SD) and high (M + 1 SD) levels of neuroticism. To answer
+that, we need to test the simple slope of stress at specific values of
+neuroticism. Again this is for demonstration only given our non-
+significant moderation. We would not need to compute simple slopes
+or effects for non-significant moderations in reality.
+
+Our default model does actually give us one simple slope:
+it is the simple slope of stress when $neuroticism = 0$. However, as
+we can tell from the mean and standard deviation of neuroticism, 0 is
+very far outside the plausible range of values so that simple slope
+given to us by default from the model is not too useful. We could
+either center neuroticism and re-run the model, which would get us a
+different simple slope, or use post hoc functions to calculate simple
+slopes.
+
+We will use the `emtrends()` function from the `emmeans` package to
+test the simple slopes. This function also works with GLMs, for your
+reference.
+
+The `emtrends()` function take a model as its first argument, then the
+variable that you want to calculate a simple slope for, here `stress`,
+the argument `at` requires a list of specific values of the moderator,
+and then we tell it how we want degrees of freedom calculated (note
+this only applies to `lmer` models). We store the results in an `R`
+object, `mem` and then call `summary()` to get a summary table. The
+`infer = TRUE` argument is needed in `summary()` if you want
+p-values. 
+
+```{r}
+
+mem <- emtrends(m, var = "dStress",
+                at = list(neuroticism = c(3.46-1.11, 3.46+1.11)),
+                lmer.df = "satterthwaite")
+
+summary(mem, infer=TRUE)
+
+```
+
+The relevant parts of the output, for us, are the columns for
+`stress.trend` which are the simple slopes, the values of
+`neuroticism` which tell us at what values of neuroticism we have
+calculated simple slopes, the confidence intervals, `lower.CL` and
+`upper.CL`, 95% by default, and the p-value. From these results, we
+can see that when $neuroticism = 2.35$ there is a significant
+negative association between stress and energy, but not when 
+$neuroticism = 4.57$.
+
+## Sample Write Up
+
+With all of this information, we can plan out some final steps for a
+polished write up of the results. First, let's get exact p-values for
+all our results. We can do this through options to `pcontrol` in
+`APAStyler()`. We also re-print the simple slopes here.
+
+```{r}
+
+APAStyler(modelTest(m),
+  pcontrol = list(digits = 3, stars = FALSE, includeP = TRUE,
+                  includeSign = TRUE, dropLeadingZero = TRUE))
+
+summary(mem, infer=TRUE)
+
+``` 
+
+Now we will make a polished, finalized figure. I have customized the
+colours, and turned off the legends. In place of legends, I have
+manually added text annotations including the simple slopes and
+confidence intervals and p-values for the simple slopes^[For your
+reference, it took about 8 trial and errors of different x and y
+values and angles to get the text to line up about right. I did not
+magically get the values to use to get a graph that I thought looked
+nice. That is why I think sometimes it is easier to add this sort of
+text after the fact in your slides or papers rather than building it
+into the code.].
+
+```{r}
+
+visreg(m, xvar = "dStress",
+       by = "neuroticism", overlay=TRUE,
+       breaks = c(3.46-1.11, 3.46+1.11),
+       partial = FALSE, rug = FALSE, gg=TRUE,
+       xlab = "Daily Stress",
+       ylab = "Predicted Daily Energy") +
+  scale_color_manual(values = c("2.35" = "black", "4.57" = "grey70")) +
+  theme_pubr() +
+  guides(colour = FALSE, fill = FALSE) +
+  annotate(geom = "text", x = 3.2, y = 3.9, label = "High Neuroticism: b = -0.07 [-0.23, 0.10], p = .447",
+           angle = -12) + 
+  annotate(geom = "text", x = 4, y = 4.4, label = "Low Neuroticism: b = -0.21 [-0.36, -0.06], p = .005",
+           angle = -33)
+
+```
+
+A linear mixed model using restricted maximum likelihood was used to
+test whether the association of daily stress on daily energy is
+moderated by baseline neuroticism scores. All predictors were included
+as fixed effects and a random intercept by participant was included.
+Visual diagnostics showed that energy was normally distributed, and no
+outliers were present.
+
+The daily stress x neuroticism interaction was not statistically
+significant, which indicated that the relationship between stress 
+and energy did not vary by neuroticism. Results from the analysis with
+the interaction dropped revealed that both neuroticism and daily stress
+were negatively associated with daily energy. 
+
+
+# Continuous x Categorical Interactions in `R`
+
+Continuous x Categorical interactions are conducted much as continuous
+x continuous interactions. Typically with continuous x categorical
+interactions, simple slopes for the continuous variable are calculated
+at all levels of the categorical variable.
+
+Let's illustrate this with a model examining the relationship between
+daily energy levels and self-esteem with sex as a moderator.
+
+
+```{r}
+
+mconcat<- lmer(dSE ~ dEnergy*sex + (1| ID), data = dm) 
+
+```
+
+The model diagnostics look relatively good, albeit not perfect.
+
+```{r}
+
+plot(modelDiagnostics(mconcat), nrow = 2, ncol = 2, ask = FALSE)
+
+```
+
+With reasonable diagnostics, we can look at a summary.
+There is one extreme residual but I'm choosing to 
+leave it in the dataset.
+
+
+```{r}
+
+summary(mconcat)
+
+```
+
+Factor variables in interactions do not work currently with 
+`modelTest()`, so if we wanted to use it, we'd need to manually dummy
+code the categorical variable. The results are identical.
+
+```{r}
+
+dm[, female := as.integer(sex == "female")]
+
+malt <- lmer(dSE ~ dEnergy * female + (1 | ID), data = dm)
+
+APAStyler(modelTest(malt))
+
+``` 
+
+## Plotting
+
+With continuous x categorical interactions, the easiest approach is to
+plot the simple slope of the continuous variable by the categorical
+one as shown in the following.
+
+```{r}
+
+visreg(mconcat, xvar = "dEnergy",
+       by = "sex", overlay=TRUE,
+       partial = FALSE, rug = FALSE)
+
+## EXTRA: another example using a different
+## model with continuous variable as moderator
+egltable(c("conscientiousness"), data = dm[!duplicated(ID)])
+
+visreg(m2, xvar = "Int_Str",
+       by = "conscientiousness", overlay=TRUE,
+       breaks = c(3.76-0.86, 3.76+0.86),
+       partial = FALSE, rug = FALSE)
+
+
+```
+
+## Simple Effects
+
+When working with models that have interactions, a common aid to
+interpretation is to test the simple effects / slopes from the
+model. For example, previously we graphed the association between
+daily energy and self-esteem at each level of the categorical
+`sex` variable, i.e. for men and women.
+However, we cannot tell from the graph whether daily energy is
+significantly associated with self-esteem for men or women.
+
+To answer that, we need to test the simple slope of energy at 
+the two sex levels. Our default model does actually give us one simple slope:
+it is the simple slope of energy when for men (i.e when female = 0), but we
+might want more.
+
+We will use the `emtrends()` function from the `emmeans` package to
+test the simple slopes. 
+
+The `emtrends()` function take a model as its first argument, then the
+variable that you want to calculate a simple slope for, here `energy`,
+the argument `at` requires a list of specific values of the moderator,
+and then we tell it how we want degrees of freedom calculated (note
+this only applies to `lmer` models). We store the results in an `R`
+object, `mem` and then call `summary()` to get a summary table. The
+`infer = TRUE` argument is needed in `summary()` if you want
+p-values. 
+
+```{r}
+
+mem <- emtrends(mconcat, var = "dEnergy",
+                at = list(sex = c("male", "female")),
+                lmer.df = "satterthwaite")
+
+summary(mem, infer=TRUE)
+
+```
+
+The relevant parts of the output, for us, are the columns for
+`dEnergy.trend` which are the simple slopes, the values of
+`sex` which tell us at what values of sex we have calculated 
+simple slopes, the confidence intervals, `lower.CL` and 
+`upper.CL`, 95% by default, and the p-value. From these results,
+we can see that daily energy is significantly associated with 
+self-esteem for any sex, although it is stronger for men than 
+women.
+
+# Categorical x Categorical Interactions in `R`
+
+
+Categorical x Categorical interactions are conducted comparably,
+although more contrasts / simple effect follow-ups are possible.
+
+Here we will work with Int_Str again, which is a two-level 
+categorical predictor (0 = no interaction with a stranger, 1 = 
+interacted with a stranger that day) and energy as the outcome.
+We also work with a three-level conscientiousness variable.
+
+
+```{r}
+
+## create a categorical conscientiousness variable
+dm[, cons3 := cut(conscientiousness, breaks = quantile(conscientiousness, probs = c(0, 1/3, 2/3, 1), na.rm=TRUE),
+                    labels = c("Low", "Mid", "High"),
+                    include.lowest = TRUE)]
+
+mcat2 <- lmer(dEnergy ~ cons3 * Int_Str + (1 | ID), data = dm)
+
+```
+
+The model diagnostics look relatively good.
+
+```{r}
+
+plot(modelDiagnostics(mcat2), nrow = 2, ncol = 2, ask = FALSE)
+
+```
+
+With reasonable diagnostics, we can look at a summary.
+
+```{r}
+
+summary(mcat2)
+
+```
+
+## Plotting
+
+With categorical x categorical interactions, `visreg()` produces OK
+but not great figures as shown in the following. We can see the means
+of transformed mood for all 6 cells (the cross of 3 level of
+conscientiousness x 2 levels of Int_Str).
+
+```{r}
+
+ dm[, Int_Str := factor(
+  Int_Str,
+  levels = c(0,1),
+  labels = c("No interaction with stranger", "Interacted with stranger"))]
+
+visreg(mcat2, xvar = "Int_Str",
+       by = "cons3", overlay=TRUE,
+       partial = FALSE, rug = FALSE)
+
+```
+
+## Simple Effects
+
+When working with two categorical interactions (or with
+a categorical predictor with >2 levels where you want to test various
+group differences), the `emmeans()` function from the `emmeans`
+package is helpful. We can get the means of interaction with stranger by
+conscientiousness group and get confidence intervals and p-values. These p-values
+test whether each mean is different from zero, by default.
+
+```{r}
+
+## re-run mcat2 now with int_str as factor
+mcat2 <- lmer(dEnergy ~ cons3 * Int_Str + (1 | ID), data = dm)
+
+em <- emmeans(mcat2, "Int_Str", by = "cons3",
+              lmer.df = "satterthwaite")
+summary(em, infer = TRUE)
+
+```
+
+A nice plot, with confidence intervals for the fixed effects, can be
+obtained by using the `emmip()` function from the `emmeans`
+package. It takes as input the results from `emmeans()`, not the
+`lmer()` model results directly. Here is a simple plot showing the
+categorical interactions. Note that with this approach, you could
+basically fit the same model(s) that you would with a repeated
+measures or mixed effects ANOVA model, with the advantage that LMMs do
+not require balanced designs and allow both categorical and continuous
+predictors (e.g., you could include continuous covariates
+easily). GLMs and (G)LMMs can do everything that t-tests and various
+ANOVAs can, but with greater flexibility.
+
+```{r}
+
+emmip(em, cons3~Int_Str, CIs = TRUE) +
+  theme_pubr() +
+  ylab("Predicted Energy")
+
+```
+
+If you want pairwise comparisons, you can get all possible pairwise
+comparisons between stranger interaction levels by conscientiousness
+using the `pairs()` function.
+
+
+```{r}
+
+## pairwise comparisons of Int_Str by conscientiousness
+pairs(em, by = "cons3")
+
+## pairwise comparisons of conscientiousness by Int_Str
+pairs(em, by = "Int_Str")
+
+``` 
+
+You can also get custom contrasts. For example, if we wanted to
+compare high conscientiousness to the average of low and mid 
+conscientiousness at each level of sex (H1) and secondly see if 
+low and mid conscientiousness differ (H2). The list gives the 
+specific contrast weights, which are directly applied to the 
+means we obtain from `emmeans()`.
+
+```{r}
+
+## First let's run the model examining whether the
+## association between conscientiousness and energy
+## is moderated by sex
+mcat22 <- lmer(dEnergy ~ cons3 * sex + (1 | ID), data = dm)
+
+## Get the means for each group
+em2 <- emmeans(mcat22, "cons3", by = "sex",
+              lmer.df = "satterthwaite")
+summary(em2, infer = TRUE)
+
+## Apply the custom contrasts
+contrast(em2,
+         list(
+           H1 = c(.5, .5, -1),
+           H2 = c(1, -1, 0)),
+         by = "sex")
+
+``` 
+
+To help you see directly how the contrast weights are applied, we can
+apply them directly to the estimated means.
+
+```{r}
+
+## all the means
+as.data.frame(em2)
+
+## just the first three, all for sex = male
+as.data.frame(em2)$emmean[1:3]
+
+## apply H1 weights
+sum(as.data.frame(em2)$emmean[1:3] * c(.5, .5, -1))
+
+## apply H2 weight
+sum(as.data.frame(em2)$emmean[1:3] * c(1, -1, 0))
+
+```
+
+You could get even more specific hypotheses about group differences,
+if you wanted using `by = NULL` all the means are in a row of 6 and we
+can apply weights to each. For example, here we contrast the average
+of low conscientiousness among females and low conscientiousness among males to
+high conscientiousness among females (H1).
+For more examples of weighting schemes for many different possible
+specific contrasts, see:
+https://stats.idre.ucla.edu/spss/faq/how-can-i-test-contrasts-and-interaction-contrasts-in-a-mixed-model/
+.
+
+```{r}
+
+## all the means
+as.data.frame(em2)
+
+
+contrast(em,
+         list(
+           H1 = c(.5, 0, 0, .5, 0, -1)),
+         by = NULL)
+
+
+``` 
+
+
+# Summary
+
+## Conceptual
+
+Key points to take away conceptually are:
+
+- How to include interactions/moderation in LMMs
+- How to understand whether there is a significant interaction or
+  notation
+- How to test and interpret interactions 
+- How to test simple slopes / simple effects from different kinds of
+  interactions 
+
+## Code
+
+
+| Function       | What it does                                 |
+|----------------|----------------------------------------------|
+| `lmer()`     | estimate a LMM  |
+| `confint()` | calculate confidence intervals for a LMM  | 
+| `visreg()` | create marginal or conditional graphs from a LMM  | 
+| `modelDiagnostics()` | evaluate model diagnostics for LMMs including of multivariate normality  | 
+| `summary()` | get a summary of model results
+| `modelTest()` | along with `APAStyler()` get a nicely formatted summary of a model results. | 
+| `emmeans()` | test specific means from a model. | 
+| `emtrends()` | test simple slopes from a model. | 
+| `contrast()` | test custom contrasts on a set of means from `emmeans()`. | 
+
