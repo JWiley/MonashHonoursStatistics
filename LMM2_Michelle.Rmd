@@ -395,7 +395,7 @@ dm.noev2a <- dm[ID %nin% 29]
 
 ``` 
 
-Supposing we wanted to remove IDs 24, 26, and 51, we could use the
+Supposing we wanted to remove IDs 23, 109 and 143, we could use the
 same approach but instead of listing one ID, we'd list all three as a
 vector, like this:
 
@@ -520,6 +520,8 @@ intervals.
 
 ```{r, fig.width = 7, fig.height = 10}
 
+iccMixed("dStress",id="ID",data=dm) ## Let's get the ICC
+
 m2 <- lmer(dStress ~ Benergy + Wenergy +
              (Wenergy | ID),
            data = dm)
@@ -593,14 +595,18 @@ such that each one unit higher average energy people had was associated
 with `r fixef(m2)[["Benergy"]]` 
 95% CI = `r sprintf("[%0.2f, %0.2f]", m2.ci[6, 1], m2.ci[6, 2])`.
 
-There was also a significant fixed effect of within person energy on
-stress, such that on days where people were one unit higher on energy
-than their own average, people were expected to have 
+There was no significant fixed effect of within person energy on
+stress,`r fixef(m2)[["Wenergy"]]` 
+95% CI = `r sprintf("[%0.2f, %0.2f]", m2.ci[7, 1], m2.ci[7, 2])`.
+
+(If this would have been significant, you could report that: On 
+days where people were one unit higher on energy than their 
+own average, people were expected to have 
 `r fixef(m2)[["Wenergy"]]` 
 95% CI = `r sprintf("[%0.2f, %0.2f]", m2.ci[7, 1], m2.ci[7, 2])`
-lower stress that same day, on average. 
-However, there were individual differences, with the standard
-deviation for the random slope being
+lower stress that same day, on average. However, there were
+individual differences, with the standard deviation for the
+random slope being
 `r as.data.table(VarCorr(m2))[2, sdcor]`
 indicating that there are individual differences in the slope of
 within person energy on stress. 
@@ -608,7 +614,8 @@ Assuming the random slope follow a normal distribution,
 we expect most people to fall within one standard deviation of the
 mean, which in these data would indicate that most people are expected
 to have a within person slope of stress on energy between:
-`r fixef(m2)[["Wenergy"]] + c(-1, 1) *  as.data.table(VarCorr(m2))[2, sdcor]`.
+`r fixef(m2)[["Wenergy"]] + c(-1, 1) *  as.data.table(VarCorr(m2))[2, sdcor]`.)
+
 Finally, there was a negative correlation between the random intercept
 and slope, 
 `r as.data.table(VarCorr(m2))[3, sdcor]`
