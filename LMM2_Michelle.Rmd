@@ -464,7 +464,7 @@ random intercept and slope has dropped from
 to 
 `r as.data.table(VarCorr(m1noev))[3, sdcor]`
 and the average slope of energy on stress, the fixed effect part, is
-somewhat stronger going from 
+somewhat weaker going from 
 `r fixef(m1)[["dEnergy"]]` to 
 `r fixef(m1noev)[["dEnergy"]]`.
 
@@ -571,7 +571,7 @@ A linear mixed model was fit to
 `r nobs(m2)` stress scores from 
 `r as.integer(ngrps(m2))` people. The intraclass correlation
 coefficient of stress, the outcome, was 
-`r iccMixed("dStress", id = "ID", data = dm)$ICC[1]` and of mood, the
+`r iccMixed("dStress", id = "ID", data = dm)$ICC[1]` and of energy, the
 predictor was 
 `r iccMixed("dEnergy", id = "ID", data = dm)$ICC[1]`,
 indicating that about 40% of the total variance in stress and about
