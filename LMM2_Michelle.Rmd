@@ -593,7 +593,7 @@ mean, which in these data would be somewhere between:
 There was also a significant fixed effect of average energy on stress,
 such that each one unit higher average energy people had was associated
 with `r fixef(m2)[["Benergy"]]` 
-95% CI = `r sprintf("[%0.2f, %0.2f]", m2.ci[6, 1], m2.ci[6, 2])`.
+95% CI = `r sprintf("[%0.2f, %0.2f]", m2.ci[6, 1], m2.ci[6, 2])` lower stress.
 
 There was no significant fixed effect of within person energy on
 stress,`r fixef(m2)[["Wenergy"]]` 

@@ -12,7 +12,7 @@
 
 <meta name="author" content="Joshua F. Wiley - 2021 updates Michelle Byrne" />
 
-<meta name="date" content="2021-05-12" />
+<meta name="date" content="2021-05-17" />
 
 <title>Linear Mixed Models (LMMs) - Part 2</title>
 
@@ -279,7 +279,7 @@ if (window.hljs) {
 
 <h1 class="title toc-ignore">Linear Mixed Models (LMMs) - Part 2</h1>
 <h4 class="author">Joshua F. Wiley - 2021 updates Michelle Byrne</h4>
-<h4 class="date">2021-05-12</h4>
+<h4 class="date">2021-05-17</h4>
 
 
 <div id="TOC">
@@ -991,7 +991,7 @@ plot(m2.diag, ncol = 2, nrow = 3, ask=FALSE)</code></pre>
 <p>The profile likelihood confidence intervals take a few seconds to complete and generate a few warnings related to the fact that the lower bound for the intercept-slope correlation is -1, the lowest possible correlation.</p>
 <div id="sample-write-up" class="section level3">
 <h3><span class="header-section-number">1.2.1</span> Sample Write Up</h3>
-<p>A linear mixed model was fit to 283 stress scores from 88 people. The intraclass correlation coefficient of stress, the outcome, was 0.3989 and of energy, the predictor was 0.2753, indicating that about 40% of the total variance in stress and about 28% of the total variance in energy exists between people with the remaining due to daily fluctuations within people. The fixed effect intercept revealed that the estimated average [95% CI] stress was 5.2794 [4.32, 6.23], when <code>Benergy</code> and <code>Wenergy</code> are zero. However, there were individual differences, with the standard deviation for the random intercept being 0.8442 indicating that there are individual differences. Assuming the random intercepts follow a normal distribution, we expect most people to fall within one standard deviation of the mean, which in these data would be somewhere between: 4.4352, 6.1235. There was also a significant fixed effect of average energy on stress, such that each one unit higher average energy people had was associated with -0.2931 95% CI = [-0.52, -0.06].</p>
+<p>A linear mixed model was fit to 283 stress scores from 88 people. The intraclass correlation coefficient of stress, the outcome, was 0.3989 and of energy, the predictor was 0.2753, indicating that about 40% of the total variance in stress and about 28% of the total variance in energy exists between people with the remaining due to daily fluctuations within people. The fixed effect intercept revealed that the estimated average [95% CI] stress was 5.2794 [4.32, 6.23], when <code>Benergy</code> and <code>Wenergy</code> are zero. However, there were individual differences, with the standard deviation for the random intercept being 0.8442 indicating that there are individual differences. Assuming the random intercepts follow a normal distribution, we expect most people to fall within one standard deviation of the mean, which in these data would be somewhere between: 4.4352, 6.1235. There was also a significant fixed effect of average energy on stress, such that each one unit higher average energy people had was associated with -0.2931 95% CI = [-0.52, -0.06] lower stress.</p>
 <p>There was no significant fixed effect of within person energy on stress,-0.1186 95% CI = [-0.26, 0.03].</p>
 <p>(If this would have been significant, you could report that: On days where people were one unit higher on energy than their own average, people were expected to have -0.1186 95% CI = [-0.26, 0.03] lower stress that same day, on average. However, there were individual differences, with the standard deviation for the random slope being 0.2236 indicating that there are individual differences in the slope of within person energy on stress. Assuming the random slope follow a normal distribution, we expect most people to fall within one standard deviation of the mean, which in these data would indicate that most people are expected to have a within person slope of stress on energy between: -0.3422, 0.105.)</p>
 <p>Finally, there was a negative correlation between the random intercept and slope, -0.1503 indicating that compared to the population averages, people who had a relatively higher stress when energy was 0 also tended to have a more negative within person association between energy and stress.</p>
