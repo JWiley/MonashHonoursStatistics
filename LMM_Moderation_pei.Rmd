@@ -407,7 +407,7 @@ the same way as for GLMs.
 First to avoid any issues around diagnostics etc. from haven labeled
 type data, we will convert the variable we are going to work with to
 numeric. Then we fit a LMM with an interaction between stress and
-neuroticism, mood as the outcome and a random intercept as the only
+neuroticism, energy as the outcome and a random intercept as the only
 random effect.
 
 ```{r}
@@ -520,6 +520,8 @@ extreme values changed the results substantially, or to compare models
 with different outcomes.
 
 ```{r}
+# Remember: m <- lmer(dEnergy ~ neuroticism * dStress + (1 | ID), data = dm)
+# mtest1 <- lmer(dMood ~ neuroticism * dStress + (1 | ID), data = dm)
 
 APAStyler(list(
   Energy = modelTest(m),
@@ -883,7 +885,7 @@ summary(mcat2)
 
 With categorical x categorical interactions, `visreg()` produces OK
 but not great figures as shown in the following. We can see the means
-of transformed mood for all 6 cells (the cross of 3 level of
+of energy for all 6 cells (the cross of 3 level of
 conscientiousness x 2 levels of Int_Str).
 
 ```{r}
@@ -1004,8 +1006,8 @@ sum(as.data.frame(em2)$emmean[1:3] * c(1, -1, 0))
 You could get even more specific hypotheses about group differences,
 if you wanted using `by = NULL` all the means are in a row of 6 and we
 can apply weights to each. For example, here we contrast the average
-of low conscientiousness among females and low conscientiousness among males to
-high conscientiousness among females (H1).
+of low conscientiousness among female participants and low conscientiousness among male participants to
+high conscientiousness among female participants (H1).
 For more examples of weighting schemes for many different possible
 specific contrasts, see:
 https://stats.idre.ucla.edu/spss/faq/how-can-i-test-contrasts-and-interaction-contrasts-in-a-mixed-model/
