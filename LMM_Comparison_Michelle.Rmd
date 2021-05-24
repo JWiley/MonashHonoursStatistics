@@ -58,10 +58,7 @@ meant to be exhaustive.
 * Calculate effect sizes for one or multiple predictors
 
 We will look at examples of the different uses of model comparisons in
-this topic. In fact, we already saw one example in the topic on
-Moderation where we compared the results, by eye, from two models that
-differed only in whether some extreme values were included or
-excluded. This is a type of model comparison.
+this topic. 
 
 Just as there are many different kinds of models we can fit, even with
 LMMs (e.g., with or without random slopes, etc.), so to there are many
@@ -388,7 +385,7 @@ rather different theoretical foundations, but for practical purposes
 they are similar other than the complexity penalties).
 
 A common way of defining model complexity is based on the number of
-estiamted model parameters, $k$. For example, consider the following
+estimated model parameters, $k$. For example, consider the following
 simple linear regression for $n$ different observations:
 
 $$
@@ -524,7 +521,7 @@ nobs(malt)
 Now we can see which model is the best fit. For the nested models
 (m0 - m3) we can use LRTs. Technically, m0 also is nested in malt, so
 we can use a LRT for that too. We cannot use a LRT for, say, m1 and
-malt as those mdoels are not nested. We can use AIC and BIC for all
+malt as those models are not nested. We can use AIC and BIC for all
 models, though. Note that with multiple models, the `anova()` function
 is doing sequential LRT tests (e.g., m0 vs m1; m1 vs m2, etc.) not all
 compared to one model. If you want two specific models compared,
@@ -1053,8 +1050,8 @@ model. Individual differences in mean level of mood are already
 captured in the random intercept model, so for the conditional model,
 it will be very difficult for Bstress to actually improve the overall
 variance explained. Instead, Bstress is able to shift what was
-previously variance due to the random intercept and explain it so it
-because variance attributable to the fixed effects portion of the
+previously variance due to the random intercept to variance 
+attributable to the fixed effects portion of the
 model. In terms of the equations:
 
 $$
@@ -1141,7 +1138,7 @@ random effects, if the random slope does differ between people quite a
 bit.
 
 In summary, we can say that there is a significant, negative
-association within stress and same daymood (b [95% CI] = -0.37 [-0.49, -0.25]
+association within stress and same day mood (b [95% CI] = -0.37 [-0.49, -0.25]
 p < .001), with a small effect size for the
 fixed effects, $f^2$ = .08, and a medium effect size for the overall
 conditional model, $f^2$ = .19. The pattern of results is that higher

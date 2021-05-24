@@ -12,7 +12,7 @@
 
 <meta name="author" content="Joshua F. Wiley - updated for 2021 by Michelle Byrne" />
 
-<meta name="date" content="2021-05-18" />
+<meta name="date" content="2021-05-24" />
 
 <title>Linear Mixed Models (LMMs) - Model Comparisons</title>
 
@@ -279,7 +279,7 @@ if (window.hljs) {
 
 <h1 class="title toc-ignore">Linear Mixed Models (LMMs) - Model Comparisons</h1>
 <h4 class="author">Joshua F. Wiley - updated for 2021 by Michelle Byrne</h4>
-<h4 class="date">2021-05-18</h4>
+<h4 class="date">2021-05-24</h4>
 
 
 <div id="TOC">
@@ -365,7 +365,7 @@ dm[, relsta := factor(
 <li>Calculate the significance of multiple predictors</li>
 <li>Calculate effect sizes for one or multiple predictors</li>
 </ul>
-<p>We will look at examples of the different uses of model comparisons in this topic. In fact, we already saw one example in the topic on Moderation where we compared the results, by eye, from two models that differed only in whether some extreme values were included or excluded. This is a type of model comparison.</p>
+<p>We will look at examples of the different uses of model comparisons in this topic.</p>
 <p>Just as there are many different kinds of models we can fit, even with LMMs (e.g., with or without random slopes, etc.), so to there are many different kinds and purposes for different model comparisons.</p>
 <p>To begin with, let’s imagine we are just trying to compare two models: Model A and Model B. We can broadly classify the type of comparison based on whether Model A and B are nested or non-nested models. We will talk about what these mean next.</p>
 <div id="nested-models" class="section level2">
@@ -542,7 +542,7 @@ anova(modela, modelb, test = &quot;LRT&quot;)</code></pre>
 <p>Both the AIC and BIC are calculated based primarily on the log likelihood, LL, of a model. One way of thinking about these information criterion is that you could think about models being a way of approximating reality. Suppose you have two models that both generate approximations (predictions) of reality. The model whose predictions are closer to the observed data will have a higher LL. The LL can be used as a <em>relative</em> measure of model fit. LL <strong>is not</strong> an absolute measure of fit. That is, we do not interpret a specific LL value as indicating “good” fit. Only which of a set of (all potentially bad) models is the best.</p>
 <p>However, there is a limitation with using LL alone. The LL will always stay the same or increase as additional predictors / parameters are added to the model. Thus if we use the LL alone, out of a set of competing models, we would virtually always pick the more complex models. To address this, we need to incorporate some penalty for the complexity of a model, so that to choose a more complex over simpler model as the “best” it has to improve the LL <em>enough</em>.</p>
 <p>The AIC and BIC are very similar except that they use different penalties for model complexity (technically they are derived from rather different theoretical foundations, but for practical purposes they are similar other than the complexity penalties).</p>
-<p>A common way of defining model complexity is based on the number of estiamted model parameters, <span class="math inline">\(k\)</span>. For example, consider the following simple linear regression for <span class="math inline">\(n\)</span> different observations:</p>
+<p>A common way of defining model complexity is based on the number of estimated model parameters, <span class="math inline">\(k\)</span>. For example, consider the following simple linear regression for <span class="math inline">\(n\)</span> different observations:</p>
 <p><span class="math display">\[
 \begin{align}
 \eta_{i} &amp;= b_0 + b_1 * x_i\\
@@ -608,7 +608,7 @@ nobs(m0)</code></pre>
 <pre><code>## [1] 283</code></pre>
 <pre class="r"><code>nobs(malt)</code></pre>
 <pre><code>## [1] 283</code></pre>
-<p>Now we can see which model is the best fit. For the nested models (m0 - m3) we can use LRTs. Technically, m0 also is nested in malt, so we can use a LRT for that too. We cannot use a LRT for, say, m1 and malt as those mdoels are not nested. We can use AIC and BIC for all models, though. Note that with multiple models, the <code>anova()</code> function is doing sequential LRT tests (e.g., m0 vs m1; m1 vs m2, etc.) not all compared to one model. If you want two specific models compared, specify just two.</p>
+<p>Now we can see which model is the best fit. For the nested models (m0 - m3) we can use LRTs. Technically, m0 also is nested in malt, so we can use a LRT for that too. We cannot use a LRT for, say, m1 and malt as those models are not nested. We can use AIC and BIC for all models, though. Note that with multiple models, the <code>anova()</code> function is doing sequential LRT tests (e.g., m0 vs m1; m1 vs m2, etc.) not all compared to one model. If you want two specific models compared, specify just two.</p>
 <pre class="r"><code>#### LRTs for nested models ####
 
 ## two specific comparisons
@@ -1055,7 +1055,7 @@ APAStyler(modelTest(m.between, method = &quot;profile&quot;),
 ## 14:    Conditional F2                         0.45  Overall Model
 ## 15:   Bstress (Fixed)          0.27/0.00, p &lt; .001   Effect Sizes</code></pre>
 <p>In the output we can see that parameters and CIs were based on REML. However, the effect sizes are based on ML, because those are based off of model comparisons. First of all, we can see in the effect sizes for Bstress that the p-value is about the same from the p-value from the fixed effects - but sometimes it differs very slightly. This may be due either to minor differences between REML and ML estimation or due to one test being a t-test with approximate degrees of freedom. Here it is the same.</p>
-<p>The Marginal F2 for Bstress indicates that it has a medium effect size. The conditional F2 is basically zero. This is not surprising as the addition of Bstress is not likely to improve the fit of the conditional model over the random intercept model. Individual differences in mean level of mood are already captured in the random intercept model, so for the conditional model, it will be very difficult for Bstress to actually improve the overall variance explained. Instead, Bstress is able to shift what was previously variance due to the random intercept and explain it so it because variance attributable to the fixed effects portion of the model. In terms of the equations:</p>
+<p>The Marginal F2 for Bstress indicates that it has a medium effect size. The conditional F2 is basically zero. This is not surprising as the addition of Bstress is not likely to improve the fit of the conditional model over the random intercept model. Individual differences in mean level of mood are already captured in the random intercept model, so for the conditional model, it will be very difficult for Bstress to actually improve the overall variance explained. Instead, Bstress is able to shift what was previously variance due to the random intercept to variance attributable to the fixed effects portion of the model. In terms of the equations:</p>
 <p><span class="math display">\[
 R^{2}_{LMM(m)} = \frac{\sigma^{2}_{fixed}}{\sigma^{2}_{fixed} +
 \sigma^{2}_{u_{0}} + \sigma^{2}_{\varepsilon}}
@@ -1131,7 +1131,7 @@ R^{2}_{LMM(c)} = \frac{\sigma^{2}_{fixed} + \sigma^{2}_{u_{0}}}{\sigma^{2}_{fixe
 \]</span></p>
 <p>any gains in <span class="math inline">\(\sigma^{2}_{fixed}\)</span> will come from a decrease in <span class="math inline">\(\sigma^{2}_{\varepsilon}\)</span>. At the same time, <span class="math inline">\(\sigma^{2}_{u_{0}}\)</span>, the variance of the random intercept will basically not change as Wstress does not vary between people at all. If the residual variance decreases, both the Marginal and Conditional F2 will increase. Thus, we reasonably expect Wstress to increase both the Marginal and Conditional F2. The Conditional F2 is larger in part because of the formula for Cohen’s <span class="math inline">\(f^2\)</span> which includes division by the unexplained variance, which is much less from the conditional than the marginal model (We can see that the Marginal R2 for the whole model is 8% whereas the Conditional R2 for the whole model is 42%).</p>
 <p>Note that for variables that vary both between and within person, they may shift some variance from the random effect variance to the fixed effect variance <strong>and</strong> from the residual variance to the fixed effect variance. Of course if a variable is included as a random slope as well, then it would also shift variance from the residuals to the random effects, if the random slope does differ between people quite a bit.</p>
-<p>In summary, we can say that there is a significant, negative association within stress and same daymood (b [95% CI] = -0.37 [-0.49, -0.25] p &lt; .001), with a small effect size for the fixed effects, <span class="math inline">\(f^2\)</span> = .08, and a medium effect size for the overall conditional model, <span class="math inline">\(f^2\)</span> = .19. The pattern of results is that higher within stress was associated with lower same day mood.</p>
+<p>In summary, we can say that there is a significant, negative association within stress and same day mood (b [95% CI] = -0.37 [-0.49, -0.25] p &lt; .001), with a small effect size for the fixed effects, <span class="math inline">\(f^2\)</span> = .08, and a medium effect size for the overall conditional model, <span class="math inline">\(f^2\)</span> = .19. The pattern of results is that higher within stress was associated with lower same day mood.</p>
 </div>
 </div>
 <div id="summary" class="section level1">
