@@ -1,0 +1,888 @@
+---
+title: "Data Visualization 1"
+author: "Joshua F. Wiley; adapted with slight modifications by Pei Hwa Goh"
+date: "`r Sys.Date()`"
+output: 
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+---
+
+```{r loadpackages}
+options(digits = 3)
+
+## load relevant packages
+library(tufte)
+library(haven)
+library(data.table)
+library(JWileymisc)
+library(psych)
+library(ggplot2)
+library(ggpubr)
+library(ggthemes)
+
+## turn off some notes from R in the final HTML document
+knitr::opts_chunk$set(message = FALSE)
+
+```
+
+# Data
+
+To start with, we'll load some data. Here we are going to use the data
+from the data collection exercise (yay!). For this code to work, you need to
+download the datasets from the moodle page under General and save them into the same
+directory as this `R`markdown file. You also may need to properly have
+an RStudio project set up, otherwise `R` may be looking in the wrong
+directory.
+
+The `read_sav()` function from the `haven` package let's you read SPSS
+data files into `R` and then we use the `as.data.table()` function to
+convert the datasets into data.tables named `db` for baseline and `dd`
+for the daily data.
+
+```{r loaddata}
+
+## read in data
+db <- as.data.table(read_sav("[2021] PSY4210 BL.sav")) # baseline
+dd <- as.data.table(read_sav("[2021] PSY4210 DD.sav")) # daily
+
+```
+
+## Scoring and Reliability
+
+When we are working with our own data, often we have to perform some
+data management. For example the Positive and Negative Affect Schedule
+(PANAS) has different items (adjectives) capturing words related to
+positive and negative emotions. However, we do not typically analyze
+these individually. The individual items are scored into two
+subscales: positive and negative affect. We may use digital (e.g.,
+Qualtrics, REDCap) or paper and pencil surveys, but those typically
+only provide us with the scores on each item. We have to create the
+subscale scores on our own. Put simply, we compute variable scores 
+from item scores.
+
+Almost always in psychology, scales/subscales are scored in one of two
+ways: either the individual items are simply added together
+or the individual items are averaged. Sometimes items are worded in
+the opposite direction and must first be reverse coded and then
+added/averaged.
+Let's look at a few ways of doing this in `R`.
+
+* The simplest approach to adding items together is to literally list
+  each item variable name separated by `+` for addition. This will
+  work to create a total score. However, a downside is that under this
+  approach if a participant misses *any* single item, they will be
+  missing on the entire subscale.
+* Another approach is to use the `rowMeans()` function. This function
+  allows you to perform the calculation (take the mean for a row of
+  data) excluding missing data if desired, which equates to imputing
+  the mean for an individual for any missing items. This is commonly
+  done and if there are small amounts of missing data (e.g., if
+  someone completed 18 / 20 items and only missed 2 / 20 items, is
+  probably a good idea).
+* If you want to deal with missing data but need a total score, you
+  can use `rowMeans()` but multiply the results by the number of items
+  that *should* have been completed (e.g., 10 if a scale has 10
+  items).
+  
+  
+As a rule of thumb, I recommend using `rowMeans()` and if the scale is
+typically added up, then multiply. This uses the most available data
+and most the time is sensible in my experience with raw data. 
+  
+
+`r margin_note("Often in R, you will see short and long ways of doing the same thing. This may seem confusing at first, but you get used to it. The reason is that there are some circumstances where you really do need the long way, but mostly the short way is quicker and easier. For example, if you have a group of friends, but only one 'Jane' in the group, you probably just say 'Jane'. However, if your friend group grows and you end up with two 'Janes' then you might call one 'Jane T' or 'new Jane' or find some other way to indicate which 'Jane' you are talking about. The same applies in R. There are usually shortcuts which are the default, but now and then you will get in a situation where you need a longer or more specific way of referring to a function or of accomplishing a specific task that cannot be managed with the short simple way.")`
+
+Let's look at each of these for the variable perceived stress from the
+baseline questionnaire of our data collection exercise. Finally, its 
+standard to report the internal consistency or reliability of a scale. 
+A common measure is Cronbach's alpha, which we can get by using the `alpha()` function from the `psych` package.
+We do something new here by writing: `psych::alpha()` that is a long
+way of typing it and tells `R` that we want to use the `alpha()`
+function from the `psych` package. Mostly we don't need to do
+this. However, the `ggplot2` package also has a function called 
+`alpha()` which is used for the alpha transparency level in
+plots. Because we are using two packages with the same function name,
+`R` can get confused so we write the package name in front of the
+function to be explicit about which one to use. If we were only using
+the `psych` or only using the `ggplot2` package, this would not be
+necessary.
+
+`r margin_note("You might have noticed something new, we used .SD, thats also a special symbol in data.table that means, the currently selected data. Well what IS the currently selected data? Whatever rows we picked and whichever columns specified by .SDcols, which we also listed at the end. That is needed because rowMeans() expects to be given a data set, not individual variables, but we are calling it already within db, a dataset, so we need some way of referring to a subset of the dataset within the data.table and the way we do that is with .SD. Its okay if that doesn't make sense right now, just copy and paste the code and know where to change variable names is enough for this unit. More: https://cran.r-project.org/web/packages/data.table/vignettes/datatable-sd-usage.html")`
+
+```{r scoring} 
+
+## add items together, if missing any item, missing Stress
+db[, StressADD := PSS1 + (6-PSS2r) + (6-PSS3r) + PSS4]
+
+## Or I could recode the variables PSS2r and PSS3r first
+db [, PSS2 := 6- PSS2r]
+db [, PSS3 := 6- PSS3r] 
+
+## average items 
+db[, StressAVG := rowMeans(.SD, na.rm = TRUE),
+   .SDcols = c("PSS1", "PSS2", "PSS3", "PSS4")]
+
+## average items then multiply to get back to "sum" scale
+db[, Stress := rowMeans(.SD, na.rm = TRUE) * 4,
+   .SDcols = c("PSS1", "PSS2", "PSS3", "PSS4")]
+
+## Let's look at how stressed people in PSY4210 are in general
+summary(db$StressAVG)
+
+## calculate Cronbach's alpha
+psych::alpha(as.data.frame(db[, .(PSS1, PSS2, PSS3, PSS4)]))
+
+## let's try with out the reverse-coded items for PSS 2 and 3
+## Pay attention to the warnings provided
+psych::alpha(as.data.frame(db[, .(PSS1, PSS2r, PSS3r, PSS4)]))
+
+## Let's do the same thing with an additional 'check.keys=TRUE' option 
+psych::alpha(as.data.frame(db[, .(PSS1, PSS2r, PSS3r, PSS4)]), check.keys = TRUE)
+
+## create a categorical stress variable
+db[StressAVG < 3, StrCat := "low"]
+db[StressAVG >= 3, StrCat := "high"]
+db[, StrCat := factor(StrCat, levels = c("low", "high"))]
+
+## wouldn't be a bad idea to also let R know that sex and relsta are factors
+db[, relsta := factor(
+  relsta, levels = c(1,2,3), 
+  labels = c("single", "in a committed exclusive relationship", "in a committed nonexclusive relationship"))]
+
+db[, sex := factor(
+  sex,
+  levels = c(1,2),
+  labels = c("male", "female"))]
+
+
+``` 
+
+
+## Try It - Scoring and Reliability
+
+Now its your turn to score the some other scales in the baseline questionnaire! 
+Four items from the Sternberger's Trait Anxiety scale (STAI; items STAI1-STAI4)
+were used in to measure anxiety levels. The short-form of the UCLA Loneliness 
+Scale (ULS-8; items ULS1-ULS8) was used to capture loneliness. The Lifespan Self-Esteem Scale (items LSE1-LSE4) was used to measure self-esteem or how one 
+feels about themselves. The 10-item version of the Big Five inventory was used
+to capture your openness, conscientiousness, extraversion, agreeableness and 
+neuroticism (e.g. BFI_E1r needs to be reverse-coded and then added to or 
+averaged with BFI_E2 to form the Extraversion score).
+
+Calculate Cronbach's alpha measure of internal consistency reliability
+for the self-esteem score.
+
+```{r tryit_scoring}
+
+## create a variable for self-esteem and name it SE, and others if you like! 
+## Go on, have fun with this :)
+
+
+## calculate the internal consistency reliability
+## for self-esteem
+
+```
+
+# Grammar of Graphics
+
+`ggplot2` is based on the **g**rammar of **g**raphics, a framework for
+creating graphs.
+
+The idea is that graphics or data visualization generally can be
+broken down into basic low level pieces and then combined, like
+language, into a final product.
+
+Under this system, line plots and scatter plots are essentially the
+same. Both have data mapped to the x and y axes.  The difference is
+the plotting symbol (**ge**ometries labelled `geom`s in `R`) in
+is a point or line. The data, axes, labels, titles, etc. may be
+identical in both cases.
+
+`ggplot2` also uses aesthetics, which control how geometries are
+displayed. For example, the size, shape, colour, transparency level
+all are **aes**thetics.
+
+## Univariate Graphs
+
+To begin with, we will make some simple graphs using `ggplot2`. The
+first step is specifying the dataset and mapping variables to axes.
+For basic, univariate plots such as a histograms, we only need to
+specify the dataset and what variable is mapped to the x axis.
+We can re-use this basic setup with different **geom**etries to make
+different graphs.
+
+```{r}
+
+pb <- ggplot(data = db, aes(x = Stress))
+
+```
+
+`r margin_note("Histograms define equal width bins on the x axis and
+count how many observations fall within each bin. Bars display these
+where the width of the bar is the width of the bin and the height of
+the bar is the count (frequency) of observations falling within that
+range. Histograms show a univariate distribution.")`
+
+Using our basic mapping, we can "add" a histogram geometry to view a
+histogram.
+
+`r margin_note("When you use geom_histogram() or geom_dotplot() you'll
+likely get a warning that a default number of bins were used and you
+should specify a better binwidth. The binwidth controls how wide the
+histogram bars are or how wide the dots in the dotplot are. However,
+for our purposes the default option is almost always good enough and
+you can feel free to ignore this message generally, unless you really
+want to change your histogram.")`
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "A histogram in ggplot2 for stress"}
+
+pb + geom_histogram()
+
+## looks like we have a pretty normal distribution based on this
+```
+
+
+`r margin_note("Density plots attempt to provide an empirical
+approximation of the probability density function (PDF) for data.
+A probability density function always sums to one (i.e., if you
+integrated to get the area under the curve, it would always be one).
+The underlying assumption is that the observed data likely come form
+some relatively smooth distribution, so typically a smoothing kernel
+is used so that you see the approximate density of the data, rather
+than seeing exactly where each data point falls.
+Density plots show a univariate distribution.")`
+
+We also can make a density plot, which also attempts to show the
+distribution, but using a smooth density function rather than binning
+the data and plotting the frequencies. Like histograms, the height
+indicates the relative frequency of observations at a particular
+value. Density plots are designed so that they sum to one. 
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "A density plot for stress"}
+
+pb + geom_density()
+
+``` 
+
+`r margin_note("Dot plots show the raw data. The data values are on the x
+axis. If two data points would overlap, they are vertically
+displaced leading to another name: stacked dot plots. They are good
+for small datasets. The y axis is kind of like a discrete density. Dot
+plots show a univariate distribution.")`
+
+Another type of plot are (stacked) dotplots. These are very effective
+at showing raw data for small datasets. Each dot represents one
+person. If two dots would overlap, they are stacked on top of each
+other. While these often are difficult to view with large datasets,
+for small datasets, they provide greater precision than histograms.
+
+```{r, fig.width = 6, fig.height = 3, fig.cap = "A dot plot for stress"}
+
+pb + geom_dotplot()
+
+```
+
+Finally, we can make Q-Q plots, although these require sample values
+instead of values on just the x-axis. We use the `scale()` function to
+z-score the data on the fly. Finally, we add a line with an intercept
+(`a`) and slope (`b`) using `geom_abline()` which is the line all the
+points would fall on if they were perfectly normally distributed.
+Remember: z=(x−mean)/SD
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "A QQ plot for stress"}
+# "sample" is z-scores of Stress, geom_qq makes "theoretical" Z-scores of a standard normal distribution
+ggplot(db, aes(sample = scale(Stress))) +
+  geom_qq() +
+  geom_abline(intercept = 0, slope = 1)
+
+```
+
+## Checking Distributions
+
+`r margin_note('We do not have to assume a normal distribution. The testDistribution() function supports many other types of distributions. For example this code would test whether the data followed a chi-squared distribution: </br> plot(testDistribution(db$Stress, distr = "chisq", starts = list(df = 5),
+  extremevalues = "theoretical", ev.perc = .005))
+</br>
+The log likelihood value is outputed for each graph, and this can be used to empirically pick the better fitting distribution as whichever distribution provides the highest log likelihood for the data. We do not get into different distributions too much in this unit, but as you go on, you may find that many variables do not follow a normal distribution and there are many statistical models that do not require outcome variables to follow a normal distribution.
+</br>
+</br>
+To see more examples, look at: http://joshuawiley.com/JWileymisc/articles/diagnostics-vignette.html
+   
+   ')`
+
+We often use graphs also to visually assess assumptions, such as
+normality and for outliers. Most commonly, and certainly in what you
+likely learned to date, we will be assuming variables follow a normal
+distribution. We can use the `testDistribution()` function combined
+with `plot()` to create a plot that helps us examine both the
+distribution and outliers. There are two parts to this graph. First,
+it makes a density plot of the raw data as a solid black line. A dashed
+blue line superimposed shows what a normal distribution would look
+like with the same mean and standard deviation as the observed
+data. If these two densities are close, that indicates the variable is
+approximately normally distributed. The x axis labels are a five
+number summary of the data, they show:
+
+* Minimum (0th percentile)
+* 1st quartile (25th percentile)
+* Median (50th percentile) 
+* 3rd quartile (75th percentile)
+* Maximum (100th percentile)
+
+We also get a rug plot (the little vertical lines between the axis and
+the density plot) which are lines where there is raw data. That helps
+see where the raw data fall.
+
+Below the density plot is a deviates plot. This is like a QQ plot, but
+rotated 45 degrees so that the line is horizontal instead of at an
+angle. If the dots fall near to the line at 0, it means they fall
+exactly where a theoretical normal distribution would be.
+
+Finally, if we assume a variable follows a normal distribution, we may
+use z scores to identify extreme values or outliers. Z scores make
+sense when we assume a theoretical distribution, like the normal
+distribution. We can have outliers identified automatically by
+specifying `extremevalues = "theoretical"` and then specifying the
+percentage of the theoretical distribution in each tail we consider
+extreme. For example `ev.perc = .005` means that we consider any score
+that is in the bottom 0.5% or top 0.5% of a normal distribution with
+the mean and standard deviation we observed for our data to be an
+"extreme" value and these will be identified in black while the rest
+of points are a light grey. There are no fixed guidelines on what
+threshold to use, many people use the top and bottom 0.1% as well
+(`ev.perc = .001`).
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "A distribution checking plot of stress"}
+
+plot(testDistribution(db$Stress,
+  extremevalues = "theoretical", ev.perc = .005))
+
+## looks like one guy could be a deviant!
+```
+
+## Mapping Additional Variables
+
+`r margin_note("When there are multiple univariate distributions to
+view, density plots are probably one of the most efficient
+ways. Histograms are difficult to view because they either are
+stacked, which makes interpretation more difficult or dodged which is
+visually difficult to see, or overplotted, which can hide some of the
+data.")`
+
+We can map additional variables to aesthetics such as the colour to
+include more information. 
+For density plots, separating by colour is easy, by adding another
+variable, say `StrCat`or `sex` or `relsta` as an additional aesthetic. 
+For categorical aesthetics like color, if it had not already been a factor, 
+its a good idea to convert it to a factor first so `R` knows
+that it is discrete and to order levels in the desired order we want,
+not the default alphabetical order (unless that is what you want).
+
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Density plot coloured by sex (and others) for stress"}
+
+ggplot(db, aes(Stress, colour = sex)) +
+  geom_density() ## continuous stress scores by sex
+
+##To remove the NAs for sex
+ggplot(db[!is.na(sex)], aes(Stress, colour = sex)) +
+  geom_density() ## continuous stress scores by sex
+
+##Let's try with other categories
+ggplot(db[!is.na(relsta)], aes(Stress, colour = relsta)) +
+  geom_density() ## continuous stress scores by relationship status
+
+##Let's try to see how self-esteem varies by stress categories
+
+db[, SE:= rowMeans(.SD, na.rm = TRUE),
+   .SDcols = c("LSE1", "LSE2", "LSE3", "LSE4")]
+
+ggplot(db, aes(SE, colour = StrCat)) +
+  geom_density() ## Self-esteem by high vs low stress
+
+```
+
+For histograms, rather than control the colour of the lines, it is
+more helpful to control the fill colour. By default, overlapping bars
+are stacked on top of each other. So that there is not an `NA` group
+we remove anyone who is missing sex
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Histogram coloured by sex for stress"}
+
+ggplot(db[!is.na(sex)], aes(Stress, fill = sex)) +
+  geom_histogram()
+
+```
+
+Overlapping bars also can be dodged instead of stacked.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Dodged histogram coloured by sex for stress"}
+
+ggplot(db[!is.na(sex)], aes(Stress, fill = sex)) +
+  geom_histogram(position = "dodge")
+
+```
+
+## Try It - Univariate
+
+Using the `db` baseline dataset:
+
+1. make a histogram for the variable: `extraversion`.
+2. use `testDistribution()` to examine whether `selfesteem` follows a
+   normal distribution and whether it has any extreme values.
+3. Make a dotplot for: `openness` *separated* (e.g., by colour and/or fill)
+   by `sex`:
+   
+```{r tryunivariate, error=TRUE}
+
+## histogram code here (extraversion)
+
+## distribution check code here (selfesteem)
+
+## dotplot code here (openness by sex)
+
+
+```
+
+# Bivariate Graphs
+
+We can make bivariate plots by mapping variables to both the x and
+y-axis. For a scatter plot, we use point geometric objects.
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot of stress and selfesteem"}
+
+ggplot(db,
+       aes(
+         x = Stress,
+         y = SE)) +
+  geom_point()
+
+```
+
+We also can use lines for bivariate data. For this example, we will
+calculate the average `mood` and `energy` by day in the daily dataset
+and save this as a new, small dataset. 
+Compared to a scatter plot, we only change point to line geometric objects.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Line plot of day and mood"}
+
+dsum <- dd[, .(
+  mood = mean(dMood, na.rm = TRUE),
+  energy = mean(dEnergy, na.rm = TRUE)),
+  by = SurveyDay]
+
+
+ggplot(dsum, aes(SurveyDay, mood)) +
+  geom_line()
+
+```
+
+With relatively discrete x axis, we can use a barplot for bivariate
+data. By default, `geom_bar()` calculates the count of observations
+that occur at each x value, so if we want our values to be the actual
+bar height, we set `stat = "identity"`.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of day and mood"}
+
+ggplot(dsum, aes(SurveyDay, mood)) +
+  geom_bar(stat = "identity")
+
+```
+
+The grammar of graphics is designed to be like sentences, where you
+can add or modify easily. For example, "There is a ball." or "There is
+a big, red, striped ball." are both valid sentences. So to with
+graphics, we often can chain pieces together to make it more nuanced.
+In `R` we just "add" more by separating each component with `+`. 
+Note that most argument names (i.e., `data = `, `mapping = `) are not
+strictly required. `R` will match input to the correct argument by
+position, often. The two sets of code below yield the same plot. In
+the first, we explicitly label all arguments, in the second we rely on
+position matching. Positional matching does not always work, for
+example we still must specify `size = ` because we don't always
+provide input for every argument, instead relying on defaults and only
+changing the specific arguments we want changed from defaults.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of day and energy"}
+
+ggplot(dsum, aes(SurveyDay, energy)) +
+  geom_bar(stat = "identity")
+
+
+# Create a numeric version of Survey Day in dsum and name it nday
+dsum[,nday:= as.numeric(SurveyDay)]
+
+# Create a factor version of Survey Day in dsum and name it fday
+dsum[,fday:= as.factor(SurveyDay)]
+
+# Now let's create a pretty plot with colours! And with some lines and points.
+ggplot(data = dsum,
+       mapping = aes(x = nday,  y = energy)) +
+  geom_bar(mapping = aes(fill = nday),
+           stat = "identity") +
+  geom_line(size = 2) + 
+  geom_point(size = 6) 
+## note the continuous colour scale when your x is continuous
+
+# Now let's do the same thing but with the factor version of SurveyDay
+ggplot(data = dsum,
+       mapping = aes(x = fday,  y = energy)) +
+  geom_bar(mapping = aes(fill = fday),
+           stat = "identity") +
+  geom_line(size = 2) + 
+  geom_point(size = 6)
+
+# Alternatively you can also present your code as follows
+ggplot(dsum, aes(fday, energy)) +
+  geom_bar(aes(fill = fday), stat = "identity") +
+  geom_line(size = 2) + 
+  geom_point(size = 6)
+
+# If you want to be even more extra (note use of both fday and nday)
+ggplot(dsum, aes(nday, energy)) +
+  geom_bar(aes(fill = fday), stat = "identity") +
+  geom_line(size = 5, colour="green") + 
+  geom_point(size = 3, colour = "orange")
+
+```
+
+# Improving Data Visualization
+
+Before we continue examining graphs, it is helpful to think a bit more
+about what makes a good graph or good data visualization.
+
+Edward Tufte and William Cleveland are two authors who have written
+extensively on data visualization and how to make good graphs. There
+work is well worth reading to improving understanding on how to
+efficiently convey data graphically.
+
+- Tufte: [https://www.edwardtufte.com/tufte/](https://www.edwardtufte.com/tufte/)
+- Cleveland: [http://www.stat.purdue.edu/~wsc/](http://www.stat.purdue.edu/~wsc/)
+
+A few additional pages with good discussions on making good graphs:
+[Graphic Design Stack Exchange 1](https://graphicdesign.stackexchange.com/questions/35052/how-to-visualise-two-dimensional-scientific-data-points-in-a-chart-in-graysca/35062#35062)
+and [Graphic Design Stack Exchange 2](https://graphicdesign.stackexchange.com/questions/36908/best-plotting-symbols-for-scientific-plots-with-multiple-datasets/57122)
+
+One key principle that Tufte emphasises is the data to ink ratio. This
+ratio is how much data is conveyed versus ink used, and Tufte argues
+to try to maximize this (i.e., more data, less ink). To see this,
+consider the following graph, which is a fairly standard way stats
+programs (Excel, etc.) tend to make barplots.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of day and energy - Step 1"}
+
+ggplot(dsum, aes(SurveyDay, energy)) +
+  geom_bar(stat = "identity")
+
+``` 
+
+For starters, the borders tell us nothing. They edge the space but
+convey no information. This can be cleaned up using a different
+theme.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of day and energy - Step 2"}
+
+ggplot(dsum, aes(SurveyDay, energy)) +
+  geom_bar(stat = "identity") + 
+  theme_pubr()
+
+``` 
+
+However, there are still some borders, which we can strip away with no
+loss of data, but reducing the ink.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Bar plot of day and energy - Step 2"}
+
+ggplot(dsum, aes(SurveyDay, energy)) +
+  geom_bar(stat = "identity") +
+  theme_pubr() + 
+  theme(axis.line = element_blank())
+
+``` 
+
+Next, think about what data are conveyed in this graph. The bars
+capture two pieces of information: (1) the day and (2) the energy on
+that day. The only pieces of the bars we really need are the top. The
+rest of the bars take up a lot of ink, but convey no data. Points can
+do this more efficiently. The chart that follows has a much higher
+data-to-ink ratio as it is stripped back nearly to just the data.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Dot plot of day and energy - Step 3"}
+
+ggplot(dsum, aes(SurveyDay, energy)) +
+  geom_point(size = 4) +
+  theme_pubr() + 
+  theme(axis.line = element_blank())
+
+``` 
+
+Depending on the number of data points, one may push a bit
+further. Many people in practice find they are unfamiliar with these
+sort of graphs and at first it can take a bit longer to read. We are
+trained and used to seeing plots with "chartjunk" and low data to
+ink ratios. However, a chart like this is a far more condensed display
+of data and removes distractions to really highlight the raw data or
+results.
+
+```{r, fig.width = 5, fig.height = 4, fig.cap = "Dot plot of day and energy - Step 4"}
+
+ggplot(dsum, aes(SurveyDay, energy)) +
+  geom_point(size = 4) +
+  geom_text(aes(y = energy + .04, label = round(energy, 2))) +
+  theme_pubr() +   
+  theme(axis.line = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank()) +
+  ggtitle("Energy across days")
+
+``` 
+
+Another example is the popular scatter plot. By default scatter plots
+already have relatively high data to ink ratios.
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 1"}
+
+ggplot(db, aes(Stress, SE)) +
+  geom_point()
+
+``` 
+
+However, "normal" axes don't convey data, so they can be removed.
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 2"}
+
+ggplot(db, aes(Stress, SE)) +
+  geom_point() +
+  theme_pubr() + 
+  theme(axis.line = element_blank())
+
+``` 
+
+If we want something *like* axes but to be more useful, we can use the
+function `geom_rangeframe()` from the `ggthemes` package to put more
+informative data in. Range frames add "axes" but only that go the
+range of the observed data. Thus, these new axes show the minimum and
+maximum of each variable.
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 3"}
+
+ggplot(db, aes(Stress, SE)) +
+  geom_point() +
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() 
+
+``` 
+
+`r margin_note("These informative axes are created by asking 
+ggplot2 to create tick marks (breaks) on the x and y axis at the 
+quintiles of the variables, which is the default output from the 
+quantile() function. So now instead of the default tick marks /
+breaks on the axes, the breaks and numbers are:
+minimum (0th percentile), </br>
+25th percentile (i.e., lower quartile), </br>
+50th percentile (i.e., median), </br>
+75th percentile (i.e., upper quartile), </br>
+maximum (i.e., 100th percentile). </br>
+This provides a useful descriptive statistics on each variable in the
+plot, right in the axes.")`
+
+
+Finally, we can make the axis labels more informative. Instead of
+presenting "pretty" numbers but that convey no data, we can pick axis
+labels and breaks at meaningful points of the data.
+One option is quantiles / percentiles: 0th, 25th, 50th (median), 75th
+and 100th percentiles are given by default from the `quantile()`
+function. Now almost every piece of ink in this figure conveys some
+useful information. We can visually see the range of the `stress` and
+`selfesteem` variables from the axes. We can see the median and interquartile
+range as well. 
+
+```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot - Step 4"}
+
+ggplot(db, aes(Stress, SE)) +
+  geom_point() +
+  scale_x_continuous(breaks = as.numeric(quantile(db$Stress))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(db$SE))) +   
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() 
+
+``` 
+
+In the rest of the graphs we examine, we will try to implement this
+data to ink ratio principle. It does require some additional `R` code
+versus simply plotting with the defaults and often at first, you may
+need to spend a bit more time explaining your graph to people in text
+or in the figure legend. However, ultimately, such plots convey more
+data.
+
+# Advanced Bivariate Graphs
+
+As with univariate graphs, we can map additional variables to
+additional aesthetics. This allows us to integrate more into standard
+bivariate plots. The following graph shows a simple example of
+this. 
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with shapes"}
+
+ggplot(db[!is.na(sex)], aes(Stress, SE, shape = sex)) +
+  geom_point() +
+  scale_x_continuous(breaks = as.numeric(quantile(db$Stress))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(db$SE))) +   
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() 
+
+```
+
+`r margin_note("There are many other shapes available. To see a list,
+    go to: http://sape.inf.usi.ch/quick-reference/ggplot2/shape.")`
+
+However, although the shapes are distinguishable, they are
+visually difficult. Cleveland did some studies around shape
+perception, particularly when points may be partially overlapping and
+on this basis suggested other shapes. We can manually specify the
+number for which shape we want applied to which value of `sex` using
+the `scale_shape_manual()` function. We also use the
+`name = ` argument so that instead of getting the legend labelled
+`sex` it is labelled `Sex` (yes, with a capital S). 
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Scatter plot with shapes"}
+
+ggplot(db[!is.na(sex)], aes(Stress, SE, shape = sex)) +
+  geom_point() +
+  scale_shape_manual(
+    name = "Sex",
+    values = c("male" = 1, "female" = 3)) +   
+  scale_x_continuous(breaks = as.numeric(quantile(db$Stress))) + 
+  scale_y_continuous(breaks = as.numeric(quantile(db$SE))) +   
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() 
+
+```
+
+## Try It - Bivariate
+
+Make a scatter plot (points) for `extraversion` and
+`conscientiousness` in the baseline data, `db`. Use the
+good visualization principles we have learned. Make your own
+decisions to make the scatter plot most useful to read.
+
+```{r trybivariate, error=TRUE}
+
+## scatter plot code here
+
+
+
+
+```
+
+# Presentation and Publication Plots
+
+`r margin_note("Many more examples can be found online, for example: http://www.cookbook-r.com/Graphs/")`
+
+Here we are going to put together several of the ideas learned to make
+some plots that could be included in presentations or publications.
+We will go through these fairly briefly and they serve largely as a
+"cookbook" with some examples you may want to use yourself later.
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Boxplot with raw data shown"}
+
+ggplot(dd, aes(factor(SurveyDay), dEnergy)) +
+  geom_boxplot() +
+  geom_jitter(colour = "lightgrey") +
+  theme_pubr() +
+  scale_y_continuous(
+    "Daily Energy Ratings",
+    breaks = as.numeric(quantile(dd$dEnergy))) +
+  xlab("Days")
+
+```
+
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Mean and 95 percent confidence interval"}
+
+ggplot(dd, aes(factor(SurveyDay), dEnergy)) +
+  stat_summary(fun.data = mean_cl_normal) +  
+  theme_pubr() +
+  ylab("Average (95% CI) Energy") + 
+  xlab("Days")
+
+```
+
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Chartjunk mean and 95 percent confidence interval"}
+
+ggplot(dd, aes(factor(SurveyDay), dEnergy)) +
+  stat_summary(fun.data = mean_cl_normal, geom = "bar") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = .3) +    
+  theme_pubr() +
+  ylab("Average (95% CI) Energy") + 
+  xlab("Days")
+
+```
+
+```{r, fig.width = 6, fig.height = 4, fig.cap = "Mean and 95 percent confidence intervals"}
+
+ggplot(db[!is.na(sex)], aes(sex, Stress)) +
+  stat_summary(fun.data = mean_cl_normal, size = 1) +
+  theme_pubr() +
+  ylab("Average (95% CI) Stress") + 
+  xlab("Sex")
+
+```
+
+```{r, fig.width = 5, fig.height = 3.5, fig.cap = "Mean and 95 percent confidence interval with data"}
+
+ggplot(db[!is.na(sex)], aes(sex, Stress)) +
+  geom_jitter(colour = "lightgrey", width = .1) +   
+  stat_summary(fun.data = mean_cl_normal, size = 1) +
+  theme_pubr() +
+  ylab("Average (95% CI) Stress") + 
+  xlab("Sex")
+
+```
+
+```{r, fig.width = 6, fig.height = 5, fig.cap = "Likert plot of means showing anchors"}
+
+## view the labels for one of the ULS items
+attr(db$ULS1, "labels")
+
+## make a summarised dataset with the means and labels
+sumdat <- melt(db[, .(ID,
+            LackCompanionship = ULS1, LeftOut = ULS4,
+            Isolated = ULS5, NoOneToTurnTo = ULS2)], id.vars = "ID")[,
+  .(Mean = mean(value, na.rm = TRUE)), by = variable]
+sumdat[, Never := paste0(variable, "\nNever")]
+sumdat[, Often := paste0(variable, "\nOften")]
+
+## make a likert plot
+gglikert("Mean", "variable", "Never", "Often", data = sumdat,
+         xlim = c(1, 5),
+         title = "Average Loneliness Ratings")
+
+```
+
+
+# Summary Table
+
+Here is a little summary of some of the functions used in this
+topic. You might also enjoy this "cheatsheet" for `ggplot2`:
+https://github.com/rstudio/cheatsheets/raw/master/data-visualization-2.1.pdf
+
+
+| Function       | What it does                                 |
+|----------------|----------------------------------------------|
+| `ggplot()`     | Sets the dataset and which variables map to which aesthetics for a plot |
+| `geom_boxplot()` | Adds geometric object for boxplots | 
+| `geom_density()` | Adds a geometric object for density lines, a way to view a distribution |
+| `geom_histogram()` | Adds a geometric object for a histogram, a way to view a distribution |
+| `geom_jitter()` | Adds a points with some automatic random noise, helpful when one axis is discrete |
+| `stat_summary()` | Used to automatically calculated some summary statistics on data and plot, usually means with standard errors or confidence intervals | 
+| `gglikert()` | Create a likert type plot showing means typically with the scale anchors |
+| `plot(testDistribution())` | Used to check whether a variable follows a specific, assumed distribution, typically a normal distribution | 
+| `ylab()` | Adds a label for the y axis |
+| `xlab()` | Adds a label for the x axis |
+

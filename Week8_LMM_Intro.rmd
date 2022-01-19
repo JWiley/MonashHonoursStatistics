@@ -1,0 +1,1164 @@
+---
+title: "Linear Mixed Models (LMMs) - Introduction"
+author: "Joshua F. Wiley - updated for 2021 by Pei Hwa Goh"
+date: "`r Sys.Date()`"
+output: 
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+---
+
+
+These are the `R` packages we will use.
+
+```{r setup}
+options(digits = 2)
+
+## new packages are lme4, lmerTest, and multilevelTools
+
+library(tufte)
+library(haven)
+library(data.table)
+library(JWileymisc)
+library(lme4)
+library(lmerTest)
+library(multilevelTools)
+library(visreg)
+library(ggplot2)
+library(ggpubr)
+
+```
+
+# Revision to Prepare for Linear Mixed Models
+
+We can model a straight line (linear regression) as
+
+$$ y_i = b_0 + b_1 * x_i + \varepsilon_i $$
+
+where:
+
+- $y_i$ is the outcome variable for the *i*th person
+- $x_i$ is the predictor/explanatory variable value for the *i*th person
+- $\varepsilon$_i is the residual/error term, the difference between the 
+  observed outcome for the *i*th person and their predicted value from the model.
+- $b_0$ is the intercept, the expected (model predicted) value of $y$
+  when $x = 0$, written, $E(Y | x = 0)$
+- $b_1$ is the slope of the line, and captures how much $y$ is
+  expected to change for a one unit change in $x$.
+
+In `R` we can write the linear regression model
+
+$$ y_i = b_0 + b_1 * x_i + \varepsilon_i $$
+
+as follows:
+
+```
+
+lm(y ~ 1 + x, data = your_dataset)
+
+
+``` 
+
+The `lm` stands for a **l**inear **m**odel. $y$ is the outcome. 
+The tilde (~) separates the outcome from the predictors.
+The predictors are $1$ and $x$. One is a constant, which 
+captures the intercept, $b_0$. 
+$x$ is whatever our predictor/explanatory variable is.
+We specify the dataset so `R` knows where to find the variables.
+
+`r margin_note("The intercept is 324.08 (the 'Estimate' column) and is
+the expected value of hp when mpg is 0. The slope is -8.83 indicating
+that each one unit increase in mpg is associated with an 8.83 lower
+expected hp value. P-values can be interpretted from the column
+called 'Pr(>|t|)' and may use scientific notation, see:
+https://en.wikipedia.org/wiki/Scientific_notation")`
+
+Here is a specific example estimated in `R` using the built in 
+`mtcars` dataset which has data on the horsepower `hp` and 
+miles per gallon `mpg` of 32 difference cars. 
+We predict `hp` from an intercept and `mpg` and 
+get a model summary.
+
+```{r}
+
+m <- lm(hp ~ 1 + mpg, data = mtcars)
+summary(m)
+
+``` 
+
+Visually, we can represent the regression as a straight line 
+where the slope is the coefficient for `mpg`, $b_1$, and the 
+intercept, $b_0$ is the expected `hp` when `mpg` is 0.
+We can see the largest residual here: its the point the furthest
+from the regression line.
+
+```{r, echo = FALSE, fig.cap = "Graph showing regression of hp on mpg with linear regression line and the maximum residual from the regression line."}
+
+ggplot(mtcars, aes(mpg, hp)) +
+  geom_point(size = 3, colour = "grey") +  
+  stat_smooth(method = "lm", formula = y ~ x, size = 1.5) +
+  theme_pubr() +
+  annotate("text", x = 16, y = max(mtcars$hp),
+           label = "max residual = 143.4", hjust = 0) 
+
+``` 
+
+In linear regression, we can conduct statistical inference as
+
+$$ \frac{b}{se} \sim \mathcal{t}(df = N - k) $$
+
+where:
+
+- $b$ = regression coefficient
+- $se$ = standard error
+- $N$ = total sample size
+- $k$ = number of parameters estimates
+- $\mathcal{t}$ is the t-distribution on $df$ degrees of freedom
+
+This approach allows us to calculate p-values and confidence intervals.
+To see what the $t$ distribution looks like for various degrees of 
+freedom and how these impact p-values, look at this demonstration: 
+https://rpsychologist.com/d3/tdist/ 
+
+Linear regression **assumes** that observations are independent of each 
+other. However, this is not always the case. **linear mixed models** are 
+an approach to regression that allows us to relax the assumption that 
+our observations are independent.
+
+# Linear Mixed Models (LMMs) - Introduction
+
+Often, observations are not independent.
+For example:
+
+
+- Repeated measures data, such as in longitudinal studies; 
+  repeated measures experiments, where observations are clustered 
+  within people
+- When individuals are clustered or grouped, such as people within 
+  families, schools, companies, resulting in clustering within the 
+  higher order unit
+
+Clustered data versus repeated measures or longitudinal data may 
+seem quite different, but from a statistical perspective, they 
+pose many of the same challenges that are solved in basically the same 
+ways. We will focus on repeated measures for now, but note the 
+statistical methods apply to both contexts.
+
+Here is some hypothetical data on a few people where systolic blood 
+pressure (SBP) was measured at three time points:
+
+| ID | SBP1 | SBP2 | SBP3 |
+|----|------|------|------|
+| 1  | 135  | 130  | 125  |
+| 2  | 120  | 125  | 121  |
+| 3  | 121  | 125  | .    |
+
+This data is stored in "wide" format. That is each repeated 
+measure is stored as a separate variable. For LMMs, we typically 
+want data in a long format, like this
+
+| ID | Time | SBP |
+|----|------|-----|
+| 1  | 1    | 135 |
+| 1  | 2    | 130 |
+| 1  | 3    | 125 |
+| 2  | 1    | 120 |
+| 2  | 2    | 125 |
+| 2  | 3    | 121 |
+| 3  | 1    | 121 |
+| 3  | 2    | 125 |
+
+in a long format, data are stored with each measure in one variable
+and an additional variable to indicate the time point or 
+which specific assessment is being examined.
+In long format, multiple rows may belong to any single unit.
+Not all units (here IDs) have to have the same number of rows.
+For example some people like ID3 may have missed a time point.
+With clustered data, you could have a large or small school with 
+a different number of students (where student is the repeated measure 
+within school rather than time points within a person).
+The `reshape()` function in `R` can be used to reshape data in 
+a wide format to a long format or from a long format to a wide format.
+See the "Working with Data" topic for examples and details.
+
+Regardless of wide or long format, these data are clearly not 
+independent. The different blood pressure readings within a 
+person are likely more related to each other than to blood pressure 
+readings from a different person.
+
+## Considering Non Independence
+
+As part of PSY4210 there was a small data collection exercise where
+you completed some questions every day. We load that data using the 
+`read_sav()` function and plot the daily energy ratings from a few
+different people in the following figure.
+
+```{r, fig.height = 4, fig.width = 5}
+
+dd <- as.data.table(read_sav("[2021] PSY4210 DD.sav")) # daily
+
+ggplot(dd[ID %in% c(10, 18, 40, 64, 97)],
+       aes(factor(ID), dEnergy)) +
+  geom_point(alpha = .2) +
+  stat_summary(fun = mean, colour = "blue", shape = 18) +
+  theme_pubr()
+
+``` 
+
+Not only do observations vary across days within a person, but
+different people have different mean energy levels.
+
+Our first thoughts on analysing data where observations are not
+independent, may be to consider methods we already know, such as 
+linear regression (or GLMs) or ANOVAs.
+
+You might think about would be ANOVA. We could use a
+repeated measures ANOVA. RM ANOVA can handle repeated measures if they
+are:
+
+- at discrete time points (e.g., T1, T2, T3)
+- everyone has the same number of time points
+- the outcome is continuous, normally distributed data
+
+However, RM ANOVA has many limitations. It cannot handle...
+
+- continuous time (e.g., if one person completes on days 0, 13, 22,
+  and another on 0, 1, 20)
+- if someone is missing data on any timepoint, they are completely
+  excluded from analaysis (unless you do something like imputation)
+- continuous predictors/explanatory variables (e.g., age in years) nor
+  other types of outcomes
+
+
+If ANOVAs are not ideal, what would happen if we use a linear
+regression? The following figure shows the linear regression lines for
+the association between energy and self esteem for each individual
+participant (just four for example) and the single line that is the
+result of an overall linear regression (in blue).
+
+```{r, fig.height = 4, fig.width = 5}
+
+ggplot(dd[ID %in% c(10, 18, 40, 64, 97)],
+       aes(dEnergy, dSE)) +
+  stat_smooth(method = "lm", se = FALSE, colour = "blue", size = 2) +   
+  stat_smooth(aes(group = ID), method = "lm", se = FALSE, colour = "black") + 
+  theme_pubr()
+
+``` 
+
+The overall linear regression has to be the same for everyone because
+in linear regression we have one intercept and one slope. The fact
+that different people may have different overall levels of energy or self
+esteem and the fact that the association between energy and selfesteem
+may not be the same for all people cannot be captured by the linear
+regression.
+
+Statistically, the linear regression assumption of independence also
+would be violated making the standard errors, confidence intervals,
+and p-values from a linear regression on non-independent data biased
+and wrong.
+
+Both the fact that regular regression / GLMs cannot capture individual
+differences in the level of each line (different intercepts by ID) nor
+the fact that different people may have a different relationship
+between the predictor and outcome (different slopes by ID) and the
+issue around independence stem from the fact that in the regressions /
+GLMs we have learned so far, all the coefficients are **fixed
+effects**, meaning that they are **fixed** (assumed) to be identical
+for every participant. 
+
+When you have only one observation per participant, fixed effects are
+necessary as it is impossible to estimate coefficients for any
+individual participant. We can only analyze by aggregating across
+individuals. With repeated measures, however, it is possible and
+important to consider whether a coefficient differs between people. 
+
+If a regression coefficient differs for each participant we say that
+it varies or is a random variable. Because of this we call
+coefficients that differ by person random effects, which are different
+from fixed effects because they are not assumed to be identical for
+everyone, but instead vary randomly by person. 
+
+## LMM Theory
+
+Linear Mixed Effects Models (LMMs) extend the fixed-effects only linear
+regression models covered in previous units to include both fixed and
+random effects. That is, to be able to include regression coefficients
+that are identical for everyone (fixed effects) and regression
+coefficients that vary randomly for each participant (random
+effects). 
+
+Because LMMs include both fixed and random effects, they are called
+mixed models. 
+
+Let's see how this works starting with the simplest linear regression
+model and then moving into the simplest linear mixed model.
+
+The simplest linear regression model is an intercept only model.
+
+$$ y_i = b_0 * 1 + \varepsilon_i $$
+
+The intercept here, $b_0$, is the expected outcome value when all
+other predictors in the model are zero. Since there are no other
+predictors, this will be the mean of the outcome. The fixed effect
+means the linear regression model assumes that all participants have
+the same mean. Shown graphically, here are a few participants' data
+with a blue dot showing the mean for each person. The regression line
+with an intercept only will be the blue line. It assumes that the mean
+(intercept) for all people is identical, which is not true.
+We need to make $b_0$ a random effect -- to allow it to vary randomly
+across participants.
+
+```{r, fig.height = 4, fig.width = 5}
+
+ggplot(dd[ID %in% c(10, 18, 40, 64, 97)],
+       aes(ID, dEnergy)) +
+  geom_point(alpha = .2) +
+  stat_summary(fun = mean, colour = "blue", shape = 18) +
+  stat_smooth(method = "lm", se = FALSE, formula = y ~ 1) +
+  theme_pubr()
+
+``` 
+
+We can see the actual distribution of mean energy levels by ID easily
+enough as follows.
+
+```{r}
+
+plot(testDistribution(dd[, .(
+  MeanEnergy = mean(dEnergy, na.rm = TRUE)), by = ID]$MeanEnergy),
+  varlab = "Mean (average) Energy by ID")
+
+``` 
+
+The key point of the previous graph is to show that indeed, different
+participants have different mean energy levels. The mean energy levels
+vary and in this case appear to fairly closely follow a normal
+distribution. The means are a random variable.
+
+If we assume that a random variable follows a particular distribution
+(e.g., a normal distribution), we can describe it with two parameters:
+the mean and standard deviation. 
+
+Assuming a random variable comes from a distribution gives us another
+way to think about fixed and random effects.
+
+- **Fixed Effects** approximate the distribution by: $M$ = estimated
+  mean; $SD$ = 0 (i.e., the standard deviation is **fixed** at 0)
+- **Random Effects** approximate the distribution by:
+  $M$ = estimated mean; $SD$ = estimated standard deviation
+  (the SD is free to vary).
+
+In this way, you can think of both fixed and random effects as both
+using a distribution to approximate a random variable (the association
+between say energy and self esteem for different people) but fixed
+effects make the strong assumption that the distribution has $SD = 0$
+whereas random effects *relax* that assumption and allow the
+possibility that $SD > 0$.
+
+## Intraclass Correlation Coefficient (ICC)
+
+In repeated measures / multilevel (twolevel) data, we can decompose
+variability into two sources: Variability **between** individuals and
+variability **within** individuals.
+
+We call the ratio of between variance to total variance the Intraclass
+Correlation Coefficient (ICC). The ICC varies between 0 and 1. 
+
+- 0 indicates that all individual means are identical so that all
+  variability occurs within individuals.
+- 1 indicates that within individuals all values are the same with all
+  variability occurring between individuals. 
+
+We can define some equivalent notations:
+
+$$ TotalVariance = \sigma^{2}_{between} + \sigma^{2}_{within} = \sigma^{2}_{randomintercept} + \sigma^{2}_{residual} $$
+
+With that definition of the total variance, we can define the ICC as:
+
+$$ ICC = \frac{\sigma^{2}_{between}}{\sigma^{2}_{between} + \sigma^{2}_{within}} = \frac{\sigma^{2}_{randomintercept}}{\sigma^{2}_{randomintercept} + \sigma^{2}_{residual}} $$
+
+A basic understanding of these equations is helpful as it let's us
+interpret the ICC. Suppose that every person's mean was
+identical. There would be no variation at the between person level. 
+That is, $\sigma^{2}_{between} = 0$. That results in:
+
+$$ ICC = \frac{0}{0 + \sigma^{2}_{within}} = 0 $$
+
+When there are no differences between people, $ICC = 0$.
+
+What happens if there is no variation within people? What if all the
+variation is between people? 
+That is, $\sigma^{2}_{within} = 0$. That results in:
+
+$$ ICC = \frac{\sigma^{2}_{between}}{\sigma^{2}_{between} + 0} = 1 $$
+
+When there are no differences within people, $ICC = 1$.
+The ICC is the ratio of the differences between people to the total
+variance. A small ICC near 0 tells us that almost all the variation
+exists within person, not between person. A high ICC near 1 tells us
+that almost all the variation occurs between people with very little
+variation within person. The ICC can be interpretted as the percent of
+total variation that is between person.
+
+The following figure shows two examples. The High Between variance
+graph would have a **high** ICC and the Low Between variance graph
+would have a **low** ICC.
+
+```{r, fig.height = 10, fig.width = 7, fig.cap = "Example showing the difference between high and low between person variance in data."}
+
+set.seed(1234)
+ex.data.1 <- data.table(
+  ID = factor(rep(1:4, each = 10)),
+  time = rep(1:10, times = 4),
+  y = rnorm(40, rep(1:4, each = 10), .2))
+
+ex.data.2 <- data.table(
+  ID = factor(rep(1:4, each = 10)),
+  time = rep(1:10, times = 4),
+  y = rnorm(40, 2.5, 1))
+
+ggarrange(
+  set_palette(ggplot(ex.data.1,
+         aes(time, y, colour = ID, shape = ID)) +
+  stat_smooth(method = "lm", formula = y ~ 1, se=FALSE) +
+  geom_point() +
+  theme_pubr(), "jco"),
+  set_palette(ggplot(ex.data.2,
+         aes(time, y, colour = ID, shape = ID)) +
+  stat_smooth(method = "lm", formula = y ~ 1, se=FALSE) +
+  geom_point() +
+  theme_pubr(), "jco"),
+  ncol = 1,
+  labels = c("High Between", "Low Between"))
+
+```
+
+`r margin_note("Beyond the scope of this unit, sometimes we have even
+more levels of data, like repeated observations measured within
+people and people measured within classrooms or cities, etc. We can
+similarly calculate ICCs for each level, i.e., city, person,
+etc. To do this using the iccMixed() function, you would just add
+more ID variables.")`
+   
+We can calculate the ICC in `R` using the `iccMixed()` function.
+It requires the name of the dependent variable, the ID variable,
+indicating which rows in the dataset belong to which units, and the
+dataset name. It returns the standard deviation (Sigma) attributable
+to the units (ID; the between variance) and to the residual (the
+within variance). The column labelled ICC is the proportion of total
+variance attributable to each effect. The main ICC would be the ICC
+for the ID, here 0.40 for stress.
+
+```{r}
+
+iccMixed("dStress", id = "ID", data = dd)
+
+```
+
+The ICC can differ across variables. For example, one variable might
+be quite stable across days and another very unstable. When working
+with repeated measures data, the ICC for each repeated measure
+variable is a useful descriptive statistic to report. For example, the
+following calculates the ICC for energy, 0.28, which is lower
+than that for stress, indicating that energy is less stable from day
+to day than is stress, or equivalently that compared to energy, stress
+has relatively more variation between people then within them.
+
+```{r}
+
+iccMixed("dEnergy", id = "ID", data = dd)
+
+```
+
+## Between and Within Effects
+
+The ICC illustrates an idea that comes up a lot in multilevel or mixed
+effects models: the idea of between and within effects. A total effect
+or the observed total score can be decomposed into some part
+attributable to between and some part attributable to a within
+effect as shown in the following diagram.
+
+```{r, echo = FALSE, fig.cap = "Decomposing multilevel effects"}
+
+DiagrammeR::grViz("
+digraph 'Decomposing multilevel effects' {
+  graph [overlap = true, fontsize = 14]
+  node [fontname = Helvetica, shape = rectangle]
+  T [label = 'Total']
+  B [label = 'Between']
+  W [label = 'Within']
+
+  T -> {B W}
+}
+")
+
+```
+
+Between effects exist **between** units whereas within effects exist
+**within** a unit. In psychology, often the unit is a person and the
+between effects are differences between people whereas the within
+effects are differences within an individual.
+
+```{marginfigure}
+
+When you subtract the mean from a variable, the new mean will be equal
+to 0. For example, if you have three numbers:
+
+$$ (1, 3, 5) $$
+
+the mean is 3, if you subtract the mean you get:
+
+$$ (-2, 0, +2) $$
+
+and the mean of the deviations are 0.
+
+If you have:
+
+$$ (4, 5, 6) $$
+
+the mean is 5 and if you subtract the mean you get:
+
+$$ (-1, 0, +1) $$
+
+as deviation scores and the mean of these deviations is 0.
+
+It is a fact that the mean of deviations from a mean will always
+be 0. Because of how we normally calculate a within person variable,
+from a total variable, we separate out the mean into the between
+portion and the within portion has deviations from individuals' own
+means and so the mean of the within portion will be 0.
+
+```
+
+For example, suppose that in one individual, Person A, over three
+days, we observed the following scores on happiness: 1, 3, 5.
+Those total observed scores could be decomposed into one part
+attributable to a stable, between person effect (the mean) and another
+part that purely captures daily fluctuations, the within person effect 
+(deviations from the individuals' own mean). We could break down those
+numbers: 1, 3, 5 as shown in the following figure.
+
+```{r, echo = FALSE, fig.cap = "Decomposing multilevel effects - concrete example"}
+
+DiagrammeR::grViz("
+digraph 'Decomposing multilevel effects example' {
+  graph [overlap = true, fontsize = 12]
+  node [fontname = Helvetica, shape = rectangle]
+
+  subgraph Between {
+    node [fontname = Helvetica, shape = rectangle]
+    B1 [label = 'Day 1: 3']
+    B2 [label = 'Day 2: 3']
+    B3 [label = 'Day 3: 3']
+    B1 -> B2
+    B2 -> B3
+  }
+
+  subgraph Within {
+    node [fontname = Helvetica, shape = rectangle]
+    W1 [label = 'Day 1: -2']
+    W2 [label = 'Day 2: 0']
+    W3 [label = 'Day 3: +2']
+    W1 -> W2
+    W2 -> W3
+  }
+
+  Total
+  Total -> Between
+  Total -> Within
+
+  Between -> B1 [lhead = between]
+  Within  -> W1 [lhead = within]
+
+}
+")
+
+```
+
+Notice that the between person effect does not vary across days. It is
+constant for a single individual. The within person portion, however,
+does vary across days.
+
+In this case, the between person effects would be the mean for each
+person, matching a different intercept for each person from our ICC
+example. The variance in these means (intercepts) is the between
+person variance. The within person effects are individual deviations
+from individuals' own means and their variance would be the residual
+variance. Together those variances add up to the total variance and
+these portions are what the ICC captures.
+
+## Linear Mixed Models
+
+```{marginfigure}
+
+Linear mixed models (LMMs) or mixed effects models are also 
+sometimes called "multilevel models"  or 
+"hierarchical linear models" (HLMs). The multilevel model or 
+hierarchical linear model names both come from the fact that 
+they are used for data with multiple, hierarchical levels,
+like observations nested within people, or kids nested 
+within classrooms. However, all three of these are synonyms 
+for the same statistical model, that includes both fixed and random
+effects, as random effects are the method used to address the
+hierarchical or multilevel nature of the data.
+
+One difference, however, is that HLMs imply a specific hierarchy,
+which may not always be present in data. For example, if all siblings
+from a family were recruited as well as students in the same
+classroom, there would be crossed effects with any given person a
+member of a higher level family unit and a higher level classroom
+unit. HLMs generally are not setup for situations where there is not a
+pure hierarchy. Mixed effects models address this easily as it just
+requires different random effects (one for families, one for
+classrooms, for example). Thus, all HLMs are mixed models, but not all
+mixed models are HLMs. Another example would be if in an experiment,
+we randomly sampled difficulty levels and every participant completed
+all combinations. Difficulty level could be a random effect and
+participant could be a random effect, with observations nested within
+both, but they do not form a clear hierarchy (i.e., difficulty level
+is not above/below participant).
+
+```
+
+Unlike linear regression, which models all regression coefficients as
+fixed effects, mixed effects regression models some coefficients as
+fixed effects and others as random effects (hence the term, "mixed"
+effects).
+
+A random effect is a regression coefficient that is allowed to vary
+as a random variable. Random effects provide a way of dealing with
+non-independence in the data by explicitly modeling the systematic
+differences between different units. 
+
+The simplest linear mixed model (LMM) is an intercept only model,
+where the intercept is allowed to be a random variable.
+
+$$ y_{ij} = b_{0j} * 1 + \varepsilon_{ij} $$
+
+Here we have an observed outcome, $y$, with observations for a
+specific person (unit), $j$, at a specifc timepoint / lower level
+unit, $i$. In addition, note that our intercept, which in linear
+regression is $b_0$ is now $b_{0j}$ indicating that the intercept is
+an estimated intercept for each unit, $j$. In psychology our units
+often are people, but as noted before the "unit"may be something else,
+such as students within classrooms, or kids within families, etc.
+
+As before, we assume that:
+
+$$ y_{ij} \sim \mathcal{N}(\boldsymbol{\eta}, \sigma_{\varepsilon_{ij}}) $$
+
+by convention, we decompose random effects, here the random intercept,
+as follows:
+
+$$ b_{0j} = \gamma_{00} + u_{0j} $$
+
+where 
+
+- $\gamma_{00}$ is the mean intercept across all people. There are
+  no variable subscripts under it, only numbers, as it does *not* vary 
+  across different people.
+- $u_{0j}$ is the individual unit deviations from the mean
+  intercept, $\gamma_{00}$.
+  
+Under this decomposition, $\gamma_{00}$, is a fixed effect, the
+average intercept for all units, and is interpretted akin to what we
+are used to in linear regression, $b_0$. $u_{0j}$ is how much each
+individual units intercept differs from the average, they are
+deviations.
+
+We also make another, new distributional assumption, we assume that:
+
+$$ u_{0j} \sim \mathcal{N}(0, \sigma_{int}) $$
+
+In other words, we assume that individual units' deviations from the
+fixed effect, average intercept follow a normal distribution with mean
+0 and standard deviation equal to the standard deviation of the
+deviations.
+
+The actual parameters of the model that must be estimated are:
+
+- $\gamma_{00}$, the fixed effect intercept
+- $\sigma_{int}$, the standard deviation of the individual deviations
+  from the fixed effect intercept, the $u_{0j}$
+- $\sigma_{\varepsilon}$, the residual error term
+
+A powerful feature of LMMs is that despite needing to allowing/model
+individual differences in a coefficient, here the intercept, we do not
+have to actually estimate a separate intercept parameter for each unit
+/ person. In fact, it takes only one more parameter than a regular
+linear regression. The only additional parameter is the standard
+deviation of the individual intercepts. We also have another
+distribution assumption, by assuming the the random effect intercept
+also follows a normal distribution, but in exchange for the one extra
+parameter and one new assumption, we are able to relax the assumption
+of linear regression that each observation is independent.
+
+To fit a LMM in `R`, we use the `lmer()` function from the `lme4`
+package. `lmer()` stands for **l**inear **m**ixed **e**ffects
+**r**egression, and it follows a syntax very similar to `lm()`. The
+main difference/addition is a new section in parentheses to indicate
+which specific regression coefficients should be random effects and
+what the ID variable of the unit is that should be used for the random
+effects. Here we will fit an intercept only LMM on stress from the
+daily data collection exercise data. We add a random intercept by ID
+using the syntax: `(1 | ID)`.
+
+```{marginfigure}
+
+Summary of output:
+
+Type of model, how fit (Restricted Maximum Likelihood, REML) and how
+  statistical inference was performed (t-tests using the Satterthwaite's
+  approximation method to calculate approximate degrees of freedom)
+
+Formula used to define the model is echoed for reference
+
+REML criterion, which is kin to a log likelihood value. We'll talk
+  about this more in a later lecture.
+
+Scaled residuals, which are rescaled from the raw residuals.
+  Interpret these similarly to usual residuals from linear regression.
+
+A new section: *Random Effects*.
+  This shows the variance and standard deviation (just square root of
+  variance) for the random intercept and the residual variance (our
+  residual error term from linear regression).
+
+Total number of observations included and the number of unique
+  units, here IDs, representing different people. These numbers are
+  what were included in the analysis.
+
+Fixed Effects regression coefficient table for LMMs is interpretted 
+  comparably to the regression coefficients table for a linear
+  regression. One note is that the degrees of freedom, df, cannot
+  readily be calculated in LMMs. The Satterthwaite's approximation
+  method was used here, but this approximation is not perfect and
+  because it is an estimated degrees of freedom, you can get decimal
+  points, not just whole numbers. The decimals are not an error.
+  
+```
+
+The summary shows information about how the model was estimated and
+its overall results.
+
+```{r}
+
+m  <- lmer(dStress ~ 1 + (1 | ID), data = dd)
+
+summary(m)
+
+```
+
+We can interpret that in this model, there were 
+`r nobs(m)` observations included in the linear mixed model, and these
+observations came from 
+`r ngrps(m)[["ID"]]` different people. 
+On average, these people had a stress score of 
+`r fixef(m)[["(Intercept)"]]`, the fixed effect intercept, and this
+was signifciantly different from zero. By examining the random effects
+standard deviations, `Std.Dev.` we can see that the random intercept
+standard deviation is pretty close to the residual standard
+deviation, which is consistent with the earlier ICC we calculated for
+stress that nearly half the variance in stress is between people with
+the other half occuring within people.
+
+```{marginfigure}
+
+In mixed models we do not technically estimate parameters for each
+individual. That is, we do not directly estimate random effects like
+$b_{0j}$. We estimate the average of the distribution, $\gamma_{00}$
+and the standard deviation fo the distribution, $\sigma_{int}$.
+
+The `coef()` function then does not report estimated coefficients per
+se, but what are called Best Linear Unbiased Predictors (BLUPs).
+
+The BLUPs use the model estimated parameters from the LMM along with
+the data, to basically predict what each person's own, conditional
+mean is. This combines both their actual data and the model. People
+with more data will have a BLUP closer to the observed mean of their
+own data in an intercept only model. People with less data (say only
+1-2 observations) will have a BLUP that is closer to the average mean
+of all people as its assumed that the mean of their 1-2 data points is
+likely very noisy/inaccurate due to small sample size.
+
+*Side note: while many of the concepts from LMMs apply to GLMMs just as
+many concepts from LMs apply to GLMs, the BLUPs or conditional means
+do not quite generalize. In GLMMs we can get conditional modes, but
+not conditional means. This only matters if you would be doing, for
+example, logistic mixed effects regression models.
+
+``` 
+
+We can see the fixed effects coefficients only from the model by using
+the `fixef()` function. If we want to see the predictions of the
+coefficients for each person, i.e., using the random effects, we can
+use the `coef()` function.
+
+```{r}
+
+fixef(m)
+
+coef(m)
+
+``` 
+
+The random intercept coefficient estimates are similar conceptually to
+what we would calculate if we calcualted the average stress score, per
+person, across days. However, there are some differences. To see
+these, we'll put both into the same dataset.
+
+```{r}
+
+## make a data table of the random intercepts and IDs
+randomintercept <- data.table(
+  ID = as.numeric(rownames(coef(m)$ID)),
+  RI = coef(m)$ID[, "(Intercept)"])
+
+## view the first few rows
+head(randomintercept)
+
+## calculate the means and number of observations, by ID
+individualMeans <- dd[!is.na(dStress), .(
+  Means = mean(dStress),
+  N = .N), by = ID]
+
+## merge the two datasets together by ID
+rimeans <- merge(randomintercept, individualMeans, by = "ID", all=FALSE)
+
+## order the dataset by mean
+rimeans <- rimeans[order(Means)]
+rimeans[, ID := factor(ID, levels = ID)]
+
+## view the merged data
+head(rimeans)
+
+``` 
+
+Now we can make a figure with an arrow for each person that starts at
+the raw mean and ends at the random intercept estimate for that
+individual. The fixed effect intercept is added as a line. The
+individual arrows are coloured based on how many days of stress data
+each person had available.
+
+```{r, fig.width = 5, fig.height = 7, fig.cap = "Figure showing how compared to raw means, random intercept estimates from LMMs tend to shrink indivdiual estimates towards the overall fixed effect estimate, the solid line in the middle. The degree of shrinkage tends to be greater for individuals that are further away from the fixed effect estimate and is greater for individuals with fewer data points."}
+
+ggplot(rimeans, aes(ID, xend = ID, y = Means, yend = RI, colour = N)) +
+  geom_hline(yintercept = fixef(m)[["(Intercept)"]]) + 
+  geom_segment(arrow = arrow(length = unit(.15, "cm"))) +
+  coord_flip() +
+  theme_pubr() +
+  ggtitle("Shrinkage From Raw to LMM Means")
+
+``` 
+
+This figure highlights how shrinkage is a distinction of using LMMs
+compared to simply fitting models (here a mean) separately on each
+individual person. The LMMs tend to shrink estimates towards the
+overall fixed effect estimate. In other words more extreme estimates
+get pulled in to be closer to the mean, which has an effect of
+stabilising relatively extreme values. How much an estimate is
+shrunken depends on both how extreme it is (the more extreme, the more
+shrinkage) and on how many observations are available for that
+unit. If a unit has many data points, it will have less shrinkage.
+
+For some more discussion and examples of this, see:
+
+- https://m-clark.github.io/posts/2019-05-14-shrinkage-in-mixed-models/
+- https://www.tjmahr.com/plotting-partial-pooling-in-mixed-effects-models/
+
+
+Finally, we can run model diagnostics on LMMs similarly to how we did
+for linear regressions. If we run the `modelDiagnostics()` function on
+our model, we get an error about an unknown class of type haven_labelled.
+
+```{r, error=TRUE}
+
+md <- modelDiagnostics(m, ev.perc = .001)
+
+```
+
+This is telling us that `modelDiagnostics()` is not sure how to work
+with data of that type in `R`. Because we know stress is basically
+numeric data, we can convert stress into a numeric variable in `R`
+using `as.numeric()`. This is basically just a way of telling `R` that
+it really is just numeric data. Then we refit our model and again ask
+for diagnostics. Note that if we had lots of variables in our model,
+we might have to check the classes of multiple variables to find out
+which one was the problem. Since we only had stress in the model, we
+know its that. 
+
+```{r}
+
+## check the R class of stress
+class(dd$dStress)
+
+## convert stress in R to a numeric class
+dd[, dStress := as.numeric(dStress)]
+
+``` 
+
+Now, we can refit our model and calculate diagnostics. The plot of the
+residuals and the residuals versus predicted values plots are familiar
+and are used to assess the same two assumptions for LMMs as for linear
+regression models. We also get a density plot for `ID : (Intercept)`
+the random effect for intercepts. This is to assess the assumption
+that the random effects, the random intercept coefficients are also
+about normally distributed. In this case, all the assumptions appear
+reasonably well met, with only one relatively extreme stress residual
+noted at -3.13.
+
+```{r}
+
+## refit model
+m  <- lmer(dStress ~ 1 + (1 | ID), data = dd)
+
+## calculate diagnostics
+md <- modelDiagnostics(m, ev.perc = .001)
+
+## plot diagnostics
+plot(md, ask = FALSE, ncol = 2, nrow = 2)
+
+
+``` 
+
+In later lectures, we will dig further into estimating LMMs and adding
+predictors with both fixed and random effects.
+
+# Data Cleaning for LMMs
+
+A common data cleaning task is to identify and address extreme values.
+In multilevel / repeated measures data, extreme values may exist at
+the between person level (i.e., a person who is relatively extreme
+compared to other people) or at the within person level (i.e., an
+assessment that is relatively extreme for that person).
+
+In order to assess whether an individual is, on average, similar to or
+relatively extreme from other indivdiuals or whether a specific data
+point within an individual is similar to or different from that
+individuals' own typical values, we often calculate the mean per
+person and the deviations from the mean. This essentially decomposes a
+repeated measures variable into part that is between person and part
+that is within person. One way to make it clear which is which is to
+add a prefix, like `B` for between and `W` for within.
+
+To clean `stress`, we will start by calculating the average for each
+person and the deviations from each person's own average, using the 
+`meanDeviations()` function. We will create two new variables in the
+dataset: `Bstress` and `Wstress` and these will be created by ID.
+If we look at the first few rows of the data, we can see that if we
+were to add up the between and within stress variables, we would get
+back the original stress variable.
+
+```{r}
+
+dd[!is.na(ID), c("Bstress", "Wstress") := meanDeviations(dStress), by = ID]
+
+head(dd[!is.na(ID), .(Bstress, Wstress, dStress, ID)])
+
+``` 
+
+We are going to start by examining the data at the within person
+level. The reason for this is that if there is a particular day that
+is very extreme for a particular person, that extreme value on a day
+not only will be extreme at the within person level, but because the
+average stress for a person is calculated by averaging all of their
+days of data, that extreme value will impact their mean at the between
+level. So we want to first clean the within person level of data.
+
+Examining the data at the within level helps to identify whether, for
+a particular person, any observation is extreme/an outlier compared to
+what is normal for that person. We do this by examining the within
+stress variable, which is how different each days stress data are for
+each person from their own mean. For this, we use the original daily
+dataset because we need the repeated measures included.
+
+```{r}
+
+plot(testDistribution(dd[!is.na(ID)]$Wstress,
+  extremevalues = "theoretical", ev.perc = .005),
+  varlab = "Within stress (Wstress)")
+
+``` 
+
+```{marginfigure}
+Note, we do not always use the top and bottom 0.5% of a theoretical
+distribution. This is used here as it helps to identify some extreme
+values and it is relatively conservative. However, for excluding
+cases, its also common to use a more extreme threshold, like the top
+and bottom 0.1%, which would be obtained as ev.perc = .001.
+``` 
+In the figure, based on the specified definition of extreme values,
+the top and bottom 0.5% of a theoretical normal distribution, we can
+see there are four extremely low stress value and one extremely high
+stress value.
+
+We can either figure out approximately where those scores are and
+manually subset the dataset to find out which IDs and which days, or
+use the `testDistribution()` function again. Doing it manually
+requires a bit of guess to pick the correct cut off to find the
+cases. Using `testDistribution()` we select the data and pick only
+those rows that are extreme values using `isEV == "Yes"` and then 
+look at the `OriginalOrder` column to see the row numbers in the
+original dataset, here `dd`. Then we can use those row numbers to
+directly look at the correct rows of the dataset.
+
+```{r}
+
+##create a dd dataset without ID = NA
+dd2 <- dd[!is.na(ID)]
+
+## manually identify ID and day from dd with missing IDs excluded
+dd2[Wstress < -2.3, .(dStress, Bstress, Wstress, SurveyDay, ID)]
+dd2[Wstress > 2.5, .(dStress, Bstress, Wstress, SurveyDay, ID)]
+
+## use testDistribution to find the row numbers of extreme values
+testDistribution(dd2$Wstress,
+  extremevalues = "theoretical", ev.perc = .005)$Data[isEV == "Yes"]
+
+dd2[c(251, 250, 63, 273, 34), .(dStress, Bstress, Wstress, SurveyDay, ID)]
+
+``` 
+
+This effort reveals that ID 29 on day 5, ID 23 on day 5, ID 110 on days
+1 and 5, and ID 64 on day 1 are relatively extreme values. 
+We could exclude them based on the ID and day or if we used 
+`testDistribution()` we know exactly which rows to exclude from the 
+dataset. We remove rather than select rows by adding a minus sign in 
+front. We save the new dataset as `dd.noev` to indicate no extreme 
+values. We could run diagnostics again or call it a day. If we do run 
+another plot, we see one new observation emerge as relatively extreme. 
+It is not too bad and we've already done one cleaning pass. Thus,
+I would not remove the new guy who does not fit in.
+
+```{r}
+
+dd.noev <- dd2[-c(251, 250, 63, 273, 34)]
+
+plot(testDistribution(dd.noev$Wstress,
+  extremevalues = "theoretical", ev.perc = .005),
+  varlab = "Within stress (Wstress)")
+
+``` 
+
+Now that we have cleaned the within person level, we need to recreate
+the between person level. This is because with some specific, extreme
+days excluded the people impacted, IDs 29, 23, 110, and 64, will have 
+a different average stress value.
+We use exactly the same code as earlier to make a between and within
+stress variable, but do it on the `dd.noev` dataset.
+
+```{r}
+
+dd.noev[, c("Bstress", "Wstress") := meanDeviations(dStress), by = ID]
+
+``` 
+
+Next, we examine the mean stress values to clean the data
+at the between person level. In this long dataset, the between person
+values (mean stress) are repeated for every day the person collected
+data. To clean the data at the between level, we only want one row of
+data per person. It does not really matter which row we get, since the
+between stress variable will be the same for all rows of the same ID,
+so we can just take rows where ID is not duplicated and store that in
+a between person daily dataset, `dd.b`.
+
+```{r}
+
+dd.b <- dd.noev[!duplicated(ID)]
+
+``` 
+
+From here, we can evaluate the distribution and look for any outliers
+or extreme values just as we did in the Data Visualization 1 topic
+using `testDistribution()` and `plot()`. 
+
+```{r}
+
+plot(testDistribution(dd.b$Bstress,
+  extremevalues = "theoretical", ev.perc = .005),
+  varlab = "Average stress (Bstress)")
+
+``` 
+
+In this example, average stress looks pretty good. It is about
+normally distributed based on the density plots. There are a couple of
+fairly extreme low values, near 1, but they are not that far away from
+the rest of the data points. As usual, we can get a five number
+summary from the x axis, showing that the median of the average daily
+stress scores is 4.2, with an interquartile range from 3.6 to 5.0. 
+The interpretation is as usual, other than we have to keep in mind
+that what we are plotting is not individual stress scores from
+specific days, they are average stress scores across days per
+person. As long as we keep that in mind and interpret based on that,
+we can interpret this graph same as any other time we would evaluate a
+variable for outliers, etc.
+
+If there were extreme values, we could follow a similar approach as
+for the within person data. However, rather than excluding specific
+days, we would need to exclude entire IDs from the dataset and all
+rows associated with that ID.
+
+Another approach that can be taken to extreme values is to winsorize
+them, for example to the 1st and 99th percentiles, or something like
+that which can help to remove extreme scores without fully excluding
+those data points.
+
+However, winsorizing with multilevel data is complicated by the fact
+that any change to the mean also impacts the within level data and
+that any change to the within level data impacts the mean.
+
+
+## Cleaning You Try It
+
+Try to clean the within and between level of the variable:
+`dEnergy` in the daily dataset with missing IDs removed, 
+`dd2`. To do this make a between and within variable and 
+assess both distributions. If needed, excluded rows / IDs.
+
+```{r trycleaning, error=TRUE}
+
+
+
+
+```
+
+
+
+# Summary
+
+## Conceptual
+
+Some key concepts to understand and take away are:
+
+- the problems with using things like linear regression on repeated
+  measures data or other data with non independent measures
+- understanding how to calculate and interpret the intraclass
+  correlation coefficient (ICC)
+- understanding the distinction and interpretation of between and within levels
+- basic understanding of fixed vs random effects
+- the additional assumption brought in for linear mixed models (random
+  effects follow a normal distribution)
+- understand what shrinkage means and under what conditions shrinkage
+  tends to be larger / smaler  
+
+## Functions
+
+Here is a little summary of some of the functions used in this
+topic. 
+
+| Function       | What it does                                 |
+|----------------|----------------------------------------------|
+| `iccMixed()`     | Calculate intraclass correlation coefficients  |
+| `lmer()` | fit linear mixed models in `R`  | 
+| `fixef()` | extract the fixed effects only coefficients from a LMM | 
+| `coef()` | extract the random effects coefficients from a LMM |
+| `meanDeviations()` | calculate between and within versions of a repeated measures variable |
+
+
+## Extra Resources
+
+If you want some introduction to mixed effects models for GLMs rather
+than just linear models, see:
+
+- https://stats.idre.ucla.edu/other/mult-pkg/introduction-to-generalized-linear-mixed-models/
