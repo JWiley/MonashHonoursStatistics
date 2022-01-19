@@ -1,25 +1,20 @@
 # [Home](README.md)
-Acknowledgements: This MonashHonoursStatistics git repo is forked from Josh Wiley's original repo. Dr. Wiley created this course and much of the material remains his original work, with a few updates (mostly R related) for the current 2021 course.
+Acknowledgements: This MonashHonoursStatistics git repo is forked from Josh Wiley's original repo. Dr. Wiley created this course and some of the material (i.e., your "readings") remains his original work, although I have been updating and changing it since 2021.
 
-The vision of this unit is to train you in applied statistics and data
-science for Psychology. These skills are useful not only for
-quantitative research but also are highly in demand industry/job
-skills. With industry and modern, agile teams in mind, we will be
-using several tools that are common tools used in industry. Some of
-these you may have used, some may be new. We'll introduce each.
+The vision of this unit is to train you in applied statistics and data science for Psychology. These skills are useful not only for quantitative research but also are highly in demand industry/job skills. With industry and modern, agile teams in mind, we will be using several tools that are common tools used in industry. Some of these you may have used, some may be new. 
 
 # 1. Microsoft Teams -- team communication
 
 Teams is an instant messaging / chat platform. It allows easier, real time communication, sharing
-code, files, and images than email. A channel that sits under the "PSY Honours 2021" Team called "PSY4210 - Data Science Forum" has been created, and if you are enrolled in the unit, you will automatically be added to the channel.
+code, files, and images than email. A channel that sits under the "PSY Honours 2022" Team called "PSY4210 - Data Science Forum" has been created, and if you are enrolled in the unit, you will automatically be added to the channel.
 
 
-Although Moodle forums also will be available (and all official announcements will be made on both Teams and Moodle), Teams provides easier
-real time interactions that are closer to how real teams work and
-operate. Please feel free to chat openly, ask and answer questions
-with each other in this space. If you need specific help from one of
-the teachers you can use "@name" to mention them specifically and tag
-them to look at a particular message.
+I will place all official announcements on both Teams and Moodle, but most of the day to day communication will be on Teams. You will not be able to stay up to date in the unit (or any of your other Honours units) without Teams. It provides real time interactions that are closer to how real teams work and operate. Please feel free to chat openly, ask and answer questions with each other in this space. If you need specific help from one of
+the teachers you can use "@name" to mention them specifically and tag them to look at a particular message. 
+
+A note on screenshots: It can be very useful to provide screenshots of errors that you need help troubleshooting on Teams. Please be aware, that small errors and debugging of your lab reports are fine to share. However, you should avoid posting entire sections of your lab report code and writeup to Teams. Lab reports are not collaborative assignments and you must work on them independendently. If you are unsure, please use the Chat function on Teams to send a DM to myself and/or the tutors. Relatedly, while we can help you debug your code and understand the errors you might be getting, we cannot completely solve your coding issues, since that is your independent work. We can give you hints as to why your code did not run - we cannot re-write it for you.
+
+On Teams, as with all communication, the rule of 48 business hours still applies. On Teams, your message is more likely to be answered by myself, the unit coordinator, a tutor, or a fellow student much more quickly than emailing everyone separately. There are also times when I am available at my computer to answer messages quickly - however, I cannot guarantee when I will be "live" on Teams. I will do my best to answer messages when I can, but please do not expect answers from myself or the other instructors before a 48 business hour period (i.e., not overnight or on the weekends). 
 
 # 2. GitHub -- collaborative code
 
