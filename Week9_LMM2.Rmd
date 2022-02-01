@@ -1,0 +1,1151 @@
+---
+title: "Linear Mixed Models (LMMs) - Part 2"
+author: "Joshua F. Wiley - 2021 updates Michelle Byrne"
+date: "`r Sys.Date()`"
+output: 
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+---
+
+These are the `R` packages we will use.
+
+```{r setup}
+options(digits = 4)
+
+## new packages are lme4, lmerTest, and multilevelTools
+
+library(data.table)
+library(JWileymisc)
+library(extraoperators)
+library(lme4)
+library(lmerTest)
+library(multilevelTools)
+library(visreg)
+library(ggplot2)
+library(ggpubr)
+library(haven)
+
+## load data collection exercise data downloaded off github
+## and placed in your R folder.
+## merged is a a merged long dataset of baseline and daily
+dm <- as.data.table(read_sav("[2021] PSY4210 merged.sav"))
+
+```
+
+# Random Intercepts and Slopes
+
+## Theory / Conceptual
+
+Thus far we have learned about estimating LMMs where only the
+intercept is a random effect, although we've added fixed effect
+between and within predictors, looked at diagnostics, interpretations,
+etc.
+
+In addition to allowing intercepts to differ by person, we can also
+allow regression slopes to differ by person. In LMMs, we always
+include a random intercept. That means if we also include a random
+slope, we will have two random effects. With two (or more) random
+effects, because they are assumed to be a random variable with a
+normal distribution, we can also look at how the random effects
+correlate with each other. That is, just as how you could look at how
+two random variables, say age and stress, correlate with each other,
+you can look at how any two random effects correlate with each other
+(e.g., how a random intercept and random slope correlate).
+
+When working with random slopes, we also need to slightly modify our
+understanding of the assumptions and notation for LMMs.
+
+Let $\mathbf{G}$ be a square, $q$ x $q$ covariance matrix, where $q$
+is the number of random effects in the model. In our simplest of
+examples, there is only one random effect, the random intercept, so $q
+= 1$ and the random effect covariance matrix is:
+
+$$
+\mathbf{G} =
+\begin{bmatrix}
+\sigma^{2}_{int} \\
+\end{bmatrix}
+$$
+
+If we had a random intercept only, then we assume:
+
+$$ u_{0j} \sim \mathcal{N}(0, \mathbf{G}) $$
+
+This is the same assumption we covered in the introduction to LMMs,
+however the subtle change in notation sets us up for more complexity.
+By using $\mathbf{G}$ we are replacing a single standard
+deviation/variance with a covariance matrix. The benefit of the matrix
+is that a covariance matrix can be small, like a 1 x 1 matrix or
+bigger like a 2 x 2 or $q$ x $q$ matrix for any number of random
+effects.
+
+So what is the implication of this change? We do not *just* assume
+that each random effect follows a normal distribution. In fact, for
+LMMs, the assumption is that the random effects follow a
+**multivariate** normal distribution^[for more info, see here:
+https://en.wikipedia.org/wiki/Multivariate_normal_distribution]. 
+The multivariate normal distribution (MVN) is a distribution for
+multiple variables. If $q$ variables follow a MVN, then each $q_i$
+variable will itself follow a univariate normal distribution.
+However, just because each $q_i$ variable individually follows a
+univariate normal distribution does not mean that the $q$ variables
+together follow a MVN.  In other words, MVN implies univariate normal,
+but univariate normal does not imply MVN.
+
+Like the univariate normal distribution, the MVN has two basic
+parameters, the mean and variance. However, unlike a univariate normal
+distribution, the MVN the means will be a vector of means, one for
+each variable, and the variances, will be a $q$ x $q$ covariance
+matrix. 
+
+Back to LMMs, what this means is that if we have a random intercept
+and a random slope, $q = 2$ and we'd have:
+
+$$
+\mathbf{G} =
+\begin{bmatrix}
+\sigma^{2}_{int} & \sigma_{int,slope} \\
+\sigma_{int,slope} & \sigma^{2}_{slope} \\
+\end{bmatrix}
+$$
+
+The variances are on the diagonal and the covariance (the
+unstandardized correlation between the intercept and the slope) is on
+the off diagonal.
+
+The usual practice in LMMs is to freely estimate both the variances
+and covariances (correlations) for any random effects. We can,
+however, also assume that the random effects are uncorrelated, that
+is, assume that the random effects follow a multivariate normal
+distribution like this:
+
+$$
+\mathbf{G} =
+\begin{bmatrix}
+\sigma^{2}_{int} & 0 \\
+0 & \sigma^{2}_{slope} \\
+\end{bmatrix}
+$$
+
+Although random slopes are different in some respects from a random
+intercept, in most ways they are comparable. In both cases we assume a
+normal distribution, with a mean (the "fixed effect" part, the average
+slope across people) and a standard deviation (how much variability
+there is in the slope across people). We estimate the mean and
+standard deviation, but we *can* get BLUPs for the individual slopes
+as well, which are predictions about what the slope is for any
+specific individual. While a random intercept only impacts the level
+of lines, a random slope will impact both the level and the slope of
+the lines, shown graphically in the following figure.
+
+```{r, fig.width = 7, fig.height = 10, fig.cap = "Figure showing a random intercept or random intercept and slope"}
+
+ggarrange(
+ggplot(expand.grid(x = c(0, 10), y = c(0, 10)), aes(x, y)) +
+  geom_point(colour = "white") + 
+  geom_abline(intercept = 1, slope = 1, colour = "black", size = 1) +
+  geom_abline(intercept = 2, slope = 1, colour = "yellow", size = 1) +
+  geom_abline(intercept = 3, slope = 1, colour = "blue", size = 1) +
+  geom_abline(intercept = 4, slope = 1, colour = "purple", size = 1) +  
+  theme_pubr() +
+  coord_cartesian(xlim = c(0, 9), ylim = c(0, 10), expand=FALSE) +
+  ggtitle("Random Intercepts"),
+ggplot(expand.grid(x = c(0, 10), y = c(0, 10)), aes(x, y)) +
+  geom_point(colour = "white") + 
+  geom_abline(intercept = 1, slope = 1, colour = "black", size = 1) +
+  geom_abline(intercept = 2, slope = .5, colour = "yellow", size = 1) +
+  geom_abline(intercept = 3, slope = 1.5, colour = "blue", size = 1) +
+  geom_abline(intercept = 4, slope = .5, colour = "purple", size = 1) +  
+  theme_pubr() +
+  coord_cartesian(xlim = c(0, 9), ylim = c(0, 10), expand=FALSE) +
+ggtitle("Random Slopes"),
+ncol = 1, nrow = 2)
+
+```
+
+To evaluate the distributional assumptions of LMMs with multiple
+random effects, the ideal test is to evaluate whether the random
+effects come from a MVN. Visualizing MVN distributions is not easy,
+especially with more than 2 dimensions, so instead we use another
+approach.
+
+The Mahalanobis distance measures the distance between a point and a
+space defined by a vector of means and a covariance matrix. The
+"point" can be unidimensional or multidimensional and if multidimensional
+is not limited to only two dimensions. That is, the Mahalanobis
+distance can compute the distance between a multidimensional point and
+a multidimensional distribution. This is very convenient as it scales
+arbitrarily to however complex (many random effects) or simple (one
+random effect) we may have. If for each row of data, we calculate its
+Mahalanobis distance, those squared distances will follow a $\chi^{2}$
+(chi-squared) distribution with degrees of freedom equal to the number
+of dimensions ($p$), that is a $\chi^2$ distribution with $df =
+p$ if the raw data were MVN. This allows us to compare our observed
+Mahalanobis distances to a chi-squared distribution and if they are a
+close match, it indicates the data on which the Mahalanobis distances
+were calculated were MVN. Thus, we can use Mahalanobis distances to
+evaluate whether a set of variables have a MVN distribution.
+They also can help identify multivariate outliers. We will see
+examples of this when we look at diagnostics for LMMs with multiple
+random effects.
+
+## Random Slopes in `R`
+
+Random slopes can only be estimated for predictors that vary within
+units. Using the merged daily data collection exercise dataset, we can
+look at mood predicting stress. First, we will take a look at a model
+with a random intercept and `dEnergy` as a fixed effect only.
+
+```{r}
+
+## get rid of the haven_labeled class type for stress
+dm[, dStress := as.numeric(dStress)]
+
+m0 <- lmer(dStress ~ dEnergy + (1 | ID),
+           data = dm)
+
+summary(m0)
+
+plot(modelDiagnostics(m0), ncol = 2, nrow = 2, ask = FALSE)
+
+```
+
+From the results, we can see that on average, higher energy is
+associated with lower stress. Energy has not been separated into a
+between or within component, so we cannot say whether its driven by
+people who have higher energy on average having lower stress or days
+with higher than usual energy having lower than usual stress, or both.
+We can see that the residuals (top left graph panel) and random
+intercept by ID (bottom left graph panel) are about normally
+distributed with only modest if any outliers and we can see that the
+homogeneity of variance assumption is approximately met at least in
+the residuals vs fitted/predicted values (top right).
+
+Next, we add dEnergy as a random slope by adding it inside the
+parentheses before ID, `(dEnergy | ID)`.
+
+```{r}
+
+m1 <- lmer(dStress ~ dEnergy + (dEnergy | ID),
+           data = dm)
+
+summary(m1)
+
+```
+
+The output is fairly familiar to the fixed effect slope and random
+intercept only model but there is another random effect under the
+groups ID for `dEnergy`. We get the variance and standard deviation of
+`dEnergy` as well as the correlation between the random intercept and the
+random slope. The correlation is 
+`r as.data.table(VarCorr(m1))[3, sdcor]` indicating that people who
+have a higher level of stress when energy is 0 (the intercept) also tend
+to have a more negative slope of stress on energy. Note that although
+the fixed effect slope estimate for energy is about the same between the
+two models, the standard error is larger so the p-value is higher
+(further away from 0) for the model with a fixed and random slope of
+`dEnergy` than the model with only a fixed slope of `dEnergy`. This is a
+fairly common pattern.
+
+Now we can look at model diagnostic plots. We use 2 columns and 3 rows
+as there are more plots now, but otherwise we use the usual 
+`modelDiagnostics()` function.
+
+
+```{r, fig.width = 7, fig.height = 10}
+
+plot(modelDiagnostics(m1), ncol = 2, nrow = 3, ask = FALSE)
+
+```
+
+In the figure, we see our familiar density and QQ deviates plot for
+the residuals (top left). Univariate density plots (black lines) and
+univariate normal distributions (blue dashed lines) for the random
+intercept alone (`ID : (Intercept)`) and the random slope of energy
+alone (`ID : dEnergy`). The naming convention is to include the
+coefficient name, intercept or energy for the energy slope, prefixed by
+what the variable name is for the random effect, here ID. Both of the
+univariate random effect distribution plots can be interpreted as
+usual and are shown on the middle row, left and right panels. What is
+technically graphed are the BLUPs and at the bottom we can get a five
+number summary to help see the minimum, 25th percentile, 50th
+percentile (median), 75th percentile, and maximum, which can give us
+some sense of the spread of the random intercept and slope. For
+example, for the random slope of energy, the maximum BLUP is 0.07,
+indicating that the highest predicted individual slope for anyone is
+0.07. This tells us that not many people are expected to have *higher* stress if
+they have higher energy. We can also see that 50% of people have BLUPs
+between -0.20 and -0.07, giving us a sense of the spread of the random
+slopes.
+
+The new graph is on the bottom row, left side and it evaluates whether
+the random effects by ID follow a MVN or not by using the Mahalanobis
+distances. The observed density is the black line. The theoretical
+density again is in dashed blue line. Here the theoretical density
+**is not** a normal density, but a chi-squared density with $df = p =
+2$. In this case, we can see that its not a terrible fit between the
+observed and theoretical chi-squared density, suggesting the MVN
+assumption is reasonably well met. We also can see, however, that
+there are some relatively extreme distances, with the maximum at 13.72
+being quite a bit higher than the next nearest. Although its not
+flagged as an extreme value, partly because there are only about 88
+people. 
+
+In practice, I may not actually make any changes here. For the sake of
+illustration, however, and to show how to do it, we will use a more
+stringent criteria for extreme values. Rather than defining an extreme
+value as the top and bottom 0.5% of the theoretical distribution,
+let's use the top and bottom 1% of the theoretical distribution.
+Because I know this will yield some extreme values to remove, I am
+saving the results of `modelDiagnostics()` in an object, `m1.diag`
+which I can plot but I can also use to identify which rows / IDs in
+the dataset are extreme and should / could be dropped.
+The new figure shows a few extreme values in the random effect
+BLUPs. Maybe a low value on the intercept, definitely a couple too low
+slopes, and maybe one MVN extreme value, the 13.72 Mahalanobis
+distance. 
+
+```{r, fig.width = 7, fig.height = 10}
+
+m1.diag <- modelDiagnostics(m1, ev.perc = .01)
+plot(m1.diag, ncol = 2, nrow = 3, ask=FALSE)
+
+``` 
+
+To consider removing these cases, we need to identify them.
+The `m1.diag` object in `R` has several subparts, but we are
+particularly interested here in the `extremeValues` subpart, which is
+itself a little data table, shown in the following.
+
+```{r}
+
+m1.diag$extremeValues
+
+``` 
+
+In this extreme values data table, we can see a few columns. The most
+important columns are:
+
+- `ID` this is the ID variable from the dataset and will be helpful
+  later.
+- `Index` this is the row number in the dataset used in the LMM and
+  can be used to identify specific rows of data that are extreme.
+- `EffectType` this indicates what type of effect the extreme value
+  was identified on.
+  
+The first column, `dstress` just shows the outcome variable score for
+reference, which may help but is not necessarily that useful always.
+The name of the first column will depend on the name of the outcome
+variable 
+
+In this dataset, we can see that there are three extreme values
+identified on the residuals. For all the random effects, because the
+BLUPs are calculated per person, not per observation if a person is
+classified as an extreme value, then all observations belonging to
+that specific ID will be shown. That is because at the random effect
+level, a person as a whole unit is either extreme or not and if
+extreme the only "choice" would be to exclude / modify that entire person.
+
+Because there are multiple types of extreme values, we could have some
+choice in how to address them. We could remove any extreme values, or
+remove one at a time and re-run the model to see if anything else
+remained extreme or not. For example, we can see that ID 23 is an
+extreme value on the random effect of dEnergy as well as the random
+intercept. Dropping ID 23 might change the rest enough that say some
+of the other residuals are no longer extreme. Conversely, we could
+drop some of the extreme residuals, specific 'weird' days and see if
+that happens to address any of the random effects. In this case, it is
+not too likely as the extreme residuals come from different
+participants (IDs 29, 64, 110) than do the extreme values on the random
+effects.
+
+A relatively intense approach would be to drop all of these extreme
+values and re-estimate the LMM in the dataset with these rows / IDs
+excluded.  Here are different ways that we could do that.
+
+The first approach uses the `Index` column from the extreme values
+data table and then we pass that to our dataset, `dm` and use the
+minus sign to indicate we want to drop those rows of data.
+Note that because the same rows are extreme on a few different
+measures, we use the `unique()` function so that we only drop each row
+once. This never hurts to use, as if all rows are already unique its
+fine, but it helps if there are duplicate extreme values (e.g., Index
+29 is extreme on the random intercept and random effect of dEnergy).
+
+```{r}
+
+dm.noev1 <- dm[-unique(m1.diag$extremeValues$Index)]
+
+``` 
+
+Another approach, supposing we only wanted to drop selected IDs. For
+example, we could decide that we want to only get rid of ID 23. 
+Here we use the `%nin%` operator which takes a variable
+on the left and returns `TRUE` if it is not in (nin) the value/vector
+of values on the right hand side. This operator comes from the
+`extraoperators` package so we need to have that loaded.
+
+```{r}
+
+dm.noev2 <- dm[ID %nin% 23]
+
+#Here I'm going to create an alternate version of this with a different ID (29) to show you something later, forget it for now:
+dm.noev2a <- dm[ID %nin% 29]
+
+``` 
+
+Supposing we wanted to remove IDs 23, 109 and 143, we could use the
+same approach but instead of listing one ID, we'd list all three as a
+vector, like this:
+
+```{r}
+
+dm.noev3 <- dm[ID %nin% c(23, 109, 143)]
+
+``` 
+
+If we wanted to only exclude one type of effect, say only the MVN
+extreme values, we could use the row indices but pre-select specific
+effect types. We can do this because the extreme values dataset is a
+regular data table, so we can operate on it the same as we would on
+any dataset. Let's just confirm that we can subset the extreme values
+dataset to only give us the MVN extreme values.
+
+
+```{r}
+
+m1.diag$extremeValues[EffectType == "Multivariate Random Effect ID"]
+
+```
+
+Now that that works, we can use the same approach we did to exclude
+all extreme values, but using this subsetted dataset. We replace:
+`m1.diag$extremeValues` with 
+`m1.diag$extremeValues[EffectType == "Multivariate Random Effect ID"]`
+and then we use just the `Index` column as before by writing:
+`$Index`.
+
+
+```{r}
+
+dm.noev4 <- dm[-unique(m1.diag$extremeValues[EffectType == "Multivariate Random Effect ID"]$Index)]
+
+``` 
+
+If you wanted even more customized options, you could achieve those by
+making the subsetting of the extreme values dataset fancier (e.g.,
+picking multiple but not all effect types, etc.)^[This is one of the
+benefits of `R` and an approach where everything is an object. We can
+use the output from one function, `modelDiagnostics()`, and because it
+returns an object, a dataset of extreme values, we can operate on it
+as we want and then use those results to subset our main dataset for
+analysis.].
+
+At this point, we can re-run our analysis using the revised dataset.
+For the sake of example, I will just use our dataset that
+excluded only one person, `dm.noev2`.
+
+```{r, fig.width = 7, fig.height = 10}
+
+m1noev <- lmer(dStress ~ dEnergy + (dEnergy | ID),
+           data = dm.noev2)
+
+summary(m1noev)
+
+m1noev.diag <- modelDiagnostics(m1noev, ev.perc = .01)
+plot(m1noev.diag, ncol = 2, nrow = 3, ask=FALSE)
+
+```
+
+The results look fairly similar, although the correlation between the
+random intercept and slope has dropped from 
+`r as.data.table(VarCorr(m1))[3, sdcor]`
+to 
+`r as.data.table(VarCorr(m1noev))[3, sdcor]`
+and the average slope of energy on stress, the fixed effect part, is
+somewhat weaker going from 
+`r fixef(m1)[["dEnergy"]]` to 
+`r fixef(m1noev)[["dEnergy"]]`.
+
+The diagnostics also look improved.
+
+A shorter trick to re-running the same model on a new dataset is to
+use the `update()` function. The `update()` function takes an existing
+model, and you can update that model in different ways. Here, we will
+update the model by just using a new dataset, here the dataset where
+we only excluded a different ID, `dm.noev2a`. This is just to
+illustrate how easy it is even without knowing the formula for a model
+to just update an old model on a different dataset. This is very
+helpful for running models with and without extreme values or with and
+without some participants who perhaps did not follow the study
+protocol correctly, etc. The benefit of using `update()` is that even
+if you have lots of predictors in your model, you don't have to type
+them all again and you are guaranteed to have the same model as
+before, just with a new dataset, no chance for typos and forgetting a
+predictor or covariate.
+
+```{r}
+
+m1noev2 <- update(m1, data = dm.noev2a)
+summary(m1noev2)
+# Note - you could do this theoretically with any of the dm.noev models we created.
+# It just so happens that when we remove too much in our dataset, the models don't coverge!
+```
+
+In the previous topic, we added both between and within person
+variants of a predictor into a LMM as fixed effects. Now let's take a
+look at doing that with both fixed and random slopes.
+First, we need to create a between and within person version of our
+predictor, `dEnergy`. Note that this only works because energy was measured
+each day (which is why it has the d at the front of the variable name).
+It would not work if `dEnergy` was measured only once, it would
+already be a between person variable. Note also that mean deviations
+only makes sense for continuous predictors. If `dEnergy` was binary, it
+would not make sense to look at the average and the deviations from
+the average, probably.
+
+
+```{r}
+
+dm[, c("Benergy", "Wenergy") := meanDeviations(dEnergy), by = ID]
+
+```
+
+Now we can fit a LMM with `Benergy` and `Wenergy` as fixed effects and a
+random intercept and random slope for `Wenergy`. Note that the random
+intercept is included automatically, without us having to ask for it
+explicitly. We also look at the model diagnostics and confidence
+intervals.
+
+```{r, fig.width = 7, fig.height = 10}
+
+iccMixed("dStress",id="ID",data=dm) ## Let's get the ICC
+
+m2 <- lmer(dStress ~ Benergy + Wenergy +
+             (Wenergy | ID),
+           data = dm)
+
+summary(m2)
+
+m2.diag <- modelDiagnostics(m2)
+plot(m2.diag, ncol = 2, nrow = 3, ask=FALSE)
+
+m2.ci <- confint(m2, oldNames = FALSE)
+m2.ci
+
+```
+
+In the output, we now see the random slope is for `Wenergy` and under
+fixed effects we have both `Benergy` and `Wenergy`. In this instance both
+the sign and the magnitude of the fixed effects for the slope of
+`Benergy` and `Wenergy` on stress are about the same. However, this does
+not have to be true. In fact, its even possible for the between person
+effect to have one sign and the within person effect to have the
+opposite sign for the slope^[A conceptual example of why the between
+and within might differ. Imagine that you look at the relationship
+between exercise and well being. You might find that people that
+exercise more on average have better average wellbeing. However, if
+people exercise more than usual for them, they might over exercise and
+that be associated with worse wellbeing. Because overexercising is
+relative to an individuals' own fitness level, it only shows up at the
+within person only level. Although this is relatively rare, it often
+happens that the magnitude of effects varies across the between person
+and within person effects.].
+
+Visually, all the diagnostics look relatively OK, although there are a
+few extreme values (now using the default top and bottom 0.5% of the
+theoretical distribution definition) on the residuals and on the
+random intercept. In practice, it would be worthwhile to consider
+whether these extreme values should be addressed somehow or if you are
+comfortable proceeding as is.
+
+The profile likelihood confidence intervals take a few seconds to
+complete and generate a few warnings related to the fact that the
+lower bound for the intercept-slope correlation is -1, the lowest
+possible correlation.
+
+### Sample Write Up
+
+A linear mixed model was fit to 
+`r nobs(m2)` stress scores from 
+`r as.integer(ngrps(m2))` people. The intraclass correlation
+coefficient of stress, the outcome, was 
+`r iccMixed("dStress", id = "ID", data = dm)$ICC[1]` and of energy, the
+predictor was 
+`r iccMixed("dEnergy", id = "ID", data = dm)$ICC[1]`,
+indicating that about 40% of the total variance in stress and about
+28% of the total variance in energy exists between people with the
+remaining due to daily fluctuations within people.
+The fixed effect intercept revealed that the
+estimated average [95% CI] stress was 
+`r fixef(m2)[["(Intercept)"]]`
+`r sprintf("[%0.2f, %0.2f]", m2.ci[5, 1], m2.ci[5, 2])`, when `Benergy`
+and `Wenergy` are zero.
+However, there were individual differences, with the standard
+deviation for the random intercept being
+`r as.data.table(VarCorr(m2))[1, sdcor]`
+indicating that there are individual differences. Assuming the random
+intercepts follow a normal distribution, 
+we expect most people to fall within one standard deviation of the
+mean, which in these data would be somewhere between:
+`r fixef(m2)[["(Intercept)"]] + c(-1, 1) *  as.data.table(VarCorr(m2))[1, sdcor]`. 
+There was also a significant fixed effect of average energy on stress,
+such that each one unit higher average energy people had was associated
+with `r fixef(m2)[["Benergy"]]` 
+95% CI = `r sprintf("[%0.2f, %0.2f]", m2.ci[6, 1], m2.ci[6, 2])` lower stress.
+
+There was no significant fixed effect of within person energy on
+stress,`r fixef(m2)[["Wenergy"]]` 
+95% CI = `r sprintf("[%0.2f, %0.2f]", m2.ci[7, 1], m2.ci[7, 2])`.
+
+(If this would have been significant, you could report that: On 
+days where people were one unit higher on energy than their 
+own average, people were expected to have 
+`r fixef(m2)[["Wenergy"]]` 
+95% CI = `r sprintf("[%0.2f, %0.2f]", m2.ci[7, 1], m2.ci[7, 2])`
+lower stress that same day, on average. However, there were
+individual differences, with the standard deviation for the
+random slope being
+`r as.data.table(VarCorr(m2))[2, sdcor]`
+indicating that there are individual differences in the slope of
+within person energy on stress. 
+Assuming the random slope follow a normal distribution,
+we expect most people to fall within one standard deviation of the
+mean, which in these data would indicate that most people are expected
+to have a within person slope of stress on energy between:
+`r fixef(m2)[["Wenergy"]] + c(-1, 1) *  as.data.table(VarCorr(m2))[2, sdcor]`.)
+
+Finally, there was a negative correlation between the random intercept
+and slope, 
+`r as.data.table(VarCorr(m2))[3, sdcor]`
+indicating that compared to the population averages, people who had a
+relatively higher stress when energy was 0 also tended to have a
+more negative within person association between energy and stress.
+
+## Solving Convergence/Estimation Issues
+
+We have talked before some about convergence, where algorithms iterate
+through cycles and try to find the best parameter estimates. Sometimes
+this process fails or runs into problems, which we may broadly call
+convergence or estimation issues.
+
+Sometimes these do not make too big of a difference, sort of false
+positives, but sometimes these issues may severely impact a models'
+results. If you see warnings about convergence or estimation, its best
+to address and resolve them before being confident in the model
+results.
+
+Let's create a between and within version of the daily variable,
+`dMood` and look at a fixed and random slope LMM predicting stress
+from mood
+
+```{r}
+
+dm[, c("Bmood", "Wmood") := meanDeviations(dMood), by = ID]
+
+# Please note, for demonstration purposes, I'm using a different outcome variable, "stress"
+# rather than dStress (as that model converged fine) - stress is just the average across days
+mest <- lmer(stress ~ Bmood + Wmood +
+             (Wmood | ID),
+             data = dm)
+
+``` 
+
+When we estimate the model, we get a message about a boundary
+(singular) fit with the suggestion to see `?isSingular`.
+This is a helpful suggestion and provides more details on potential
+approaches to resolving it. If we run 
+`?isSingular` in the `R` console will get a help page with some more
+information, which you **should** do and go read now.
+
+Armed with that knowledge, we can run a `summary()` on our model to
+learn a bit more. Its not always clear, but in this case we can see a
+correlation of 1 between the random intercept and slope that is
+causing the singularity.
+
+```{r}
+
+summary(mest)
+
+```
+
+Our options for resolving this are listed in `?isSingular`. In this
+case, a simple path forward is to remove some random effects. We
+basically always keep a random intercept in our LMMs, so the only
+candidate to remove is the random slope for `Wmood`. 
+Sometimes when doing that we no longer get the singularity warning, but
+in this case, the model still failed to converge, so we should not trust 
+the results.
+
+```{r}
+
+mest2 <- lmer(stress ~ Bmood + Wmood +
+             (1 | ID),
+             data = dm)
+
+summary(mest2)
+
+``` 
+
+If you have multiple random slopes, it can be tricky to decide which
+one to drop.
+
+Now let's look at a convergence issue. For this, we'll use another
+dataset, the `aces_daily` data. First we setup the data (from the
+`JWileymisc` package) and then fit a model with a random slope of
+stress predicting negative affect.
+
+```{r}
+
+data(aces_daily)
+
+mconv <- lmer(NegAff ~ STRESS + (1 + STRESS | UserID),
+          data = aces_daily)
+
+``` 
+
+In this case, we get a warning message that the model did not
+converge. This is not a singularity issue. This means that the
+algorithm that tries to find the best parameter estimates tried and
+failed to find estimates its confident are 'best'. For now, we won't
+worry too much about what the 'best' actually means. In this case,
+sometimes using a different optimizer, basically the algorithm that
+goes about trying to find the best estimates, or changing its options
+can help. We can control the underlying algorithms using the
+`lmerControl()` function. In this unit, we are not going to talk much
+about the different options but just show one alternate you could try
+if you run into convergence problems.
+
+
+```{r}
+
+## use the control function to pick a  different algorithm
+## and adjust the options to be a bit stricter
+## may take longer but also may have a better chance of converging
+strictControl <- lmerControl(optCtrl = list(
+   algorithm = "NLOPT_LN_NELDERMEAD",
+   xtol_abs = 1e-12,
+   ftol_abs = 1e-12))
+
+## now fit our model
+mconv2 <- lmer(NegAff ~ STRESS + (1 + STRESS | UserID),
+               data = aces_daily,
+               control = strictControl)
+
+```
+
+In this case, the change in algorithm and options did it and we now
+get our model converging without warnings. Sometimes it may still have
+warnings and none of what you know how to try will solve those. In
+those cases, you'd either want to consult an expert or simplify the
+model. Very often, much as with singularity issues, convergence issues
+surround the random effects in a model. If you remove some of the
+random effects (at the extreme a random intercept only) you are likely
+to resolve the convergence issues, although you may give up aspects of
+the model you wanted to keep.
+
+Sometimes as well, the convergence issues may not make much
+difference. Here we can look at the model results that did not
+converge quite and those that did.
+
+```{r}
+
+summary(mconv)
+
+summary(mconv2)
+
+``` 
+
+In this instance, the only apparent difference is in the 4th decimal
+point of the standard deviation of the random intercept.
+While the first algorithm did not quite achieve estimates it was
+confident are the best, it was really very close. Sometimes however,
+the estimates could be far off. If you cannot get a model that
+converges, though, you have no comparison so its hard to know if the
+non convergence was an issue or not. That is why its generally the
+best idea to always resolve a non convergence issue if possible and be
+very cautious about interpreting a model that did not converge.
+
+# Graphing LMMs
+
+We can graph results from LMMs much as we do for linear regressions or
+GLMs. There are a few nuances, however. In LMMs, people sometimes
+refer to marginal or conditional effects. In some ways, these
+correspond to the idea of fixed or random effects.
+
+Marginal predictions are based only on the averages, basically the fixed
+effects portion of the model. Conditional predictions incorporate
+**both** the fixed and random effects portion of the model.
+
+Because the conditional predictions incorporate random effects, they
+can only be made for the existing data because it is impossible to
+know what a new person would look like (e.g., if you recruited one
+more participant, would their BLUP be like ID 1, ID 2, or ID XX?).
+Therefore, conditional predictions are only made off the data used to
+build the model. Marginal predictions could be made for new data,
+though to answer a question like, what would the model predict, on
+average, the stress score would be if mood was 2 points above average
+on a day? That would not tell you how any single individual is
+predicted to be, but does indicate what, on average, the prediction
+would be from the model. Additionally, because conditional predictions
+will vary by ID, we can get different conditional predictions for each
+participant in the dataset.
+We will look at examples of both of these briefly.
+
+## Marginal
+
+Graphs based off the marginal predictions from the model are probably
+the default and most common approach. These graphs show the average
+association or predictions from the model and basically graph the
+fixed effects part of the model. They are interpreted nearly
+identically to linear regression graphs.
+
+To start, we will use our model with between person and within person
+energy predicting stress with a random intercept and random slope for
+within person energy, called `m2`. We use the `visreg()` function to
+graph the results with the x axis being `Benergy` and the y axis the
+predicted stress scores.
+
+```{r, error = TRUE}
+
+m2 <- lmer(dStress ~ Benergy + Wenergy + 
+             (Wenergy | ID),
+           data = dm)
+
+visreg(m2, xvar = "Benergy")
+
+``` 
+
+This however results in an error message about a differing number of
+rows. Its not clear from the error message, but since everything else
+in the code is right, we can infer this error message has something to
+do with the underlying data. We can use the `str()` function to get
+the classes in `R` for each of our variables.
+
+```{r}
+
+str(dm[, .(dStress, Benergy, Wenergy, ID)])
+
+```
+
+Here we can see that `Wenergy` has the class haven labeled. As this is
+not a common class (common classes in `R` are logical, integer,
+factor, numeric, character), its a reasonable guess that is causing
+the trouble. `visreg()` may not know how to work with haven labeled
+type variables. We don't need the labels so we can convert `Wenergy` to
+a numeric variable and try again. Since we are using a model, after
+updating `Wenergy` we need to re-run our LMM. The results will not
+change but hopefully now `visreg()` will work as expected.
+
+```{r}
+
+dm[, Wenergy := as.numeric(Wenergy)]
+
+m2 <- lmer(dStress ~ Benergy + Wenergy + 
+             (Wenergy | ID),
+           data = dm)
+
+visreg(m2, xvar = "Benergy",
+       partial = FALSE, rug = FALSE,
+       gg = TRUE,
+       xlab = "Average Energy",
+       ylab = "Predicted Stress",
+       line = list(col = "black", size = 1)) + 
+  theme_pubr()
+
+``` 
+
+The graph shows us how average energy (between person energy) and stress
+are associated on average. We made a number of customizations to the
+graph, including not showing partial residuals, no rug plot, defining
+our own x and y axis labels, and changing the line colour to black
+(the default is blue), and use the `pubr` theme.
+
+
+We can make the same plot for within person energy. We just change the
+`xvar` option to be `Wenergy`. We also make a bit fancier x axis
+label. Note the use of "\n" that tells `R` that we want a line break
+in the x axis label.
+
+```{r}
+
+visreg(m2, xvar = "Wenergy",
+       partial = FALSE, rug = FALSE,
+       gg = TRUE,
+       xlab = "Within Energy\n(deviations from own average)",
+       ylab = "Predicted Stress",
+       line = list(col = "black", size = 1)) + 
+  theme_pubr()
+
+``` 
+
+This figure shows the negative fixed effect coefficient for `Wenergy` graphically.
+
+## Conditional
+
+We can use `visreg()` function to graph conditional predictions as
+well. We will make a few modifications compared to the marginal
+graph.
+
+1. We specify that we want lines `by = "ID"` to indicate
+   we should get a separate line for each ID.
+2. We specify particular `breaks`, these are the breaks for the `by`
+   variable and in this case indicate which specific IDs should be
+   plotted. To see available IDs, we look at `unique(dm$ID)`. I've
+   chosen a few IDs to show for example. You could pick others.
+3. We specify the `re.form` argument. If we want to incorporate all
+   random effects in the predictions, we should specify the same
+   formula for random effects as we did in the model. If we want to
+   only incorporate some but not all random effects, we can specify a
+   modified formula, we'll look at some examples a bit later.
+
+With those changes we get the following figure. Each ID is separated
+into a separate plot panel.
+
+```{r, fig.fullwidth = TRUE}
+
+unique(dm$ID)
+
+visreg(m2, xvar = "Wenergy", by = "ID",
+       breaks = c(10, 35, 54, 64, 99, 101),
+       re.form = ~ (Wenergy | ID),
+       partial = FALSE, rug = FALSE,
+       gg = TRUE,
+       xlab = "Within Energy\n(deviations from own average)",
+       ylab = "Predicted Stress") + 
+  theme_pubr() +
+  ggtitle("Conditional Random Intercept and Slope")
+
+```
+
+Note that these are not raw regression lines per person, they are
+conditional predictions from the LMM, so they will include shrinkage
+of the random intercept and slopes to the overall sample average
+intercept and slope. Nevertheless, we can see that there are quite
+large differences in the within person association between energy and
+stress for say ID 10 compared to ID 101. They are not the same, and
+although in the marginal plots section earlier, we saw that on average
+there is a negative association between within person energy and stress,
+not everyone exactly has a negative predicted slope (10 looks a little positive).
+
+If we did not want to incorporate all random effects in the
+predictions, we could modify the `re.form`. This does not change the
+LMM we fit, it merely changes which random effects are incorporated
+into the predictions from the regression model and then plotted.
+For example, we could only include the intercept, which gives us the
+following figure:
+
+```{r, fig.fullwidth = TRUE}
+
+visreg(m2, xvar = "Wenergy", by = "ID",
+       breaks = c(10, 35, 54, 64, 99, 101),
+       re.form = ~ (1 | ID),
+       partial = FALSE, rug = FALSE,
+       gg = TRUE,
+       xlab = "Within Energy\n(deviations from own average)",
+       ylab = "Predicted Stress") + 
+  theme_pubr() +
+  ggtitle("Conditional Random Intercept")
+
+```
+
+What this figure showed is each individual IDs own predicted
+intercept, but it used the average marginal slope for within person
+mood and stress for all IDs.
+
+Finally, if we leave out the `re.form` section all together, we get
+the marginal intercept and marginal slope, which is just the same as
+our marginal graph but repeated for each ID, a fairly useless figure,
+but it highlights what happens if you forget to include `re.form` in
+your conditional graph.
+
+```{r, fig.fullwidth = TRUE}
+
+visreg(m2, xvar = "Wenergy", by = "ID",
+       breaks = c(10, 35, 54, 64, 99, 101),
+       partial = FALSE, rug = FALSE,
+       gg = TRUE,
+       xlab = "Within Energy\n(deviations from own average)",
+       ylab = "Predicted Stress") + 
+  theme_pubr() +
+  ggtitle("Unconditional (marginal) only")
+
+
+```
+
+If you don't want to look at specific IDs too carefully but instead
+want to get some sense of the overall variation or you have small
+number of IDs, you can overlay all the lines together by specifying 
+`overlay = TRUE`.
+
+```{r}
+
+visreg(m2, xvar = "Wenergy", by = "ID",
+       breaks = c(10, 35, 54, 64, 99, 101),
+       re.form = ~ (Wenergy | ID),
+       partial = FALSE, rug = FALSE,
+       gg = TRUE,
+       xlab = "Within Energy\n(deviations from own average)",
+       ylab = "Predicted Stress",
+       overlay = TRUE) + 
+  theme_pubr()
+
+```
+
+To see the overall variation in conditional intercepts and slopes, we
+could set the breaks equal to all the IDs by using:
+`breaks = unique(dm$ID)`.
+
+```{r}
+
+visreg(m2, xvar = "Wenergy", by = "ID",
+       breaks = unique(dm$ID),
+       re.form = ~ (Wenergy | ID),
+       partial = FALSE, rug = FALSE,
+       gg = TRUE,
+       xlab = "Within Energy\n(deviations from own average)",
+       ylab = "Predicted Stress",
+       overlay = TRUE) + 
+  theme_pubr()
+
+``` 
+
+With so many different people, we probably do not care about or want
+the legend, we can turn that off in `ggplot2` by adding no position to
+the legend as shown in the following.
+
+
+```{r}
+
+visreg(m2, xvar = "Wenergy", by = "ID",
+       breaks = unique(dm$ID),
+       re.form = ~ (Wenergy | ID),
+       partial = FALSE, rug = FALSE,
+       gg = TRUE,
+       xlab = "Within Energy\n(deviations from own average)",
+       ylab = "Predicted Stress",
+       overlay = TRUE) + 
+  theme_pubr() +
+  theme(legend.position = "none")
+
+``` 
+
+What this figure helps show is how both the random intercept and slope
+influence the results and the individual differences in both level of
+stress and slope of stress on within person energy in the data. In this
+case, for example, it seems that the individual differences in level
+of stress may be larger than the individual differences in slope. With
+a few exceptions, a lot of the slopes are *relatively* similar, albeit
+not exactly the same.
+
+# You Try It
+
+To try it out yourself, see if you can predict energy from between and
+within person stress including a random intercept and slope. Check
+diagnostics and try to solve any convergence or singularity issues you
+may run into (if you cannot solve them, try your best and detail what
+you tried). Make a conditional graph of your results.
+
+Here are the basic steps.
+
+1. Create a between and within person stress variable
+2. Since we know `visreg()` does not like haven labeled type
+   variables, check if any of your stress variables or the `dEnergy`
+   variable is haven labeled and if so, convert them to numeric.
+3. Fit a LMM using `lmer()` with both `Bstress` and `Wstress` as fixed
+   effects and a random intercept and random `Wstress` slope by ID.
+4. Check model diagnostics and where appropriate remove extreme
+   values.
+5. Make a summary of the final model.
+6. Use `visreg()` to make a conditional plot.
+
+
+```{r, eval = FALSE}
+
+
+## 1. Create a between and within person stress variable
+
+#### here's a start:
+## dm[, meanDeviations() ] 
+
+## 2. Since we know `visreg()` does not like haven labeled type
+##    variables, check if any of your stress variables or the `energy`
+##    variable is haven labeled and if so, convert them to numeric.
+
+#### here's a start:
+## str(dm[, .(ID, dEnergy,       ) ])
+
+## 3. Fit a LMM using `lmer()` with both `Bstress` and `Wstress` as fixed
+##    effects and a random intercept and random `Wstress` slope by ID.
+
+#### here's a start:
+## yourmodel <- lmer(dEnergy ~          )
+
+## 4. Check model diagnostics and where appropriate remove extreme
+##    values.
+
+#### here's a start:
+## yourdiag <- modelDiagnostics(      )
+## plot(  yourdiag  )
+
+
+## 5. Make a summary of the final model.
+
+#### here's a start
+## summary(  yourmodel  )
+
+## 6. Use `visreg()` to make a conditional plot.
+
+#### here's a start, change up as needed
+#### don't forget, if you drop some IDs, need to drop them here too
+#### by changing the dataset in the unique() call
+#visreg(m2, xvar = "Wmood", by = "ID",
+#       breaks = unique(dm$ID),
+#       re.form = ~ (Wmood | ID),
+#       partial = FALSE, rug = FALSE,
+#       gg = TRUE,
+#       xlab = "Within Mood\n(deviations from own average)",
+#       ylab = "Predicted Stress",
+#       overlay = TRUE) + 
+#  theme_pubr() +
+#  theme(legend.position = "none")
+
+``` 
+
+
+
+# Summary
+
+## Conceptual
+
+Key points to take away conceptually are:
+
+- With multiple random effects, there are the standard deviations of
+  each random effect but also the correlations (covariances) between
+  random effects
+- A simple understanding of a multivariate normal distribution
+- We assume random effects follow a multivariate normal distribution
+- How to use the Mahalanobis distance to evaluate multivariate
+  outliers and whether data follow  a multivariate normal distribution
+- How to fit random slopes in mixed models
+- How to interpret fixed and random slopes
+- A general understanding of how to write up fixed and random slopes
+- Strategies to resolve singularity and non convergence issues during
+  model estimation
+- The distinction between marginal and conditional graphs
+- How to read and understand marginal and conditional graphs from LMMs
+
+
+## Code
+
+
+| Function       | What it does                                 |
+|----------------|----------------------------------------------|
+| `lmer()`     | estimate a LMM  |
+| `confint()` | calculate confidence intervals for a LMM  | 
+| `visreg()` | create marginal or conditional graphs from a LMM  | 
+| `modelDiagnostics()` | evaluate model diagnostics for LMMs including of multivariate normality  | 
+| `str()` | check the class / structure of data useful to find odd variable types  | 
+| `lmerControl()` | way to change the algorithm used during model estimation and its options to help solve convergence issues  | 
+
