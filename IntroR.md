@@ -215,7 +215,7 @@ boards if you are stuck. Note that you will not be using any of these
 right now. Just try to run it so everything is installed and ready to
 go. 
 
-Please Post problems and errors to the discussion forum also will help
+Please Post problems and errors to Teams, also will help
 us troubleshoot so that in later weeks when we present analyses, you
 have a fully functioning `R` on your system.
 
@@ -232,7 +232,7 @@ try this
 
 To begin learning `R` we are going to be using the online platform,
 DataCamp. Follow the instructions on Moodle (under Assessments) for getting your account
-setup and use the Invite Link there. You should be added to the Organization called "Statistics and Data Science for Psychology 2021". Under "My assignments" you can see a list of chapters. Follow the schedule in the Table on Moodle.
+setup and use the Invite Link there. You should be added to the Organization called "Statistics and Data Science for Psychology 2022". Under "My assignments" you can see a list of chapters. Follow the schedule in the Table on Moodle.
 
 Note the first 1-2
 weeks will be fairly intense as to follow the class, you need to get
