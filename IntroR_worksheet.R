@@ -1,4 +1,4 @@
-#### 1. Basic R Use (Demonstration) ####
+#### 1. Basic R Use ####
 
 ## use R as a calculator
 3 + 4 # addition
@@ -12,7 +12,7 @@
 ## create a vector
 c(1, 5, 4)
 
-## asign results to an object
+## assign results to an object
 ## note that after it is assigned, it shows up in RStudio in the "Environment"
 x <- c(1, 3, 5)
 
@@ -24,7 +24,7 @@ x
 ## the second argument is how many digits to use for rounding
 round(1.214294254, digits = 2)
 
-#### 2. Descriptive Statistics (Activity) ####
+#### 2. Descriptive Statistics ####
 
 ## calculate the mean
 ## note that we reuse the previously assigned variable, x
@@ -46,12 +46,14 @@ max(x)
 ## to see this, lets first create an object with some missing data
 ## we will call it "y"
 ## NA stands for Not Available, i.e., missing
-y <- c(1, 3, NA, 7)
+## If we want the vector to have the numbers 1, 3, missing, then 7, 
+## what would we fill in the ??? with here?
+y <- ???
 
 ## calculate mean on y
 mean(y)
 
-## to all the descriptives, we need to tell R
+## Why didn't that work? We need to tell R
 ## to remove missing values first
 ## (na for not available; rm for remove)
 ## by adding an argument, na.rm = TRUE
@@ -60,14 +62,15 @@ mean(y, na.rm = TRUE)
 #### 2b. You Try It ####
 
 ## find the mean of these numbers: 5, 3, 2, 9, 1
-
+???
+  
 ## find the standard deviation of the variable "y"
+???
 
-
-#### 3. Using a Dataset (Demonstration) ####
+#### 3. Using a Dataset ####
 
 ## R has a built in dataset called "mtcars"
-## this dataset has variables about 32 different cars
+## this dataset has variables on about 32 different cars
 
 ## view the dataset
 View(mtcars)
@@ -86,43 +89,43 @@ mtcars$mpg
 ## R return NULL indicating no data
 mtcars$Mpg
 
-## calculate descriptive statistics
-mean(mtcars$mpg)
-sd(mtcars$mpg)
-
 ## it is also possible to round an entire set of numbers
 round(mtcars$mpg, digits = 0)
 
-## summary of a whole dataset
-summary(mtcars)
 
+#### 3b. You Try It ####
+## calculate descriptive statistics (mean, standard deviation) of the 
+## variable mpg
+???
 
-#### 4. Loading Data (Demonstration) ####
+## How do you get a summary of a whole dataset? Use google or the ? function
+???
 
-## to start with, we will load a package for data management
-## loading a package is like opening an app
+#### 4. Loading Data ####
+
+## to start with, we will load a package for data management.
+## Loading a package/library is like opening an app
 ## and you need to repeat this process each time you start up R
 ## note that if this does not work, try to install it first
 ## by uncommenting the install packages code
+
 # install.packages("data.table", dependencies = TRUE)
 library(data.table)
 
-## import CSV - first insert your working directory
-setwd("C:/Users/mbyr0010/Documents/Teaching/PSY4210")
+## import CSV - first insert your working directory instead of mine
+setwd("C:/Users/michelle/Documents/git_repos/MonashHonoursStatistics")
 d <- read.csv("IntroR_sample.csv")
 
 # (When you have more time, also install package "tidyverse"
 # - it takes a while)
 
-## get a summary of the data
-summary(d)
+## YOU TRY IT: get a summary of the data
+???
 
 ## load package to read Excel files (.xls or .xlsx)
 ## if not installed please uncomment and run code below
  install.packages("xlsx", dependencies = TRUE)
 library("xlsx")
-
-## make sure you saved this Excel data to your R project folder
 
 ## read in the "Sleep" sheet
 d.acti <- read.xlsx2("actigraph_scored_31.xlsx", sheetName = "Sleep")
@@ -130,24 +133,29 @@ d.acti <- read.xlsx2("actigraph_scored_31.xlsx", sheetName = "Sleep")
 ## view the variable names in the dataset
 names(d.acti)
 
-## calculate the mean sleep duration (total sleep time; TST)
-mean(d.acti$TST)
-# what error did you get?
-str(d.acti)
-d.acti$TST <- as.numeric(d.acti$TST)
-str(d.acti)
-mean(d.acti$TST)
-
 #### 4b. You Try It ####
+## calculate the mean sleep duration (total sleep time; TST)
+???
+# what error did you get?
+
+# Search the following functions
+?str
+?as.numeric
+#and see if you can figure out how to fix it
+???
+???
+???
+
 
 ## view the Sleep Efficiency (se) variable in d.acti
 ## what is the second value?
-
+???
+  
 ## what are the variable names in the "Summary" sheet?
-## the first variable is "ID"
+???
 
 
-#### 5. Logical Operators (activity) ####
+#### 5. Logical Operators ####
 
 ## "==" : logical test if Depressed is equal to 1
 d$Depressed == 1
@@ -170,6 +178,9 @@ d$zStress
 
 ## here is just the first and third value
 d$zStress[c(1, 3)]
+
+## YOU TRY IT: What is the 10th value?
+???
 
 ## here are just the values of zStress where Depressed == 1
 d$zStress[d$Depressed == 1]
