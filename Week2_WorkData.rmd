@@ -14,15 +14,11 @@ library(tufte)
 
 # Intro
 
-`r margin_note("Core ideas and code are in the main document. Extra information that may help understanding but is not the big picture I will go in margin notes, like this. Remember that if you use GitHub desktop, you should already have the Rmarkdown file on your computer (see Week 1).")`
+`r margin_note("Core ideas and code are in the main document. Extra information that may help understanding but is not the big picture I will go in margin notes, like this.")`
 
-To start off the lecture, please make sure that you:
-
-Have downloaded the `R`markdown file for the lecture by pulling the most recent git repo
-[https://github.com/michellebyrne1/MonashHonoursStatistics/edit/master/WorkData.rmd](https://github.com/michellebyrne1/MonashHonoursStatistics/edit/master/WorkData.rmd)
-and that you have RStudio open and have opened the project you are using for
-this class and have the `R`markdown file for this lecture open on
-your own laptop (or are following along with someone else).
+Note from Michelle: Please make sure that you have downloaded the `R`markdown file for the lecture by pulling the most recent git repo
+[https://github.com/michellebyrne1/MonashHonoursStatistics/blob/master/Week2_WorkData.rmd](https://github.com/michellebyrne1/MonashHonoursStatistics/blob/master/Week2_WorkData.rmd)
+You can follow along with the pre-recorded lecture videos for Week 2, or you can read this markdown (in HTML format) independently, and follow along by executing the code in R Studio using the markdown (RMD) file.
 
 
 # Basic `R` Use
@@ -46,7 +42,7 @@ vector, a set of numbers. Here's a quick refresher on creating
 vectors, using `c()` and on storing them in an object, here I used
 `x`.
 
-Once you have created an object, it should show up in RStudion in the
+Once you have created an object, it should show up in RStudio in the
 "Environment". In addition, we can view or operate on all the elements
 of an object by referring to it by name.
 
@@ -297,7 +293,7 @@ In `R` `data.table`s have three main parts
     columns/variables. That could be selecting only certain
     columns/variables to display *or* creating / modifying a column or
     variable. The last part, the `by` represents a grouping variable or
-    some way or organising our operations. For example, we might want to
+    some way of organising our operations. For example, we might want to
     perform the same operation for each ID in the dataset. Lastly, if
     there are NO commas, that means just give me the
     rows/cases that match my criteria, but give me all columns/variables.
@@ -345,6 +341,7 @@ d2[, .(UserID, STRESS)] ## IDs and number of obs
 `r margin_note("Here, the order is: first, remove missing stress
 observations, second take only surveys/rows where stress scores > 3,
 third, count how many observations are not missing by ID.")`
+
 Now look what happens if we first take stress values greater than 3.
 That is we change the order of the operations. We end up with much
 fewer people. 
@@ -362,25 +359,7 @@ non missing stress values > 3 whereas before we took people with 30
 non missing stress values (any value) and then only observations where
 stress > 3.
 
-## You Try It - Subsetting
 
-Select observations where:
-
-- positive affect, in the dataset, called `PosAff` is not missing
-- participants who have **at least 20** non missing positive affect (any value)
-- where positive affect scores are greater than or equal to 3
-
-Use the template below filling in values where appropriate.
-You should end up with 2,455 observations.
-
-
-```{r trysubset, echo = TRUE, eval = FALSE}
-
-d3 <- d[!is.na(  )][, Count := .N, by = UserID][   ][   ]
-
-d3[, .(UserID, PosAff)] ## IDs and number of obs
-
-```
 
 ## Finding Specific Cases or Outliers
 
@@ -417,7 +396,7 @@ class(names(d))
 
 Although these are the basic building blocks of data, there also are special formats that can be built off of these, often off of numeric type data.
 
-- *Date*: A special representation of numeric data when the data are dates. In `R` represented by multiple classes, including `Date`, `POSIX` and `chron`. The standard approach is to count the days since some origin. In `R`, the default origin in 1970-01-01. So 1970-01-01 is 0. 2 would indicate 1970-01-03. You can do some arthmetic on dates. For example adding or subtracting numbers, calculating the differece between dates.
+- *Date*: A special representation of numeric data when the data are dates. In `R` represented by multiple classes, including `Date`, `POSIX` and `chron`. The standard approach is to count the days since some origin. In `R`, the default origin in 1970-01-01. So 1970-01-01 is 0. 2 would indicate 1970-01-03. You can do some arthmetic on dates. For example adding or subtracting numbers, calculating the difference between dates.
 - *Date and time*: A special representation of numeric data when the data are dates and times. In `R` represented by multiple classes, including `POSIX` and `chron`. The standard approach is to count the seconds since some origin. In `R`, the default origin in 1970-01-01 00:00:00. So 1970-01-01 00:00:00 is 0. 2 would indicate 1970-01-01 00:00:02. You can do some arthmetic on datetime objects. For example adding or subtracting numbers, calculating the differece between dates and times.
 - *time*: A special representation of numeric data when the data are times. In `R` represented by class `chron`. 24 hours are formated so that they go from 0 to 1. For example, 3:31pm would be converted to 24 hour time: 15:30 and then to decimals for hours: 15.5 then converted ito range from 0 to 1: 15.5/24.
 - *factor*: A special representation of numeric data when the data are fundamentally discrete. For example, if study condition is coded as 0 = control, 1 = medication, 2 = psychotherapy. The data could be stored numerically, or as text. If stored as a factor, R will do some convenient things automatically, such as dummy coding in regression models.
@@ -491,34 +470,6 @@ example "%Y-%m-%d" for YYYY-mm-dd or "%Y/%m/%d" for YYYY/mm/dd or "%Y
 is needed as different people and countries commonly write dates in
 many different formats. 
 
-## You Try It - Dates
-
-Now you try to convert the following character strings into date class
-objects in `R` by fillng in the correct template in quotes for the
-`format = ` argument. If you do it incorrectly, you will get errors or
-`NA` indicating the text could not be converted to a date uing the
-template you supplied. 
-
-```{r trydates, echo = TRUE, eval = FALSE}
-
-y1 <- c("5/28/2018", "6/30/2019")
-as.Date(y1, format = "") ## you complete
-
-y2 <- c("28 01 2018", "15 06 2019")
-dy2 <- as.Date(y2, format = "") ## you complete
-dy2 ## show results
-
-y3 <- c("28-1-18", "15-6-19")
-as.Date(y3, format = "") ## you complete
-
-## how many days are there between 
-## 28 January 2018 and 15 June 2019?
-## use the object dy2 to complete like 
-## we did above
-
-
-
-```
 
 ## Date Helper Functions
 
@@ -565,20 +516,6 @@ table(weekdays(d2$SurveyDay))
 
 ``` 
 
-## You Try It - Subset Dates
-
-Now you try to create a dataset that excludes any weekends.
-
-```{r trysubsetdates, echo = TRUE, eval = FALSE}
-
-## complete to make a dataset that 
-## excludes any weekend days
-d3 <- d[ ]
-
-## there should now be no surveys on weekends
-table(weekdays(d3$SurveyDay))
-
-```
 
 # Factor Variables
 
