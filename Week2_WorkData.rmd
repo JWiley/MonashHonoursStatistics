@@ -474,7 +474,7 @@ many different formats.
 ## Date Helper Functions
 
 Dates have a variety of helpful functions that let you operate on or
-learn moe about them. We can use the `weekdays()`, `months()`, and
+learn more about them. We can use the `weekdays()`, `months()`, and
 `quarters()` functions to find out the day of week, month or quarter a
 particular date falls in. They return character strings. 
 
@@ -516,7 +516,6 @@ table(weekdays(d2$SurveyDay))
 
 ``` 
 
-
 # Factor Variables
 
 Factor variables can be made from numeric or 
@@ -548,24 +547,6 @@ table(y)
 ## default factor() approach, labels based on 
 ## levels and sorted numerically: 0, 1, 2
 table(factor(x)) ## automatic conversion to factor 
-
-```
-
-## You Try It - Factors
-
-Now try using factors for dummy coding. In the daily study,
-there is a varible, SurveyInteger. 1 = morning, 2 = afternoon,
-3 = evening. Make it a factor and then create a frequency table 
-using `table()`.
-
-```{r tryfactors, eval = FALSE, echo = TRUE}
-
-d[, SurveyIntegerF := factor(
-  SurveyInteger,
-  levels = c(    ),
-  labels = c(    ))]
-
-table(d$SurveyIntegerF)
 
 ```
 
@@ -789,91 +770,6 @@ merge(surveys2, acti2, by = "ID", all = TRUE)
 
 ```
 
-
-## You Try It - Merging
-
-Here are those two datasets shown as tables.
-
-```{r datamerge}
-
-ds1 <- data.table(
-  ID = c("A1", "B2", "C3"),
-  Stress = c(4, 5, 6))
-
-ds2 <- data.table(
-  ID = c("A1", "B2", "D4", "E5"),
-  Steps = c(9524, 15303, 7432, 4035))
-
-``` 
-
-```{r, echo = FALSE, results = "asis"}
-knitr::kable(ds1, caption = "Dataset: ds1")
-```
-
-```{r, echo = FALSE, results = "asis"}
-knitr::kable(ds2, caption = "Dataset: ds2")
-```
-
-Before you try joining those datasets, try to answer these
-questions, which are similar to what might be on the exam. The next
-section has an answer guide.
-For these questions, `ds1` is the "left"
-dataset and `ds2` is the "right" dataset and you are joining by ID.
-
-- How many rows would occur in a **natural join** of `ds1` and
-  `ds2`? How many missing values total across all
-  variables?
-
-- How many rows would occur in a **full outer join** of `ds1` and
-  `ds2`? How many missing values total across all
-  variables?
-
-- How many rows would occur in a **left outer join** of `ds1` and
-  `ds2`? How many missing values total across all variables?
-
-- How many rows would occur in a **right outer join** of `ds1` and
-  `ds2`? How many missing values total across all variables?
-
-```{r trymerge, error = TRUE}
-
-## using the datasets ds1 and ds2, do a natural join
-merge(   )
-
-
-## using the datasets ds1 and ds2, do a full outer join
-merge(   )
-
-
-## using the datasets ds1 and ds2, do a left outer join
-merge(   )
-
-
-## using the datasets ds1 and ds2, do a right outer join
-merge(   )
-
-
-``` 
-
-#### Answer Key
-
-These are the sort of questions that would be on the
-exam to assess understanding of joining / merging.
-	
-The key to these is to know what each join does and be
-able to predict expected behaviour. A natural join will be only
-those rows IDs present in both datasets, in this case: A1 and
-B2. Because a natural join only includes rows present in all
-datasets, you will not have any missing values on any variable,
-unless there was missing values to begin with. So in this case,
-you will have 2 rows and 0 missing values.
-
-A full outer join will include all rows from either
-dataset. That means you will have IDs A1, B2, C3, D4, and E5 (5
-rows). Stress values are only present for A1, B2, and C3, so you will
-have two missing stress values. Steps values are present for A1, B2,
-D4, and E5, so there will be one missing steps value. Together you
-will have 5 rows, and 3 missing values.
-
 ## Merging Data by Different IDs
 
 Often data are under our control, but sometimes, they are not or even
@@ -946,7 +842,7 @@ If you do not expect duplicates, it is a good idea to check for them
 before merging, as `R` will not tell you if there are duplicates and
 it impacted the merge.
 
-Relatedly, if there are duplicates, you can count how many there are,
+If there are duplicates, you can count how many there are,
 using the `duplicated()` function and making a frequency table using
 `table()`. 
 
@@ -997,26 +893,6 @@ this is a very helpful way to check whether that is true.
 table(unique(surveys2$FirstName) %in% unique(acti$ID)) # why do you think it didn't say 2 are false?
 
 table(unique(acti$ID) %in% unique(surveys2$FirstName))
-
-``` 
-
-## Checking Data You Try It
-
-Using our daily data (aces_daily):
-
-- Count how many unique IDs there are
-- Create a frequency table of the number of times `UserID` is
-  duplicated.
-- Check if there are duplicates if you use both `UserID` and
-  `SurveyDay` to create a combined ID.
-- Check if there are duplicates if you use `UserID` and `SurveyDay`
-  and `SurveyInteger`.
-
-```{r trychecking}
-
-## you try to write the checking code here!
-
-
 
 ``` 
 
