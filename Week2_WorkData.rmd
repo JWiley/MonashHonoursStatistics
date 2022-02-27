@@ -1088,34 +1088,6 @@ reshape(
 ```
 
 
-## You Try It Reshape Long
-
-Using this dataset, you try reshaping a wide dataset into a long format.
-
-```{r}
-
-dwtry <- data.table(
-  Name = c("Jane", "John"), 
-  SLEEP1 = c(2, 1),
-  SLEEP2 = c(4, 5),
-  Dep1 = c(4, 5),
-  Dep2 = c(3, 2),
-  Dep3 = c(5, 5))
-
-``` 
-
-```{r, echo = FALSE, results = "asis"}
-knitr::kable(dwtry, caption = "Wide dataset for you to try reshaping.")
-```
-
-```{r tryitlong, error=TRUE}
-
-dltry <- reshape(   )
-
-print(dltry)
-
-```
-
 ## Reshape Data Wide
 
 We can also reshape data from long to wide. To do that, we will begin
@@ -1152,19 +1124,6 @@ reshape(
 
 ```
 
-
-## You Try It Reshape Wide
-
-Using the long dataset from the previous You Try It, reshape `dltry`
-wide.
-
-```{r tryitwide, error=TRUE}
-
-reshape(   )
-
-```
-
-
 # Bonus Content - Merging by Multiple IDs
 
 Sometimes a single variable is not enough to merge two datasets. This
@@ -1197,28 +1156,3 @@ merge(surveys, acti,
 
 ``` 
 
-## Merging by Multiple IDs - You Try It
-
-Let's say that one participant had technical problems with the surveys
-from the daily data we have worked with and so filled out the last few
-on paper and pencil. Now we want to merge this data into our master
-daily dataset, `d`, using a *full outer join*. 
-The resulting dataset, `d2` should have 6,602 rows.
-
-```{r trymerging2, error=TRUE}
-
-pencil <- data.table(
-  UserID = 1L,
-  SurveyDay = as.Date("2017-3-08"),
-  Survey = c("Morning", "Afternoon", "Evening"),
-  STRESS = c(1, 3, 1))
-
-## there is no survey integer in pencil, so we need to make that
-## to merge with the d dataset.
-pencil[Survey == "Morning", SurveyInteger := 1L]
-pencil[Survey == "Afternoon", SurveyInteger := 2L]
-pencil[Survey == "Evening", SurveyInteger := 3L]
-
-d2 <- merge(   )
-
-``` 
