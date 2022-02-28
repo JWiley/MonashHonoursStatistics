@@ -219,14 +219,12 @@ Please Post problems and errors to Teams, also will help
 us troubleshoot so that in later weeks when we present analyses, you
 have a fully functioning `R` on your system.
 
-# 5. Learn about RStudio
+# 5. Learn more about RStudio
 
 To find out a bit more about RStudio, you can watch this <5 minute
 [video](https://www.youtube.com/watch?v=V_NoBcxpYC8).
 
-If you want something for future reference on RStudio,
-try this 
-[cheat sheet](https://github.com/rstudio/cheatsheets/raw/master/rstudio-ide.pdf).
+
 
 # 6. DataCamp: Learn about `R`
 
