@@ -1,0 +1,274 @@
+---
+title: "Advanced Data Visualization"
+author: "Joshua F. Wiley/Pei Hwa Goh/Michelle Byrne"
+date: "`r Sys.Date()`"
+output: 
+  tufte::tufte_html: 
+    toc: true
+    number_sections: true
+---
+
+```{r loadpackages}
+options(digits = 3)
+
+## load relevant packages
+library(tufte)
+library(haven)
+library(data.table)
+library(JWileymisc)
+library(psych)
+library(ggplot2)
+library(ggpubr)
+library(ggthemes)
+library(scales)
+library(ggExtra)
+
+## turn off some notes from R in the final HTML document
+knitr::opts_chunk$set(message = FALSE)
+
+```
+
+This reading is entirely optional for PSY4210.
+
+# Plotting Clinical Data
+
+Next, we are going to look at some hypothetical data from an
+intervention comparing augmented Treatment as Usual (TAU+) to
+Cognitive Behavioural Therapy (CBT+). The two conditions are measured
+at baseline and post intervention on depression symptoms.
+The first part of the code just simulates some data including a wide
+dataset, `trial` and a long dataset, `trial2`.
+**You do not need to follow this code, it is just to get us some
+sample data to work with.**
+
+```{r}
+
+## code to make an example dataset
+set.seed(1234)
+trial <- data.table(
+  ID = sample(1:70),
+  Group = factor(rep(c("TAU+", "CBT+"), each = 35)),
+  B_Dep = pmax(round(rnorm(35*2, mean = 22, sd = 7)), 0))
+trial[, P_Dep := round(B_Dep * rnorm(70, mean = ifelse(Group == "CBT+", .5, .9), sd = .2))]
+trial2 <- reshape(trial, varying = list(c("B_Dep", "P_Dep")), v.names = "Depression",
+                 timevar = "Assessment", times = c(0, 1),
+                 idvar = "ID", direction = "long")
+
+head(trial)
+
+head(trial2)
+
+```
+
+With some sample data, we can plot the long dataset to show the mean
+and confidence intervals for each group at each time point.
+
+```{r}
+
+p.trial1 <- ggplot(trial2, aes(Assessment, Depression, colour = Group)) +
+  stat_summary(fun.data = mean_cl_normal,
+               position = position_dodge(.05),
+               geom = "pointrange") +
+  theme_pubr()
+p.trial1 <- set_palette(p.trial1, palette = "jco")
+
+print(p.trial1)
+
+```
+
+Because these are longitudinal data, it makes sense to connect them
+with lines to show how they changed over time. We do this by adding a
+line geom based on the mean. Then we tidy up the x axis labels and the
+y axis labels.
+
+Finally, something new, we use `geom_hline()` to add a horizontal line
+at 16, a common cut off on the CES-D indicative of clinically
+significant depression symptoms. We make this a dashed, grey line to
+make it less prominent. This line aids interpretation by helping
+people anchor the results to common cut offs. We also use the 
+`coord_cartesian()` function to change the limits of the graph. Since
+the CES-D scale starts at 0 (meaning lowest possilbe / no depression
+symptoms) we make that the y axis limit. The x axis limits are based
+on the coding of assessments and the upper y axis limit we base
+visually off the upper confidence interval.
+
+```{r}
+
+p.trial1b <- p.trial1 + 
+  stat_summary(fun = mean,
+               position = position_dodge(.05),
+               geom = "line") +
+  scale_x_continuous("",
+                     breaks = c(0, 1),
+                     labels = c("Baseline", "Post")) +
+  scale_y_continuous("Depression Symptoms (CES-D)",
+                     breaks = c(0, 4, 8, 12, 16, 20, 24)) + 
+  geom_hline(yintercept = 16, linetype = 2, colour = "grey50") +
+  coord_cartesian(xlim = c(-.05, 1.05), ylim = c(0, 26.5), expand = FALSE)
+
+print(p.trial1b)
+
+```
+
+The other information that would be useful would be to annotate with
+information about group differences and change over time.
+First we run a regression on depression by group at each time point
+and then use those p-values to add annotations to the graph.
+
+```{r}
+
+summary(lm(Depression ~ Group,
+        data = trial2[Assessment == 0]))
+
+summary(lm(Depression ~ Group,
+        data = trial2[Assessment == 1]))
+
+p.trial1b +
+  annotate("text", x = 0, y = 26, label = "italic(n.s.)", parse = TRUE) + 
+  annotate("text", x = 1, y = 26, label = "***")
+
+```
+
+In smaller datasets we could visualize the individual changes in
+depression symptoms. We again plot depression symptoms on the y axis,
+assessment on the x axis and colour by group, but instead of
+summarizing the data, we directly plot points and lines. We use the
+`group = ID` to indicate we want a different line for each ID in the dataset.
+
+```{r}
+
+p.trial2 <- ggplot(trial2, aes(Assessment, Depression, colour = Group, group = ID)) +
+  geom_line() +
+  geom_point() + 
+  scale_x_continuous("",
+                     breaks = c(0, 1),
+                     labels = c("Baseline", "Post")) +
+  scale_y_continuous("Depression Symptoms (CES-D)") + 
+  geom_hline(yintercept = 16, linetype = 2, colour = "grey50") +
+  theme_pubr()
+p.trial2 <- set_palette(p.trial2, "jco")
+
+print(p.trial2)
+
+```
+
+The result lets us see the starting point and change over time for
+each person, but its a bit messy. Rather than just colour by group, it
+might be helpful to separate by group, which we do by facetting.
+
+```{r, fig.width = 9, fig.height = 6}
+
+p.trial2 + facet_grid(. ~ Group)
+
+```
+
+That worked, but now our labels overlap. We need to add some space
+between each facet (panel). Since each panel is labelled, we do not
+really need the legend guide for group, so we turn that off by using
+the `guides()` function to clean the plot up a bit.
+
+```{r, fig.width = 9, fig.height = 6}
+
+p.trial2 + facet_grid(. ~ Group) +
+  theme(panel.spacing = unit(2, "lines")) +
+  guides(colour = "none")
+
+```
+
+Another way to show individual change would be to use the wide dataset
+to calculate individual change scores. A common approach is to examine
+the percent change. We subtract 1 so that 0 means no change.
+To plot the results, we put the individual IDs on the x axis and the
+height of the bars is the percent change.
+
+```{r}
+
+trial[, PercentChange := P_Dep/B_Dep - 1]
+
+p.trial3 <- ggplot(trial, aes(ID, PercentChange, fill = Group)) +
+  geom_bar(stat = "identity") +
+  theme_pubr() +
+  scale_y_continuous("Change from Baseline", labels = percent)
+
+p.trial3 <- set_palette(p.trial3, "jco")
+
+print(p.trial3)
+
+``` 
+
+Although this figure is technically accurate, it is difficult to
+interpret. The general pattern seems to be that the CBT+ group has a
+more negative change. Ordering the data can improve this.
+We use the `order()` function to order by percent change and then
+order that to get numbers for a "new" ID variable. Now we can remake
+the plot, with a few other tweaks to clean it up (a line at 0, no
+change, removing the x axis and adding a better x axis title).
+
+```{r}
+
+trial[, ID2 := order(order(PercentChange))]
+
+p.trial4 <- ggplot(trial, aes(ID2, PercentChange, fill = Group)) +
+  geom_hline(yintercept = 0) + 
+  geom_bar(stat = "identity") +
+  theme_pubr() +
+  scale_y_continuous("Change from Baseline", labels = percent) +
+  xlab("Individual Participants") + 
+  theme(
+    axis.line.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank())
+
+p.trial4 <- set_palette(p.trial4, "jco")
+
+print(p.trial4)
+
+```
+
+With the data ordered, it is much easier to see the biggest decline,
+the biggest increase and to see that the CBT+ group dominates the left
+hand side with the largest decreases while little decrease or even
+increases occur almost exclusively in the TAU+ group.
+
+If we wanted a slight modification is to order first by group and then
+by percent change, giving the followiing result.
+
+```{r}
+
+trial[, ID3 := order(order(Group, PercentChange))]
+
+p.trial5 <- ggplot(trial, aes(ID3, PercentChange, fill = Group)) +
+  geom_hline(yintercept = 0) + 
+  geom_bar(stat = "identity") +
+  theme_pubr() +
+  scale_y_continuous("Change from Baseline", labels = percent) +
+  xlab("Individual Participants") + 
+  theme(
+    axis.line.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank())
+
+p.trial5 <- set_palette(p.trial5, "jco")
+
+print(p.trial5)
+
+```
+
+# Summary Table
+
+Here is a little summary of some of the functions used in this
+topic. You might also enjoy this "cheatsheet" for `ggplot2`:
+https://github.com/rstudio/cheatsheets/raw/master/data-visualization-2.1.pdf
+
+
+| Function       | What it does                                 |
+|----------------|----------------------------------------------|
+| `ggplot()`     | Sets the dataset and which variables map to which aesthetics for a plot |
+| `geom_point()` | Adds points such as for a scatter plot|
+| `geom_hline()` | Adds a horizontal line at a specific y axis value |
+| `stat_summary()` | Used to automatically calculate some summary statistics on data and plot, usually means with standard errors or confidence intervals | 
+| `stat_smooth()` | Used to automatically calculate a regression line | 
+| `ylab()` | Adds a label for the y axis |
+| `xlab()` | Adds a label for the x axis |
+| `theme_pubr()` | A cleaner black and white theme for `ggplot2` |
+

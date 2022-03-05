@@ -31,13 +31,12 @@ knitr::opts_chunk$set(message = FALSE)
 # Data
 
 To start with, we'll load some data. Here we are going to use the data
-from the data collection exercise (yay!). For this code to work, you need to
-download the datasets from the moodle page under General and save them into the same
-directory as this `R`markdown file. You also may need to properly have
-an RStudio project set up, otherwise `R` may be looking in the wrong
-directory.
+from the data collection exercise that previous honours cohorts did. 
+For this code to work, you need to have the datasets in the same
+directory as this `R`markdown file. If you pulled directly from git, then they 
+should be there (but check). 
 
-The `read_sav()` function from the `haven` package let's you read SPSS
+The `read_sav()` function from the `haven` package let's you read SPSS (i.e., *.sav)
 data files into `R` and then we use the `as.data.table()` function to
 convert the datasets into data.tables named `db` for baseline and `dd`
 for the daily data.
@@ -98,7 +97,8 @@ and most the time is sensible in my experience with raw data.
 Let's look at each of these for the variable perceived stress from the
 baseline questionnaire of our data collection exercise. Finally, its 
 standard to report the internal consistency or reliability of a scale. 
-A common measure is Cronbach's alpha, which we can get by using the `alpha()` function from the `psych` package.
+A common measure is Cronbach's alpha, which we can get by using the `alpha()` 
+function from the `psych` package.
 We do something new here by writing: `psych::alpha()` that is a long
 way of typing it and tells `R` that we want to use the `alpha()`
 function from the `psych` package. Mostly we don't need to do
@@ -129,7 +129,7 @@ db[, StressAVG := rowMeans(.SD, na.rm = TRUE),
 db[, Stress := rowMeans(.SD, na.rm = TRUE) * 4,
    .SDcols = c("PSS1", "PSS2", "PSS3", "PSS4")]
 
-## Let's look at how stressed people in PSY4210 are in general
+## Let's look at how stressed people were in previous years of PSY4210 in general
 summary(db$StressAVG)
 
 ## calculate Cronbach's alpha
@@ -160,31 +160,6 @@ db[, sex := factor(
 
 ``` 
 
-
-## Try It - Scoring and Reliability
-
-Now its your turn to score the some other scales in the baseline questionnaire! 
-Four items from the Sternberger's Trait Anxiety scale (STAI; items STAI1-STAI4)
-were used in to measure anxiety levels. The short-form of the UCLA Loneliness 
-Scale (ULS-8; items ULS1-ULS8) was used to capture loneliness. The Lifespan Self-Esteem Scale (items LSE1-LSE4) was used to measure self-esteem or how one 
-feels about themselves. The 10-item version of the Big Five inventory was used
-to capture your openness, conscientiousness, extraversion, agreeableness and 
-neuroticism (e.g. BFI_E1r needs to be reverse-coded and then added to or 
-averaged with BFI_E2 to form the Extraversion score).
-
-Calculate Cronbach's alpha measure of internal consistency reliability
-for the self-esteem score.
-
-```{r tryit_scoring}
-
-## create a variable for self-esteem and name it SE, and others if you like! 
-## Go on, have fun with this :)
-
-
-## calculate the internal consistency reliability
-## for self-esteem
-
-```
 
 # Grammar of Graphics
 
@@ -249,7 +224,7 @@ pb + geom_histogram()
 approximation of the probability density function (PDF) for data.
 A probability density function always sums to one (i.e., if you
 integrated to get the area under the curve, it would always be one).
-The underlying assumption is that the observed data likely come form
+The underlying assumption is that the observed data likely come from
 some relatively smooth distribution, so typically a smoothing kernel
 is used so that you see the approximate density of the data, rather
 than seeing exactly where each data point falls.
@@ -390,18 +365,6 @@ ggplot(db, aes(Stress, colour = sex)) +
 ggplot(db[!is.na(sex)], aes(Stress, colour = sex)) +
   geom_density() ## continuous stress scores by sex
 
-##Let's try with other categories
-ggplot(db[!is.na(relsta)], aes(Stress, colour = relsta)) +
-  geom_density() ## continuous stress scores by relationship status
-
-##Let's try to see how self-esteem varies by stress categories
-
-db[, SE:= rowMeans(.SD, na.rm = TRUE),
-   .SDcols = c("LSE1", "LSE2", "LSE3", "LSE4")]
-
-ggplot(db, aes(SE, colour = StrCat)) +
-  geom_density() ## Self-esteem by high vs low stress
-
 ```
 
 For histograms, rather than control the colour of the lines, it is
@@ -425,26 +388,6 @@ ggplot(db[!is.na(sex)], aes(Stress, fill = sex)) +
 
 ```
 
-## Try It - Univariate
-
-Using the `db` baseline dataset:
-
-1. make a histogram for the variable: `extraversion`.
-2. use `testDistribution()` to examine whether `selfesteem` follows a
-   normal distribution and whether it has any extreme values.
-3. Make a dotplot for: `openness` *separated* (e.g., by colour and/or fill)
-   by `sex`:
-   
-```{r tryunivariate, error=TRUE}
-
-## histogram code here (extraversion)
-
-## distribution check code here (selfesteem)
-
-## dotplot code here (openness by sex)
-
-
-```
 
 # Bivariate Graphs
 
@@ -452,13 +395,13 @@ We can make bivariate plots by mapping variables to both the x and
 y-axis. For a scatter plot, we use point geometric objects.
 
 ```{r, fig.width = 5, fig.height = 5, fig.cap = "Scatter plot of stress and selfesteem"}
-
+db[, SE := rowMeans(.SD, na.rm = TRUE),
+   .SDcols = c("LSE1", "LSE2", "LSE3", "LSE4")]
 ggplot(db,
        aes(
          x = Stress,
          y = SE)) +
   geom_point()
-
 ```
 
 We also can use lines for bivariate data. For this example, we will
@@ -509,7 +452,6 @@ changing the specific arguments we want changed from defaults.
 
 ggplot(dsum, aes(SurveyDay, energy)) +
   geom_bar(stat = "identity")
-
 
 # Create a numeric version of Survey Day in dsum and name it nday
 dsum[,nday:= as.numeric(SurveyDay)]
@@ -767,21 +709,6 @@ ggplot(db[!is.na(sex)], aes(Stress, SE, shape = sex)) +
 
 ```
 
-## Try It - Bivariate
-
-Make a scatter plot (points) for `extraversion` and
-`conscientiousness` in the baseline data, `db`. Use the
-good visualization principles we have learned. Make your own
-decisions to make the scatter plot most useful to read.
-
-```{r trybivariate, error=TRUE}
-
-## scatter plot code here
-
-
-
-
-```
 
 # Presentation and Publication Plots
 
@@ -868,10 +795,10 @@ gglikert("Mean", "variable", "Never", "Often", data = sumdat,
 ```
 
 
-# Summary Table
+# Summary Table for Data visualisation
 
-Here is a little summary of some of the functions used in this
-topic. You might also enjoy this "cheatsheet" for `ggplot2`:
+Here is a little summary of some of the functions used so far. 
+You might also enjoy this "cheatsheet" for `ggplot2`:
 https://github.com/rstudio/cheatsheets/raw/master/data-visualization-2.1.pdf
 
 
@@ -888,22 +815,9 @@ https://github.com/rstudio/cheatsheets/raw/master/data-visualization-2.1.pdf
 | `ylab()` | Adds a label for the y axis |
 | `xlab()` | Adds a label for the x axis |
 
-# PART 2
+# More advanced data visualisation - Categorical and Continuous variables
 
-```{r loaddata2}
-
-## read in data
-db <- as.data.table(read_sav("[2021] PSY4210 BL.sav")) # baseline
-
-## compute a stress variable if you haven't already done so
-db [, PSS2 := 6- PSS2r]
-db [, PSS3 := 6- PSS3r] 
-db[, Stress := rowMeans(.SD, na.rm = TRUE) * 4,
-   .SDcols = c("PSS1", "PSS2", "PSS3", "PSS4")]
-
-## compute a self-esteem variable if you haven't already done so
-db[, selfesteem:= rowMeans(.SD, na.rm = TRUE),
-.SDcols = c("LSE1", "LSE2", "LSE3", "LSE4")]
+```{r compute more variables}
 
 ## compute the personality variables if you haven't already done so
 db [, BFI_N1 := 6- BFI_N1r]
@@ -928,7 +842,7 @@ db[, agreeableness := rowMeans(.SD, na.rm = TRUE),
 
 ## create some binary variables (based on the median - will see another way to create based on median later)
 db[, StressHigh := factor(Stress >= 10, levels = c(TRUE, FALSE), labels = c("High Stress","Low Stress"))]
-db[, SelfesteemHigh := factor(selfesteem >= 3.8, levels = c(TRUE, FALSE), labels = c("High SE", "Low SE"))]
+db[, SelfesteemHigh := factor(SE >= 3.8, levels = c(TRUE, FALSE), labels = c("High SE", "Low SE"))]
 
 ```
 
@@ -955,7 +869,7 @@ We could graph the frequencies, such as with a bar plot.
 
 ```{r}
 
-p.bar <- ggplot(db, aes(sex, fill = SelfesteemHigh)) +
+p.bar <- ggplot(db[!is.na(sex)], aes(sex, fill = SelfesteemHigh)) +
   geom_bar(position = "dodge")
 
 print(p.bar)
@@ -964,9 +878,8 @@ print(p.bar)
 
 Beyond the data to ink ratio issues, if we were presenting this or
 putting it into a paper, we would want to label it more cleanly.
-Here we specify specific breaks on the x axis and specify their labels
-and then remove the axis title, since saying male and female makes it
-clear enough we don't need to say "sex" the variable name anymore.
+Here we remove the x-axis title, since saying male and female makes it
+clear enough we don't need to say "sex" is the variable name anymore.
 We could relabel the y axis (although count is fairly clear, I wanted
 to show how to do it). The theme cleans up and makes the font a bit
 bigger. 
@@ -975,9 +888,6 @@ bigger.
 ```{r}
 
 p.bar2 <- p.bar  +
-  scale_x_continuous(
-    breaks = c(1, 2),
-    labels = c("Male", "Female")) +
   xlab("") +
   ylab("Frequency") +
   theme_pubr()
@@ -1014,10 +924,10 @@ print(p.bar3)
 
 ## Percentage Plot
 
-A simple way would be to calculate the percentage of `sex = 2` in
+A simple way would be to calculate the percentage of `sex = "female"` in
 each self esteem category and plot that. We would create a new dataset with
 percentages calculated along with confidence intervals using the
-following code. We calculate the average number of `sex == 2` which
+following code. We calculate the average number of `sex == "female"` which
 is the proportion, and then use the `prop.test()` function which takes
 the count in one group and the total count and can calculate
 confidence intervals to get 95% confidence intervals for the proportions.
@@ -1025,12 +935,12 @@ confidence intervals to get 95% confidence intervals for the proportions.
 ```{r}
 
 propdata <- db[!is.na(SelfesteemHigh), .(
-  Percent = mean(sex == 2, na.rm = TRUE),
+  Percent = mean(sex == "female", na.rm = TRUE),
   LL = prop.test(
-    x = sum(sex == 2, na.rm = TRUE),
+    x = sum(sex == "female", na.rm = TRUE),
     n = sum(!is.na(sex)), correct = FALSE)$conf.int[1],
   UL = prop.test(
-    x = sum(sex == 2, na.rm = TRUE),
+    x = sum(sex == "female", na.rm = TRUE),
     n = sum(!is.na(sex)), correct = FALSE)$conf.int[2]),
   by = SelfesteemHigh]
 
@@ -1124,7 +1034,7 @@ p.prop2 <- ggplot(propdata2, aes(SelfesteemHigh, y = Percent, ymin = LL, ymax = 
     labels = c("High SE (median)", "Low SE (median)")) + 
   xlab("") + ylab("Percent High (95% CI)") + 
   theme_pubr() +
-  facet_grid(Personality ~ .) +
+  facet_grid(Personality ~ .) + #when we created propdata2 in the chunk above, we told it to make a factor called Personality with O,C,E,A,N levels
   coord_flip()
 
 print(p.prop2)
@@ -1137,8 +1047,7 @@ For all continuous variables, there are not many graphing options. A
 scatter plot is the main way two continuous variables are visualized.
 However, even with a scatter plot, we can add additional
 information to make it more useful. Our starting point is the scatter
-plots with axes based on five number summaries we saw in Data
-Visualization 1 topic. To that we add a linear regression line to help
+plots we went over earlier. To that we add a linear regression line to help
 show the overall association between the two variables. We also add a
 text annotation with the correlation coefficient and p-value, found
 from running the `cor.test()` function. We label it using `xlab()` and
@@ -1153,19 +1062,19 @@ regression line, and correlation coefficient).
 
 ```{r, fig.height = 5.5, fig.width = 5.5, fig.cap = "scatter plot with regression line and correlation"}
 
-cor.test(~ selfesteem + Stress, data = db)
+cor.test(~ SE + Stress, data = db)
 
-p.ss <- ggplot(db, aes(Stress, selfesteem)) +
+p.ss <- ggplot(db, aes(Stress, SE)) +
   geom_point() +
   stat_smooth(method = "lm", se = FALSE, size = 1) + 
   scale_x_continuous(breaks = as.numeric(quantile(db$Stress))) + 
-  scale_y_continuous(breaks = as.numeric(quantile(db$selfesteem))) +   
+  scale_y_continuous(breaks = as.numeric(quantile(db$SE))) +   
   theme_pubr() +   
   theme(axis.line = element_blank()) +
   geom_rangeframe() +
   xlab("Perceived Stress") +
   ylab("Self Esteem") +
-  annotate("text", x = max(db$Stress), y = max(db$selfesteem),
+  annotate("text", x = max(db$Stress), y = max(db$SE),
            label = "r = -0.65, p < .001",
            size = 6, hjust = 1, vjust = 1)
 
@@ -1211,54 +1120,6 @@ ggarrange(
 
 ``` 
 
-If we had more than two continuous variables we wanted to plot, there
-are fewer options. We could create a 3D graph, but those rarely work
-well for publications or theses that are printed and only viewed in
-2D. Instead, its common to map additional variables to other aspects
-or aesthetics in the figure. For example we can take our scatter plot
-of Stress and self esteem and make the size and shading of points
-proportional to neuroticism scores. The following code does this and
-plots the result. The only additions are adding
-`size = neuroticism` and `colour = neuroticism` to 
-`geom_point()`.
-
-```{r, fig.height = 5.5, fig.width = 5.5, fig.cap = "scatter plot with regression line and correlation of stress, self esteem and neuroticism"}
-
-cor.test(~ selfesteem + Stress, data = db)
-
-p.ssn <- ggplot(db, aes(Stress, selfesteem)) +
-  geom_point(aes(size = neuroticism, colour = neuroticism)) +
-  stat_smooth(method = "lm", se = FALSE, size = 1) + 
-  scale_x_continuous(breaks = as.numeric(quantile(db$Stress))) + 
-  scale_y_continuous(breaks = as.numeric(quantile(db$selfesteem))) +   
-  theme_pubr() +   
-  theme(axis.line = element_blank()) +  
-  geom_rangeframe() +
-  xlab("Perceived Stress") +
-  ylab("Self Esteem") +
-  annotate("text", x = max(db$Stress), y = max(db$selfesteem),
-           label = "r = -0.65, p < .001",
-           size = 6, hjust = 1, vjust = 1)
-
-print(p.ssn)
-
-``` 
-
-By default there are separate legend guides, one for size and one for
-the colour. We can customize this using the `guides()` function in
-`ggplot2`. We could turn one off or by using the same title make them
-the same. Where we wrote `Neuroticism` capitalized, we also could have
-changed the title of the legend guide (anything within the quotes
-would be valid).
-
-```{r, fig.height = 5.5, fig.width = 5.5, fig.cap = "scatter plot with regression line and correlation of stress, self esteem and neuroticism with one guide"}
-
-p.ssn + 
-  guides(
-    size = guide_legend("Neuroticism"),
-    colour = guide_legend("Neuroticism"))
-
-``` 
 
 # Mixed Continuous and Categorical Variables
 
@@ -1385,7 +1246,7 @@ print(p.mean3)
 
 ```
 
-Another aspect we could imporve: there is no necessary ordering of
+Another aspect we could improve: there is no necessary ordering of
 personality measures. Ordering them such as from highest to lowest
 mean can be used to help us read the plot more easily.
 
@@ -1495,270 +1356,3 @@ ggplot(na.omit(dblong2), aes(Personality, Score)) +
   facet_grid(sex ~ SelfesteemHigh)
 
 ```
-
-When we facet, only the labels show up making it difficult to
-interpret if this was being presented in presentation or article. In
-this case, we might create new variables with more descriptive labels,
-just for the plotting. Note that the choice of jitter, alpha, and
-binwidth all involve some trial and error to get to a plot that is
-easy to read and visually appealing (admittedly, a rather subjective
-concept). 
-
-```{r, fig.width = 10, fig.height = 9}
-
-dblong2[, Sex2 := factor(sex, levels = c(1, 2), labels = c("Male", "Female"))] # we already made a factor for SE
-
-ggplot(na.omit(dblong2), aes(Personality, Score)) +
-  geom_dotplot(aes(y = jitter(Score, 2)), binaxis = "y",
-               alpha = .2,
-               stackdir = "center", binwidth = .1) +   
-  stat_summary(fun.data = mean_cl_normal, position = position_dodge(.2)) +
-  scale_x_discrete("",
-    breaks = c("O", "C", "E", "A", "N"),
-    labels = c("Openness", "Conscientiousness", "Extraversion", "Agreeableness", "Neuroticism")) + 
-  theme_pubr() +
-  coord_flip() + 
-  facet_grid(Sex2 ~ SelfesteemHigh)
-
-```
-
-Next, we are going to look at some hypothetical data from an
-intervention comparing augmented Treatment as Usual (TAU+) to
-Cognitive Behavioural Therapy (CBT+). The two conditions are measured
-at baseline and post intervention on depression symptoms.
-The first part of the code just simulates some data including a wide
-dataset, `trial` and a long dataset, `trial2`.
-**You do not need to follow this code, it is just to get us some
-sample data to work with.**
-
-```{r}
-
-## code to make an example dataset
-set.seed(1234)
-trial <- data.table(
-  ID = sample(1:70),
-  Group = factor(rep(c("TAU+", "CBT+"), each = 35)),
-  B_Dep = pmax(round(rnorm(35*2, mean = 22, sd = 7)), 0))
-trial[, P_Dep := round(B_Dep * rnorm(70, mean = ifelse(Group == "CBT+", .5, .9), sd = .2))]
-trial2 <- reshape(trial, varying = list(c("B_Dep", "P_Dep")), v.names = "Depression",
-                 timevar = "Assessment", times = c(0, 1),
-                 idvar = "ID", direction = "long")
-
-head(trial)
-
-head(trial2)
-
-```
-
-With some sample data, we can plot the long dataset to show the mean
-and confidence intervals for each group at each time point.
-
-```{r}
-
-p.trial1 <- ggplot(trial2, aes(Assessment, Depression, colour = Group)) +
-  stat_summary(fun.data = mean_cl_normal,
-               position = position_dodge(.05),
-               geom = "pointrange") +
-  theme_pubr()
-p.trial1 <- set_palette(p.trial1, palette = "jco")
-
-print(p.trial1)
-
-```
-
-Because these are longitudinal data, it makes sense to connect them
-with lines to show how they changed over time. We do this by adding a
-line geom based on the mean. Then we tidy up the x axis labels and the
-y axis labels.
-
-Finally, something new, we use `geom_hline()` to add a horizontal line
-at 16, a common cut off on the CES-D indicative of clinically
-significant depression symptoms. We make this a dashed, grey line to
-make it less prominent. This line aids interpretation by helping
-people anchor the results to common cut offs. We also use the 
-`coord_cartesian()` function to change the limits of the graph. Since
-the CES-D scale starts at 0 (meaning lowest possilbe / no depression
-symptoms) we make that the y axis limit. The x axis limits are based
-on the coding of assessments and the upper y axis limit we base
-visually off the upper confidence interval.
-
-```{r}
-
-p.trial1b <- p.trial1 + 
-  stat_summary(fun = mean,
-               position = position_dodge(.05),
-               geom = "line") +
-  scale_x_continuous("",
-                     breaks = c(0, 1),
-                     labels = c("Baseline", "Post")) +
-  scale_y_continuous("Depression Symptoms (CES-D)",
-                     breaks = c(0, 4, 8, 12, 16, 20, 24)) + 
-  geom_hline(yintercept = 16, linetype = 2, colour = "grey50") +
-  coord_cartesian(xlim = c(-.05, 1.05), ylim = c(0, 26.5), expand = FALSE)
-
-print(p.trial1b)
-
-```
-
-The other information that would be useful would be to annotate with
-information about group differences and change over time.
-First we run a regression on depression by group at each time point
-and then use those p-values to add annotations to the graph.
-
-```{r}
-
-summary(lm(Depression ~ Group,
-        data = trial2[Assessment == 0]))
-
-summary(lm(Depression ~ Group,
-        data = trial2[Assessment == 1]))
-
-p.trial1b +
-  annotate("text", x = 0, y = 26, label = "italic(n.s.)", parse = TRUE) + 
-  annotate("text", x = 1, y = 26, label = "***")
-
-```
-
-In smaller datasets we could visualize the individual changes in
-depression symptoms. We again plot depression symptoms on the y axis,
-assessment on the x axis and colour by group, but instead of
-summarizing the data, we directly plot points and lines. We use the
-`group = ID` to indicate we want a different line for each ID in the dataset.
-
-```{r}
-
-p.trial2 <- ggplot(trial2, aes(Assessment, Depression, colour = Group, group = ID)) +
-  geom_line() +
-  geom_point() + 
-  scale_x_continuous("",
-                     breaks = c(0, 1),
-                     labels = c("Baseline", "Post")) +
-  scale_y_continuous("Depression Symptoms (CES-D)") + 
-  geom_hline(yintercept = 16, linetype = 2, colour = "grey50") +
-  theme_pubr()
-p.trial2 <- set_palette(p.trial2, "jco")
-
-print(p.trial2)
-
-```
-
-The result lets us see the starting point and change over time for
-each person, but its a bit messy. Rather than just colour by group, it
-might be helpful to separate by group, which we do by facetting.
-
-```{r, fig.width = 9, fig.height = 6}
-
-p.trial2 + facet_grid(. ~ Group)
-
-```
-
-That worked, but now our labels overlap. We need to add some space
-between each facet (panel). Since each panel is labelled, we do not
-really need the legend guide for group, so we turn that off by using
-the `guides()` function to clean the plot up a bit.
-
-```{r, fig.width = 9, fig.height = 6}
-
-p.trial2 + facet_grid(. ~ Group) +
-  theme(panel.spacing = unit(2, "lines")) +
-  guides(colour = "none")
-
-```
-
-Another way to show individual change would be to use the wide dataset
-to calculate individual change scores. A common approach is to examine
-the percent change. We subtract 1 so that 0 means no change.
-To plot the results, we put the individual IDs on the x axis and the
-height of the bars is the percent change.
-
-```{r}
-
-trial[, PercentChange := P_Dep/B_Dep - 1]
-
-p.trial3 <- ggplot(trial, aes(ID, PercentChange, fill = Group)) +
-  geom_bar(stat = "identity") +
-  theme_pubr() +
-  scale_y_continuous("Change from Baseline", labels = percent)
-
-p.trial3 <- set_palette(p.trial3, "jco")
-
-print(p.trial3)
-
-``` 
-
-Although this figure is technically accurate, it is difficult to
-interpret. The general pattern seems to be that the CBT+ group has a
-more negative change. Ordering the data can improve this.
-We use the `order()` function to order by percent change and then
-order that to get numbers for a "new" ID variable. Now we can remake
-the plot, with a few other tweaks to clean it up (a line at 0, no
-change, removing the x axis and adding a better x axis title).
-
-```{r}
-
-trial[, ID2 := order(order(PercentChange))]
-
-p.trial4 <- ggplot(trial, aes(ID2, PercentChange, fill = Group)) +
-  geom_hline(yintercept = 0) + 
-  geom_bar(stat = "identity") +
-  theme_pubr() +
-  scale_y_continuous("Change from Baseline", labels = percent) +
-  xlab("Individual Participants") + 
-  theme(
-    axis.line.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    axis.text.x = element_blank())
-
-p.trial4 <- set_palette(p.trial4, "jco")
-
-print(p.trial4)
-
-```
-
-With the data ordered, it is much easier to see the biggest decline,
-the biggest increase and to see that the CBT+ group dominates the left
-hand side with the largest decreases while little decrease or even
-increases occur almost exclusively in the TAU+ group.
-
-If we wanted a slight modification is to order first by group and then
-by percent change, giving the followiing result.
-
-```{r}
-
-trial[, ID3 := order(order(Group, PercentChange))]
-
-p.trial5 <- ggplot(trial, aes(ID3, PercentChange, fill = Group)) +
-  geom_hline(yintercept = 0) + 
-  geom_bar(stat = "identity") +
-  theme_pubr() +
-  scale_y_continuous("Change from Baseline", labels = percent) +
-  xlab("Individual Participants") + 
-  theme(
-    axis.line.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    axis.text.x = element_blank())
-
-p.trial5 <- set_palette(p.trial5, "jco")
-
-print(p.trial5)
-
-```
-
-# Summary Table
-
-Here is a little summary of some of the functions used in this
-topic. You might also enjoy this "cheatsheet" for `ggplot2`:
-https://github.com/rstudio/cheatsheets/raw/master/data-visualization-2.1.pdf
-
-
-| Function       | What it does                                 |
-|----------------|----------------------------------------------|
-| `ggplot()`     | Sets the dataset and which variables map to which aesthetics for a plot |
-| `geom_point()` | Adds points such as for a scatter plot|
-| `geom_hline()` | Adds a horizontal line at a specific y axis value |
-| `stat_summary()` | Used to automatically calculate some summary statistics on data and plot, usually means with standard errors or confidence intervals | 
-| `stat_smooth()` | Used to automatically calculate a regression line | 
-| `ylab()` | Adds a label for the y axis |
-| `xlab()` | Adds a label for the x axis |
-| `theme_pubr()` | A cleaner black and white theme for `ggplot2` |
-
