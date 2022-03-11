@@ -1,6 +1,6 @@
 ---
 title: "Generalized Linear Models 1"
-author: "Joshua F. Wiley - 2021 updates Michelle Byrne"
+author: "Joshua F. Wiley / Michelle Byrne"
 date: "`r Sys.Date()`"
 output:
   tufte::tufte_html: 
@@ -15,7 +15,7 @@ library(tufte)
 # Setup
 
 You can view, download or pull the `R`markdown file for this content here
-https://github.com/michellebyrne1/MonashHonoursStatistics/blob/master/GLM1_Michelle.rmd
+https://github.com/michellebyrne1/MonashHonoursStatistics
 
 We will be using a few packages for this content and also the baseline
 data only from the data collection exercise.
@@ -184,7 +184,7 @@ When we fit a linear regression, equations are solved to give
 residuals, and those parameter estimates (or regression coefficients)
 produce the line of best fit.
 
-## Muliple Linear Regression
+## Multiple Linear Regression
 
 Multiple linear regression works in principle basically the same way
 as does simple linear regression. The difference is that more then one
@@ -214,7 +214,7 @@ but with some extra requirements.
 - $\varepsilon$ is the residual/error term, the difference between the
   model predicted value and the observed value.
 
-Visually, it becomes more difficult to visualize, but remains posible
+Visually, it becomes more difficult to visualize, but remains possible
 with a 3D graph. The following figure shows the regression surface
 predicted by a multiple regression of neuroticism on both stress and
 selfesteem. Spend some time moving it around to view it from different
@@ -228,7 +228,9 @@ the other predictors.
 
 ```{r, echo = FALSE}
 
-## this package only used for demo purposes
+## this package only used for demo purposes - you do NOT need to know or 
+# understand the code below but it IS fun to play with
+
 library(plotly)
 # calculate selfesteem
 db[, selfesteem := rowMeans(.SD, na.rm = TRUE) * 4,
@@ -309,7 +311,7 @@ You have probably heard many times that in linear regression, we
 assume a *normal* distribution. Before we jump into the assumption for
 linear regression, we need to talk a bit more about **probability
 distributions**. A probability distribution is a function that
-maps a value to a particular probability of occuring. Most
+maps a value to a particular probability of occurring. Most
 probability distributions we deal with, such as the normal
 distribution, is not a single distribution, but a family of
 distributions. This is because the specific normal distribution we get
@@ -390,7 +392,7 @@ links or transforms $\boldsymbol{\eta}$ from a linear space to the
 outcome space.
 
 The link function is always called $g()$. Likewise an inverse link
-function exists that simple "undoes" whatever the link function
+function exists that simply "undoes" whatever the link function
 did. This is called $g()^{-1}$.
 
 In normal linear regression, the link function and inverse link
@@ -542,7 +544,7 @@ coordinates and the size until you are happy with it.
 
 visreg(m, xvar = "stress", partial = FALSE, rug = FALSE, gg = TRUE) +
   theme_pubr() +
-  annotate("text", x = 22, y = 8, label = "b = 0.XX, p < .0001", size = 4) + 
+  annotate("text", x = 15, y = 8, label = "b = 0.XX, p < .0001", size = 4) + 
   ggtitle("Linear regression of neuroticism on stress",
           subtitle = "Shaded region shows 95% confidence interval.")
 # Can you fill in the b coefficient in the label from the summary of m above?
@@ -565,7 +567,7 @@ a new dummy coded variable where 1 = female and 0 = male
 participants. This dummy coded variable is now a numeric predictor (it has
 0s and 1s) and can be included in regression as usual.
 
-The only real difference between interpretting a dummy coded variable
+The only real difference between interpreting a dummy coded variable
 from a regular continuous predictor is that: (1) the 0 point is not
 arbitrary, it represents one particular group (e.g., male participants)
 and (2) a one unit change in the dummy coded variable is not
@@ -627,7 +629,7 @@ Linear regressions have a few assumptions, they assume that:
 
 - $$ \boldsymbol{y} \sim \mathcal{N}(\boldsymbol{\eta}, \sigma_\varepsilon) $$ (normality)
 - observations are independent of each other (independence)
-- the residual variance, $\sigma_\varepsilon$, is homogenous
+- the residual variance, $\sigma_\varepsilon$, is homogeneous
   (homogeneity of variance).
   
 The normality assumption is typically tested by comparing the
@@ -649,7 +651,7 @@ done by examining the residuals from the model.
 Most of these diagnostics and assumptions can be checked
 graphically. We use the `modelDiagnostics()` function to calculate
 diagnostics and the `plot()` function to create a visual display.
-This should be very familiar from the Data Visualization 1 topic where
+This should be very familiar from the Data Visualization topic where
 we used `testDistribution()` and plot to test a specific variable. It
 is a similar idea but now operating on the residuals.
 
@@ -681,17 +683,17 @@ an extreme value, as specified in the call to `modelDiagnostics()`.
 
 The **right panel** shows a scatter plot of the model predicted values
 against the residuals. This can help asses the homogeneity of variance
-assumption. If the residual variance is homogenous, we would expect
+assumption. If the residual variance is homogeneous, we would expect
 the spread of the residuals (the y axis) to be about the same at all
 levels of the predicted values. Sometimes this is very easy to see
 visually. Sometimes it is not so easy to see. To aid in the visual
 interpretation, quantile regression lines are added. Quantile
 regression lines allow a regression model to predict the 10th and 90th
 percentile. These predicts are added as dashed blue lines. Under the
-assumption of homogenous variance, one would expect these lines to be
+assumption of homogeneous variance, one would expect these lines to be
 approximately horizontal and parallel to each other. If they are not
 parallel, that indicates that the variance is larger / smaller for
-some predicted values than for others, known as heterogenous
+some predicted values than for others, known as heterogeneous
 variance. The solid blue line in the middle is a loess smooth line,
 which also would ideally be about flat and about zero, to indicate
 that there is no systematic bias in the residuals. Systematic bias can
@@ -704,11 +706,13 @@ minimum, 25th percentile, median, 75th percentile, and maximum,
 providing a nice quantitative summary of the residuals and predicted
 values. 
 
-These graph looks fairly good. They are not perfect, but
+These graph looks fairly good although the loess line is not great. 
+The diagnostics are not perfect, but
 real data never are and the degree of variation in the spread of
-residuals is not extreme. We might be reasonably satisfied that the
-assumption or normality and homogeneity of variance are met or at
-least not terribly violated. There also do not appear to be extreme
+residuals is not extreme (but not good). We might be reasonably satisfied that the
+assumption of normality and homogeneity of variance are met or at
+least not terribly violated, although a case could be made that the
+homogeneity assumption is violated. There also do not appear to be extreme
 values in the residuals.
 
 For the sake of example, let's look at another outcome measure. 
@@ -729,7 +733,7 @@ the current criteria. The homogeneity of variance plot does not appear
 as bad, but the extreme values on the residuals are apparent. At a
 minimum, we would want to remove these extreme values.  We could also try a log
 transformation of the outcome (although you wouldn't do this if the normality actually 
-looks ok - but let's just do it as an example anyway.
+looks ok - but let's just do it as an example anyway).
 
 ```{r, fig.width = 9, fig.height = 5, fig.fullwidth = TRUE, fig.cap = "Regression model diagnostics after log transforming the outcome."}
 
@@ -768,8 +772,8 @@ plot(malt3d, ncol = 2, ask = FALSE)
 
 After excluding the initial extreme values, one new extreme value
 emerges. However, it is relatively less extreme and overall the model
-diagnostics look much better now.
-
+diagnostics look much better now, although the homogeneity assumption could be 
+argued to still be violated. 
 
 ## Multiple Linear Regression in `R`
 
@@ -779,7 +783,7 @@ added by simply using `+` between them. The following code shows an
 example adding both a continuous and categorical predictor
 simultaneously. Next, we run diagnostics, and only after diagnostics
 take a look at the summary. We leave the `summary()` until after
-diagnostics on purpose as there is not much point interpretting the
+diagnostics on purpose as there is not much point interpreting the
 coefficients if the model assumptions are badly violated. We would
 want to first fix the model and then interpret.
 
@@ -858,7 +862,7 @@ broad category. First up, we have the fixed effects, they are called
 fixed effects because they do not vary across individuals. These are our model
 parameters, the regression coefficients. What is reported is the
 estimates, asterisks to indicate p-values, and the 95% confidence
-interals in brackets. Rounding to two decimal points is the default
+intervals in brackets. Rounding to two decimal points is the default
 consistent with standard APA style.
 
 `r margin_note("According to Cohen's (1988) guidelines, f2 >= 0.02, f2 >= 0.15, and f2 >= 0.35 represent small, medium, and large effect sizes, respectively.")` 
@@ -1013,12 +1017,12 @@ visreg(mint2, xvar = "stress", by = "selfesteem", breaks = c(5, 10),
 
 ```
 
-Overall we can interpret that there is no statistically significnat
+Overall we can interpret that there is no statistically significant
 interaction between self esteem and stress on neuroticism (p = .153). 
 The association between stress and neuroticism does not depend on self esteem.
 
 Note that with continuous predictors, unless they were mean centered,
-the defult simple effects are not very useful. For example we would
+the default simple effects are not very useful. For example we would
 say that the simple effects show that each one unit higher stress is
 associated with -0.01 lower neuroticism, when selfesteem = 0. Although a
 technically accurate interpretation, no one scored 0 on selfesteem in

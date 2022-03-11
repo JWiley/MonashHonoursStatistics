@@ -24,7 +24,7 @@ dd <- as.data.table(read_sav("[2021] PSY4210 DD.sav")) # daily
 # Scale (ULS-8; items ULS1-ULS8) was used to capture loneliness. 
 # The Lifespan Self-Esteem Scale (items LSE1-LSE4) was used to measure self-esteem or how one 
 # feels about themselves. The 10-item version of the Big Five inventory was used
-# to capture your openness, conscientiousness, extraversion, agreeableness and 
+# to capture openness, conscientiousness, extraversion, agreeableness and 
 # neuroticism (e.g. BFI_E1r needs to be reverse-coded and then added to or 
 # averaged with BFI_E2 to form the Extraversion score).
 

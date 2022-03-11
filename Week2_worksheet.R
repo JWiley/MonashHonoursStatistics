@@ -12,7 +12,7 @@ library(extraoperators)
 ## view my_vector
 v
 
-## How would you add 2 to every element of x?
+## How would you add 2 to every element of v?
 ??? 
 
 ### 2. Loading datasets ###
