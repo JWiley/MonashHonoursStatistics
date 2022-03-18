@@ -30,10 +30,11 @@ dd <- as.data.table(read_sav("[2021] PSY4210 DD.sav")) # daily
 
 # Calculate Cronbach's alpha measure of internal consistency reliability
 # for the self-esteem score (LSE items)
-???
+psych::alpha(as.data.frame(db[, .(LSE1, LSE2, LSE3, LSE4)]), check.keys = TRUE)
 
 ## Create a variable for self-esteem and name it SE, and others if you like! 
-???
+db[, SE := rowMeans(.SD, na.rm = TRUE),
+   .SDcols = c("LSE1", "LSE2", "LSE3", "LSE4")]
   
   
   
@@ -47,32 +48,36 @@ dd <- as.data.table(read_sav("[2021] PSY4210 DD.sav")) # daily
 # Remember that we have to tell R that certain variables are factors
 # Do that now for the variable "relsta" (relationship status).
 # Hint: If you aren't sure what the levels and labels are, try str(db$relsta) first
-???
+  db[, relsta := factor(
+    relsta, levels = c(1,2,3), 
+    labels = c("single", "in a committed exclusive relationship", "in a committed nonexclusive relationship"))]
   
   
 
-# Now plot Stress by relationship status (hint: remove NAs from relsta)
-???
+# Now plot SE by relationship status (hint: remove NAs from relsta)
+ggplot(db[!is.na(relsta)], aes(SE, colour = relsta)) +
+  geom_density()
   
 
 ## Next, let's try to see how self-esteem varies by Stress categories
 
 ## First, do you remember how to reverse scores PSS items?
-???
-??? 
+db [, PSS2 := 6- PSS2r]
+db [, PSS3 := 6- PSS3r] 
 
 ## Do you remember how to create a Stress total?
-???
+db[, Stress := rowMeans(.SD, na.rm = TRUE) * 4,
+   .SDcols = c("PSS1", "PSS2", "PSS3", "PSS4")]
   
 
 ## Finally, remind us how to create high vs. low stress categories (called StrCat) 
 ## (but unlike the reading, do this on Stress total, not StressAVG)
 ## Hint: what number should you put instead of 3? How did I get 3 when I did 
 ## the code for StressAVG?
-mean(???)
-???
-???
-???
+mean(db$Stress)
+db[Stress < 10, StrCat := "low"]
+db[Stress >= 10, StrCat := "high"]
+db[, StrCat := factor(StrCat, levels = c("low", "high"))]
 
 ## It's always good to check you did a categorization correctly:
 table(db$StrCat)
@@ -83,7 +88,8 @@ table(db$StrCat)
 
 ## use `testDistribution()` to examine whether self esteem follows a
 ## normal distribution and whether it has any extreme values.
-plot(testDistribution(???))
+  plot(testDistribution(db$SE,
+                        extremevalues = "theoretical", ev.perc = .005))
 
 ## Make a histogram for the variable: `extraversion`.
 ???

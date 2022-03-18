@@ -1,6 +1,6 @@
 ---
 title: "Generalized Linear Models 2"
-author: "Joshua F. Wiley, with updates from Pei Hwa Goh"
+author: "Joshua F. Wiley / Michelle Byrne / Pei Hwa Goh"
 date: "`r Sys.Date()`"
 output:
   tufte::tufte_html: 
@@ -54,8 +54,8 @@ db[, neuroticism:= rowMeans(.SD, na.rm = TRUE),
 .SDcols = c("N1", "BFI_N2")]
 
 ## create some binary variables
-db[, StressHigh := as.integer(stress >= 2.51)]
-db[, SelfesteemHigh := as.integer(selfesteem >= 3.751)]
+db[, StressHigh := as.integer(stress >= 2.5)]
+db[, SelfesteemHigh := as.integer(selfesteem >= 3.75)]
 
 ## read in some example data from the internet
 ## (requires internet connection to run)
@@ -447,25 +447,6 @@ that what is being evaluated is the unique / independent association
 of each predictor with the outcome, independent of other variables in
 the model.
 
-### You Try It - Poisson
-
-`r margin_note("There is no association between prog and num_awards so
-do not be surprised if the graphs etc are not that interesting.")`
-
-Fit a poisson regression predicting the number of awards, `num_awards`
-from `prog` in the `dcount` data. Try to interpret the results using
-IRRs and make a graph. 
-
-```{r tryitpoisson}
-
-## fit poisson regression
-
-## calculate IRRs and confidence intervals on the IRR scale
-
-## graph and visualize the results
-
-
-``` 
 
 # Binary Logistic Regression
 
@@ -497,7 +478,7 @@ Linear regression will not work for binary outcomes for two reasons:
 The GLM solves each of these problems separately
 
 - Link functions transform the linear predicted value $\eta$ so that
-  it never goes below 0 and never goes about 1
+  it never goes below 0 and never goes above 1
 - Rather than assume a normal distribution, the GLM uses a new
   distribution, the Bernoulli distribution
     - Whereas the Normal distribution had two parameters, mean and
@@ -630,7 +611,7 @@ Finally, logistic regression generally requires a large sample size.
 There are no degrees of freedom, requires large enough sample that
 parameters are distributed about normally (central limit theorem).
 
-## Logistic Regression in `R` 1
+## Logistic Regression in `R` Part 1
 
 For logistic regression in `R`, we will use the `StressHigh`
 categorical variable we created based off stress scores in the
@@ -664,7 +645,7 @@ chi-squared test and t-test and effect sizes. The chi-square test is
 significant, p < .001 indicating that high/low self esteem and
 high/low stress are not independent. We can also see that there is
 some data in all cells of the high/low self esteem and stress, although
-only 11 people reported both high self esteem and high stress.
+only 11 people reported both low self esteem and low stress.
 
 ```{r}
 
@@ -699,7 +680,7 @@ for a linear regression in `R`.
   these residuals, you get the sums of squares used to assess model
   fit. They differ in that they are not calculated as the raw
   difference between each data point and the predicted value.
-- Coefficients: the coefficients table is interpretted nearly
+- Coefficients: the coefficients table is interpreted nearly
   identically as in linear regression. The estimates are the
   regression coefficients, the standard errors are given next. Instead
   of t values, z values are presented because in general for GLMs we
@@ -762,11 +743,11 @@ most people, it is hard to understand results on a log odds scale.
 
 If we exponentiate the regression coefficients, specifically the
 slopes, we get what are called **Odds Ratios** or ORs.
-ORs indicate how many more times the odds of occuring the outcome will
+ORs indicate how many more times the odds of occurring the outcome will
 be for a one unit change in the predictor. For example, if the $OR = 2$ and the base
 odds was 0.5, then one unit higher would be $0.5 * 2 = 1$ odds. If the base
 odds was 2, then a one unit higher would be $2 * 2 = 4$ odds.
-ORs are interpretted as for each one unit higher predictor score,
+ORs are interpreted as for each one unit higher predictor score,
 there are OR times the odds of the outcome. Because ORs are
 multiplicative, an OR of 1 means that a one unit change in the
 predictor is associated with 1 times the odds of the outcome,
@@ -869,7 +850,7 @@ Another way of saying the same thing:
 "People with high self esteem had `r exp(coef(mlog)[2])` times the
 odds of being high stress as people with low self esteem (p < .001)."
 
-## Logistic Regression in `R` 2
+## Logistic Regression in `R` Part 2
 
 Next we examine a continuous predictor, continuous self esteem.
 The analysis in `R` is basically the same as the previous example:
