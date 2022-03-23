@@ -1,6 +1,6 @@
 ---
 title: "Missing Data"
-author: "Joshua F. Wiley - updated for 2021 by Michelle Byrne"
+author: "Joshua F. Wiley / Michelle Byrne"
 date: "`r Sys.Date()`"
 output: 
   tufte::tufte_html: 
@@ -59,7 +59,8 @@ data had not been missing.
 **When data are missing at random (MAR)**, 
 it is possible to recover unbiased
 estimates if the right other variables are present. Our lecture
-example is an example of MAR. When people had high stress, we set
+example will be an example of MAR (see below). 
+When people had high stress, we set
 their positive affect values to missing. So the missing data
 mechanism was stress. Now, because stress and positive affect were
 correlated, low positive affect values were more likely to be

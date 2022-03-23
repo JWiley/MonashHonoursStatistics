@@ -1,4 +1,4 @@
-####### WEEK 5 WORKSHEET #######
+####### WEEK 5 WORKSHEET - GLM 2 #######
 
 library(haven)
 library(data.table)
