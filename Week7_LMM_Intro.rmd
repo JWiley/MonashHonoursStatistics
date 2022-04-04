@@ -1,6 +1,6 @@
 ---
 title: "Linear Mixed Models (LMMs) - Introduction"
-author: "Joshua F. Wiley - updated for 2021 by Pei Hwa Goh"
+author: "Joshua F. Wiley / Michelle L. Byrne / Pei Hwa Goh"
 date: "`r Sys.Date()`"
 output: 
   tufte::tufte_html: 
@@ -69,7 +69,7 @@ We specify the dataset so `R` knows where to find the variables.
 `r margin_note("The intercept is 324.08 (the 'Estimate' column) and is
 the expected value of hp when mpg is 0. The slope is -8.83 indicating
 that each one unit increase in mpg is associated with an 8.83 lower
-expected hp value. P-values can be interpretted from the column
+expected hp value. P-values can be interpreted from the column
 called 'Pr(>|t|)' and may use scientific notation, see:
 https://en.wikipedia.org/wiki/Scientific_notation")`
 
@@ -103,25 +103,9 @@ ggplot(mtcars, aes(mpg, hp)) +
 
 ``` 
 
-In linear regression, we can conduct statistical inference as
-
-$$ \frac{b}{se} \sim \mathcal{t}(df = N - k) $$
-
-where:
-
-- $b$ = regression coefficient
-- $se$ = standard error
-- $N$ = total sample size
-- $k$ = number of parameters estimates
-- $\mathcal{t}$ is the t-distribution on $df$ degrees of freedom
-
-This approach allows us to calculate p-values and confidence intervals.
-To see what the $t$ distribution looks like for various degrees of 
-freedom and how these impact p-values, look at this demonstration: 
-https://rpsychologist.com/d3/tdist/ 
 
 Linear regression **assumes** that observations are independent of each 
-other. However, this is not always the case. **linear mixed models** are 
+other. However, this is not always the case. **Linear mixed models** are 
 an approach to regression that allows us to relax the assumption that 
 our observations are independent.
 
@@ -188,8 +172,9 @@ readings from a different person.
 
 ## Considering Non Independence
 
-As part of PSY4210 there was a small data collection exercise where
-you completed some questions every day. We load that data using the 
+In previous PSY4210 cohorts there was a small data collection exercise where
+students completed some questions every day (like the BL dataset but repeated measures).
+We load that data using the 
 `read_sav()` function and plot the daily energy ratings from a few
 different people in the following figure.
 
@@ -463,7 +448,7 @@ variable is a useful descriptive statistic to report. For example, the
 following calculates the ICC for energy, 0.28, which is lower
 than that for stress, indicating that energy is less stable from day
 to day than is stress, or equivalently that compared to energy, stress
-has relatively more variation between people then within them.
+has relatively more variation between people than within them.
 
 ```{r}
 
@@ -1109,22 +1094,6 @@ that any change to the mean also impacts the within level data and
 that any change to the within level data impacts the mean.
 
 
-## Cleaning You Try It
-
-Try to clean the within and between level of the variable:
-`dEnergy` in the daily dataset with missing IDs removed, 
-`dd2`. To do this make a between and within variable and 
-assess both distributions. If needed, excluded rows / IDs.
-
-```{r trycleaning, error=TRUE}
-
-
-
-
-```
-
-
-
 # Summary
 
 ## Conceptual
@@ -1140,7 +1109,7 @@ Some key concepts to understand and take away are:
 - the additional assumption brought in for linear mixed models (random
   effects follow a normal distribution)
 - understand what shrinkage means and under what conditions shrinkage
-  tends to be larger / smaler  
+  tends to be larger / smaller  
 
 ## Functions
 

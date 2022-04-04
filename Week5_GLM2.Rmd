@@ -1211,9 +1211,9 @@ exp(confint(mrr))
 ```
 
 From these results we can say that people with high self esteem have a
-relative risk of 0.345 of being high stress as do people with low self
+relative risk of 0.451 of being high stress as do people with low self
 esteem. In a simple case like this model, that directly means that
-people with high self esteem have 0.345 times the probability of being
+people with high self esteem have 0.451 times the probability of being
 high stress as people with low self esteem. Although it is still on
 the multiplicative scale, it relates to probabilities directly rather
 than being multiplicative on the odds.
