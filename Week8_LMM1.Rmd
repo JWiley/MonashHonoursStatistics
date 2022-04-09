@@ -1,6 +1,6 @@
 ---
 title: "Linear Mixed Models (LMMs) - Part 1"
-author: "Joshua F. Wiley - updated for 2021 by Pei"
+author: "Joshua F. Wiley / Michelle L. Byrne / Pei Hwa Goh"
 date: "`r Sys.Date()`"
 output: 
   tufte::tufte_html: 
@@ -25,9 +25,8 @@ library(ggplot2)
 library(ggpubr)
 library(haven)
 
-## load data collection exercise data downloaded off github
-## and placed in your R folder.
-## merged is a a merged long dataset of baseline and daily
+## Set your working directory to the folder that has the datafiles.
+## "Merged" is a a merged long dataset of both baseline and daily diary
 dm <- as.data.table(read_sav("[2021] PSY4210 merged.sav"))
 
 ```
@@ -88,11 +87,11 @@ egltable(c("loneliness", "sex"), data = dm)
 ```
 
 Now we can see the mean and standard deviation for loneliness and the
-frequencies and percentages of women and men in the study. However,
-this reveals a problem/error. There were not 43 men and 240 women in
+frequencies and percentages of female and male participants in the study. However,
+this reveals a problem/error. There were not 43 male and 240 female participants in
 the study. What this actually is shown is the average loneliness, weighted by
 the number of days of data available for each participant, and the
-total number of daily surveys completed by men and women. That happens
+total number of daily surveys completed by male and female participants. That happens
 because the between person variables are repeated in long format.
 
 Let's look at the data just for the first two participants in the
@@ -113,7 +112,7 @@ complete more days of data get a higher weighting because their loneliness
 are repeated more times. For categorical/discrete variables, what we
 get is the number of assessments / observations for each level of the
 categorical variable, in this case number of observations belonging to
-men and women. In this case, when using data tables, the solution is
+male and female participants In this case, when using data tables, the solution is
 easy: drop duplicated rows and only keep one row of data per ID and
 then remake the table. The following code shows how to do this.
 The difference is in using `data = dm[!duplicated(ID)]`
@@ -283,7 +282,7 @@ bike half the days.
 The general choices, then for multilevel categorical data descriptives
 would either be to report descriptives for a variable overall or to
 report descriptives for a specific time point (e.g., day 1, 2, etc.)
-if longitudinal data.
+of longitudinal data.
 
 ```{r}
 
@@ -895,19 +894,17 @@ mean, which in these data would be somewhere between:
 `r fixef(fp.m2)[["(Intercept)"]] + c(-1, 1) *  as.data.frame(VarCorr(fp.m2))[1, "sdcor"]`. 
 Using Satterthwaite's approximation for degrees of freedom revealed
 that only between person energy was statistically significantly 
-associated with stress. The relationship between person energy was
-and daily stress were marginally signficant.
-On average across people, at the between person level, 
+associated with stress. On average across people, at the between person level, 
 a one unit higher average energy score was associated with 0.30 
-lower stress scores. On average across people, at the within person
-level, a one unit higher than average daily energy score was 
-associated with 0.12 lower stress scores that day. The magnitude 
+lower stress scores. Although not significant, on average across people, 
+at the within person level, a one unit higher than usual daily energy score was 
+associated with 0.12 lower stress scores that same day. The magnitude 
 suggests that a one unit higher average energy level has about 
 twice the magnitude of association with average stress as does 
 a one unit higher daily energy level.
 
-## Statistical Inference
-
+## Statistical Inference 
+An extra note about how we got the df's above.
 There is ambiguity in terms of how best to calculate degrees of
 freedom (df) for LMMs. By default `R` does not calculate the df and so
 does not provide p-values for the regression coefficients (fixed
@@ -946,42 +943,6 @@ confint(fp.m, method = "boot")
 
 ``` 
 
-# You Try It
-
-Fit an intercept only linear mixed model by completing the code below.
-Use the variable `dEnergy` as your outcome variable.
-Calculate a summary of the model, model diagnostics, and find the
-intraclass correlation coefficient for `dEnergy`. 
-Then try fitting a linear model to energy (i.e., not a LMM, ignore the
-repeated measures). Look at the confidence intervals for the intercept
-from the LMM and the LM. Which one is wider / smaller?
-
-```{r, error = TRUE}
-
-## store the model results in an object called "m2lmm"
-m2lmm <- lmer()
-
-
-## now make a summary of the model results
-
-
-
-## what is the intraclass correlation coefficient for this variable?
-
-
-## look at model diagnostics here
-
-
-
-## try fitting an intercept only linear regression (not LMM)
-## to dEnergy
-m2lr <- lm( )
-
-
-## calculate the confidence intervals from the LMM and the lm
-
-```
-
 # Summary
 
 ## Conceptual
@@ -1014,174 +975,4 @@ Key points to take away conceptually are:
 
 ------------------------------------------------------------------------------------------
 
-# Extra (Optional) - Likelihoods
 
-**Note: if you just want to know what you need to know, you do not
-need to read this section..** If you want some more background that is
-beyond what you're expected to know but may help provide some basis
-for a deeper understanding of ML and some later concepts, read on. 
-
-To understand ML, we need to understand what a likelihood is. A
-likelihood is not a probability. One way to think about this is that
-probabilities are related to results, whereas likelihoods are related
-to hypotheses. A very generic likelihood function looks like this:
-
-$$
-\mathcal{L}(x | \theta)
-$$
-
-where
-
-- $x$ is some data (could be a vector or a whole dataset)
-- $\theta$ is one or more parameter(s)
-
-Often, we work with log likelihoods, $\mathcal{LL}$, rather than
-likelihoods directly because likelihoods tend to be multiplicative,
-but on the log scale, we can simply sum them up. The log likelihood
-will be equal to the (typically natural) log of the likelihood so we
-can mostly interpret them the same ways anyway as we use likelihoods
-as relative values, not absolute values.
-
-Here is a simple example to help conceptually follow some of the
-basics. Here we define a log likelihood for the mean, $\mu$ as:
-
-$$
-\mathcal{LL}(x | \mu) = -\sum_{i=1}^{n}(x_i - \mu)^{2}
-$$
-
-We can create this function in `R` like this:
-
-```{r}
-
-LL <- function(x, mu) {
-  -sum((x - mu)^2)
-}
-
-```
-
-Now we can use our function in `R` to easily calculate our log
-likelihood for the data for different values of $\mu$. For example,
-let's work with the `mpg` variable from `mtcars`. Here is a graph.
-
-```{r}
-
-plot(testDistribution(mtcars$mpg))
-
-``` 
-
-We can ask, what is the log likelihood of the data given, 
-$\mu = 10$?
-
-```{r}
-
-LL(mtcars$mpg, mu = 10)
-
-``` 
-
-What about if $\mu = 15$?
-
-
-```{r}
-
-LL(mtcars$mpg, mu = 15)
-
-``` 
-
-Remember, LLs are basically always used in a relative fashion. So what
-can we say? Well, the LL is higher for $\mu = 15$ than it is for $\mu
-= 10$.  That does not tell us that the mean, $\mu$ **IS** 15. That is,
-we do not answer is our hypothesis "true". However, we can say that
-the data are more likely to come from a distribution where $\mu = 15$
-than they are to come from a distribution where $\mu = 10$. 
-
-We would say that $\mu = 15$ has higher likelihood than does $\mu =
-10$, for these data. Generally, we don't just want to find *higher*
-(log) likelihoods. It would be nice to find the **maximum** likelihood
-estimates. What value of $\mu$ would give us the highest possible, the
-maximum (log) likelihood value? Simplistically, we could think of
-trying lots and lots of different values of $\mu$ and comparing all of
-them to find the highest. We could plot this, which would look as
-follows. 
-
-```{r}
-
-tests <- data.table(
-  mu = seq(from = 10, to = 30, by = .1))
-
-tests[, LL := LL(mtcars$mpg, mu = mu), by = mu]
-
-ggplot(tests, aes(mu, LL)) +
-  geom_point() +
-  theme_pubr()
-
-``` 
-
-Obviously this is not all possible values of $\mu$, but for $\mu$
-values between 10 and 30 in increments of 0.1, we can see that the LL
-peaks at about 20. If we order our dataset so that the highest LL
-estimates are at the top, we will see that the maximum LL estimate of 
-$\mu$ **of those we tried** was 20.1. This matches the arithmetic mean
-of `mpg`, within decimals.
-
-```{r}
-
-tests[order(-LL)]
-
-mean(mtcars$mpg)
-
-``` 
-
-What we have just done is a very simple form of an algorithm to try to
-find the maximum likelihood estimate of the mean. In practice, maximum
-likelihood estimation typically:
-
-1. Has a more complex likelihood function
-2. Rather than simply try lots of values, special algorithms iterate
-   to try to purposefully move from a starting point to higher
-   likelihood values. This is what hapens, for example with GLMs and
-   in LMMs. Possible values of the parameters are tried, their
-   likelihood evaluated, new parameter values tried, and the algorithm
-   stops iterating in cycles once it cannot find any parameter values
-   that will further increase the likelihood. The maximum likelihood
-   estimates have been found.
-
-In some cases, rather than needing to try different parameter values,
-we can do maths to figure out an equation to directly calculate the
-maximum likelihood values. For example, it can be proven that the
-equation for the arithmetic mean **is** the maximum likelihood
-estimate of the mean of some data. No need to iterate.
-
-Beyond understanding how (log) likelihoods contribute to finding
-maximum likelihood estimates, the other useful take away point from
-this is that just as we compared the likelihood of two different
-possible $\mu$ values to find out that $\mu = 15$ generated a higher
-likelihood than did $\mu = 10$, down the track you'll see that we can
-compare different models using their LLs or variations of the LL to
-try to decide between two competing models.
-
-For complex models, including LMMs, the LLs also can be used to
-calculate boundaries on parameters. For example, the likelihoods can
-be profiled to find the 95% confidence intervals for a parameter. This
-is slower but sometimes more robust approach. The idea is basically to
-hold other parameters constant and vary one parameter and see how much
-the likelihood of the overall model changes and use that define the
-lower limit and upper limit of the confidence interval.
-
-Compared to maximum likelihood estimates, REML estimates do not
-generate true (log) likelihood values and so cannot be used in quite
-the same way for comparing different models, that may rely on a true
-likelihood. However, if you are just estimating one model, the REML
-estimates are actually less biased estimates than the ML estimates so
-are a good default.
-
-If you want to read more in this area, see these
-links^[https://towardsdatascience.com/a-gentle-introduction-to-maximum-likelihood-estimation-9fbff27ea12f
-and
-https://towardsdatascience.com/maximum-likelihood-estimation-explained-normal-distribution-6207b322e47f]. 
-
-**This is the end of the side diversion about likelihoods. Again you
-do not need to understand this section, it is here only for those
-interested in going a bit deeper and having more ways to think about
-ML and what is really meant by a likelihood.**
-
-------------------------------------------------------------------------------------------
