@@ -835,8 +835,8 @@ There are four main "blocks" of output from the summary.
 	The approximate p-values indicate that the average energy scores are
 	  statistically significant, indicating that people who have more 
 	  energy in general have significantly lower stress in general. 
-	  The daily energy scores are marginally significant, which suggest
-	  that within people, higher energy days may also be associated with
+	  The daily energy scores are NOT significant, but if they were, would suggest
+	  that within people, higher energy days would also be associated with
 	  lower stress days. 
 
 Profile likelihood confidence intervals can be obtained using the 
