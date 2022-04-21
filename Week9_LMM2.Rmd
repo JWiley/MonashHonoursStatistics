@@ -1,6 +1,6 @@
 ---
 title: "Linear Mixed Models (LMMs) - Part 2"
-author: "Joshua F. Wiley - 2021 updates Michelle Byrne"
+author: "Joshua F. Wiley / Michelle L. Byrne"
 date: "`r Sys.Date()`"
 output: 
   tufte::tufte_html: 
@@ -193,8 +193,8 @@ random effects.
 ## Random Slopes in `R`
 
 Random slopes can only be estimated for predictors that vary within
-units. Using the merged daily data collection exercise dataset, we can
-look at mood predicting stress. First, we will take a look at a model
+units. Using the merged daily data collection dataset, we can
+look at energy predicting stress. First, we will take a look at a model
 with a random intercept and `dEnergy` as a fixed effect only.
 
 ```{r}
@@ -241,7 +241,7 @@ groups ID for `dEnergy`. We get the variance and standard deviation of
 random slope. The correlation is 
 `r as.data.table(VarCorr(m1))[3, sdcor]` indicating that people who
 have a higher level of stress when energy is 0 (the intercept) also tend
-to have a more negative slope of stress on energy. Note that although
+to have a more negative slope of the association between stress and energy. Note that although
 the fixed effect slope estimate for energy is about the same between the
 two models, the standard error is larger so the p-value is higher
 (further away from 0) for the model with a fixed and random slope of
@@ -518,9 +518,10 @@ intercept is included automatically, without us having to ask for it
 explicitly. We also look at the model diagnostics and confidence
 intervals.
 
-```{r, fig.width = 7, fig.height = 10}
+```{r, fig.width = 7, fig.height = 10, warning = FALSE}
 
-iccMixed("dStress",id="ID",data=dm) ## Let's get the ICC
+iccMixed("dStress",id="ID",data=dm) ## Let's get the ICC of both
+iccMixed("dEnergy", id ="ID", data=dm)
 
 m2 <- lmer(dStress ~ Benergy + Wenergy +
              (Wenergy | ID),
@@ -563,7 +564,7 @@ comfortable proceeding as is.
 The profile likelihood confidence intervals take a few seconds to
 complete and generate a few warnings related to the fact that the
 lower bound for the intercept-slope correlation is -1, the lowest
-possible correlation.
+possible correlation (MLB: I have suppressed these in the markdown output).
 
 ### Sample Write Up
 
@@ -708,7 +709,7 @@ mconv <- lmer(NegAff ~ STRESS + (1 + STRESS | UserID),
 In this case, we get a warning message that the model did not
 converge. This is not a singularity issue. This means that the
 algorithm that tries to find the best parameter estimates tried and
-failed to find estimates its confident are 'best'. For now, we won't
+failed to find estimates it's confident are 'best'. For now, we won't
 worry too much about what the 'best' actually means. In this case,
 sometimes using a different optimizer, basically the algorithm that
 goes about trying to find the best estimates, or changing its options
@@ -808,39 +809,6 @@ graph the results with the x axis being `Benergy` and the y axis the
 predicted stress scores.
 
 ```{r, error = TRUE}
-
-m2 <- lmer(dStress ~ Benergy + Wenergy + 
-             (Wenergy | ID),
-           data = dm)
-
-visreg(m2, xvar = "Benergy")
-
-``` 
-
-This however results in an error message about a differing number of
-rows. Its not clear from the error message, but since everything else
-in the code is right, we can infer this error message has something to
-do with the underlying data. We can use the `str()` function to get
-the classes in `R` for each of our variables.
-
-```{r}
-
-str(dm[, .(dStress, Benergy, Wenergy, ID)])
-
-```
-
-Here we can see that `Wenergy` has the class haven labeled. As this is
-not a common class (common classes in `R` are logical, integer,
-factor, numeric, character), its a reasonable guess that is causing
-the trouble. `visreg()` may not know how to work with haven labeled
-type variables. We don't need the labels so we can convert `Wenergy` to
-a numeric variable and try again. Since we are using a model, after
-updating `Wenergy` we need to re-run our LMM. The results will not
-change but hopefully now `visreg()` will work as expected.
-
-```{r}
-
-dm[, Wenergy := as.numeric(Wenergy)]
 
 m2 <- lmer(dStress ~ Benergy + Wenergy + 
              (Wenergy | ID),
@@ -1038,82 +1006,6 @@ case, for example, it seems that the individual differences in level
 of stress may be larger than the individual differences in slope. With
 a few exceptions, a lot of the slopes are *relatively* similar, albeit
 not exactly the same.
-
-# You Try It
-
-To try it out yourself, see if you can predict energy from between and
-within person stress including a random intercept and slope. Check
-diagnostics and try to solve any convergence or singularity issues you
-may run into (if you cannot solve them, try your best and detail what
-you tried). Make a conditional graph of your results.
-
-Here are the basic steps.
-
-1. Create a between and within person stress variable
-2. Since we know `visreg()` does not like haven labeled type
-   variables, check if any of your stress variables or the `dEnergy`
-   variable is haven labeled and if so, convert them to numeric.
-3. Fit a LMM using `lmer()` with both `Bstress` and `Wstress` as fixed
-   effects and a random intercept and random `Wstress` slope by ID.
-4. Check model diagnostics and where appropriate remove extreme
-   values.
-5. Make a summary of the final model.
-6. Use `visreg()` to make a conditional plot.
-
-
-```{r, eval = FALSE}
-
-
-## 1. Create a between and within person stress variable
-
-#### here's a start:
-## dm[, meanDeviations() ] 
-
-## 2. Since we know `visreg()` does not like haven labeled type
-##    variables, check if any of your stress variables or the `energy`
-##    variable is haven labeled and if so, convert them to numeric.
-
-#### here's a start:
-## str(dm[, .(ID, dEnergy,       ) ])
-
-## 3. Fit a LMM using `lmer()` with both `Bstress` and `Wstress` as fixed
-##    effects and a random intercept and random `Wstress` slope by ID.
-
-#### here's a start:
-## yourmodel <- lmer(dEnergy ~          )
-
-## 4. Check model diagnostics and where appropriate remove extreme
-##    values.
-
-#### here's a start:
-## yourdiag <- modelDiagnostics(      )
-## plot(  yourdiag  )
-
-
-## 5. Make a summary of the final model.
-
-#### here's a start
-## summary(  yourmodel  )
-
-## 6. Use `visreg()` to make a conditional plot.
-
-#### here's a start, change up as needed
-#### don't forget, if you drop some IDs, need to drop them here too
-#### by changing the dataset in the unique() call
-#visreg(m2, xvar = "Wmood", by = "ID",
-#       breaks = unique(dm$ID),
-#       re.form = ~ (Wmood | ID),
-#       partial = FALSE, rug = FALSE,
-#       gg = TRUE,
-#       xlab = "Within Mood\n(deviations from own average)",
-#       ylab = "Predicted Stress",
-#       overlay = TRUE) + 
-#  theme_pubr() +
-#  theme(legend.position = "none")
-
-``` 
-
-
 
 # Summary
 
