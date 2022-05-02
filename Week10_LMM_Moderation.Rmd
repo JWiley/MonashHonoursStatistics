@@ -1,6 +1,6 @@
 ---
 title: "Linear Mixed Models (LMMs) - Moderation"
-author: "Joshua F. Wiley - updated for 2021 by Pei"
+author: "Joshua F. Wiley / Michelle L. Byrne"
 date: "`r Sys.Date()`"
 output: 
   tufte::tufte_html: 
@@ -321,87 +321,11 @@ self-esteem, we could say that the association of daily self-esteem
 and same day energy depends on how stressed someone is feeling on a 
 given day. 
 
-## 'Prediction' Interpretation of Interactions
-
-When one variable in an interaction varies within units and
-particularly when it is a random effect, another way that people
-sometimes interpret interactions is that the other variable is
-'predicting' the random effect. This occurs most often when the
-moderator variable varies between units only. An example may be
-clearer than words.
-
-First, we fit a model with conscientiousness and presence of interaction
-with stranger (Int_Str) as fixed effects predictors
-and a random slope as well for Int_Str, stored in `m1`. Then we fit the
-same model but adding a fixed effect interaction between Int_Str
-(within) and conscientiousness (between). Calculating the difference in
-the variance of the random Int_Str slope yields a sort of $R^2$ measure 
-of the variance in the random slope explained by the 
-Int_Str x conscientiousness interaction. 
-
-The corresponding `R` code is:
-
-```{r}
-
-## main effects only
-m1 <- lmer(dEnergy ~ conscientiousness + Int_Str + (1 + Int_Str | ID), data = dm, REML=FALSE)
-
-## interaction model
-m2 <- lmer(dEnergy ~ conscientiousness * Int_Str + (1+ Int_Str | ID), data = dm, REML=FALSE)
-
-## summary of both models, get random slope for stress variance
-summary(m1)
-summary(m2)
-
-## variance in random Int_Str slope explained by conscientiousness
-(0.2779 - 0.1246) / 0.2779
-
-``` 
-
-Because conscientiousness and Int_str interact in the model (as a 
-fixed effect), the average Int_Str slope no longer has to be the 
-same for everyone. It can differ depending on their conscientiousness.
-Specifically, the predicted average (fixed effects) Int_Str slope for 
-the *j*th person is $b_{2j} + b_3 * conscientiousness_j$. Recall that
-we normally break up random slopes into a fixed and random part:
-
-$$
-b_{2j} = \gamma_{20} + u_{2j}
-$$
-
-Without the interaction by conscientiousness, any participant level 
-differences *must* go into the $u_{2j}$ component, on which the 
-variance/standard deviation of the slope is calculated. Now the 
-simple Int_Str slope for a given participant is:
-
-$$
-\gamma_{20} + b_3 * conscientiousness_j + u_{2j} 
-$$
-
-So now the $u_{2j}$ component, on which the variance/standard
-deviation of the slope is calculated, captures deviations from the
-fixed part, which includes both the average Int_Str slope and a
-modification based on participant conscientiousness To the extent 
-that $b_3$ is different from 0, this will essentially reduce some 
-differences that otherwise go into the $u_{2j}$ component and thus 
-will explain some of the variance in the random slope.
-
-This is always true, in a way, with an interaction, but outside of
-LMMs we do not have random effects and so when we allow slopes to
-differ for different groups people, we do not know what an individual
-person's slope was without the interaction so have no reference
-point. Put differently, outside of LMMs, in regular GLMs, we always
-assume that $u_{2j} = 0$ so we wouldn't really think about
-'predicting' it when it is fixed at 0. In GLMs we only focus on how we
-allow the average slope to differ by level of the moderator. In LMMs
-we can interpret it the same way *or* we can interpret the moderator
-as 'predicting' the random slope.
-
 
 # Continuous Interactions in `R`
 
 Aside from the notes about some minor interpretation differences, in
-general interactions in LMMs are analysed, graphed, and interpretted
+general interactions in LMMs are analysed, graphed, and interpreted
 the same way as for GLMs.
 
 First to avoid any issues around diagnostics etc. from haven labeled
@@ -784,16 +708,6 @@ visreg(mconcat, xvar = "dEnergy",
        by = "sex", overlay=TRUE,
        partial = FALSE, rug = FALSE)
 
-## EXTRA: another example using a different
-## model with continuous variable as moderator
-egltable(c("conscientiousness"), data = dm[!duplicated(ID)])
-
-visreg(m2, xvar = "Int_Str",
-       by = "conscientiousness", overlay=TRUE,
-       breaks = c(3.76-0.86, 3.76+0.86),
-       partial = FALSE, rug = FALSE)
-
-
 ```
 
 ## Simple Effects
@@ -839,8 +753,8 @@ The relevant parts of the output, for us, are the columns for
 simple slopes, the confidence intervals, `lower.CL` and 
 `upper.CL`, 95% by default, and the p-value. From these results,
 we can see that daily energy is significantly associated with 
-self-esteem for any sex, although it is stronger for men than 
-women.
+self-esteem for any sex, although it is stronger for male participants than 
+female participants.
 
 # Categorical x Categorical Interactions in `R`
 
@@ -941,91 +855,6 @@ emmip(em, cons3~Int_Str, CIs = TRUE) +
 
 ```
 
-If you want pairwise comparisons, you can get all possible pairwise
-comparisons between stranger interaction levels by conscientiousness
-using the `pairs()` function.
-
-
-```{r}
-
-## pairwise comparisons of Int_Str by conscientiousness
-pairs(em, by = "cons3")
-
-## pairwise comparisons of conscientiousness by Int_Str
-pairs(em, by = "Int_Str")
-
-``` 
-
-You can also get custom contrasts. For example, if we wanted to
-compare high conscientiousness to the average of low and mid 
-conscientiousness at each level of sex (H1) and secondly see if 
-low and mid conscientiousness differ (H2). The list gives the 
-specific contrast weights, which are directly applied to the 
-means we obtain from `emmeans()`.
-
-```{r}
-
-## First let's run the model examining whether the
-## association between conscientiousness and energy
-## is moderated by sex
-mcat22 <- lmer(dEnergy ~ cons3 * sex + (1 | ID), data = dm)
-
-## Get the means for each group
-em2 <- emmeans(mcat22, "cons3", by = "sex",
-              lmer.df = "satterthwaite")
-summary(em2, infer = TRUE)
-
-## Apply the custom contrasts
-contrast(em2,
-         list(
-           H1 = c(.5, .5, -1),
-           H2 = c(1, -1, 0)),
-         by = "sex")
-
-``` 
-
-To help you see directly how the contrast weights are applied, we can
-apply them directly to the estimated means.
-
-```{r}
-
-## all the means
-as.data.frame(em2)
-
-## just the first three, all for sex = male
-as.data.frame(em2)$emmean[1:3]
-
-## apply H1 weights
-sum(as.data.frame(em2)$emmean[1:3] * c(.5, .5, -1))
-
-## apply H2 weight
-sum(as.data.frame(em2)$emmean[1:3] * c(1, -1, 0))
-
-```
-
-You could get even more specific hypotheses about group differences,
-if you wanted using `by = NULL` all the means are in a row of 6 and we
-can apply weights to each. For example, here we contrast the average
-of low conscientiousness among female participants and low conscientiousness among male participants to
-high conscientiousness among female participants (H1).
-For more examples of weighting schemes for many different possible
-specific contrasts, see:
-https://stats.idre.ucla.edu/spss/faq/how-can-i-test-contrasts-and-interaction-contrasts-in-a-mixed-model/
-.
-
-```{r}
-
-## all the means
-as.data.frame(em2)
-
-
-contrast(em,
-         list(
-           H1 = c(.5, 0, 0, .5, 0, -1)),
-         by = NULL)
-
-
-``` 
 
 
 # Summary
@@ -1034,9 +863,10 @@ contrast(em,
 
 Key points to take away conceptually are:
 
-- How to include interactions/moderation in LMMs
-- How to understand whether there is a significant interaction or
-  notation
+- How to interpret standard notation in LMM equations, including with interaction terms
+- What the different types of LMM interactions are
+- How to include interactions/moderation in LMMs in R
+- How to understand whether there is a significant interaction 
 - How to test and interpret interactions 
 - How to test simple slopes / simple effects from different kinds of
   interactions 
@@ -1054,5 +884,5 @@ Key points to take away conceptually are:
 | `modelTest()` | along with `APAStyler()` get a nicely formatted summary of a model results. | 
 | `emmeans()` | test specific means from a model. | 
 | `emtrends()` | test simple slopes from a model. | 
-| `contrast()` | test custom contrasts on a set of means from `emmeans()`. | 
+ 
 
