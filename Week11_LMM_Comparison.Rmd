@@ -627,7 +627,7 @@ $$
 Recall that we separate the random intercept as:
 
 $$
-b_{0j} = 
+b_{0j} = \gamma_{00} + u_{0j}
 $$
 
 substituting we get:
@@ -750,7 +750,7 @@ have no fixed effects predictors, only the fixed effect intercept,
 which does not vary (because it is *fixed*). The Conditional R2 is
 equal to the ICC, because it captures the proportion of total variance
 attributable to the fixed and random effects, but the fixed effects
-variance is 0, so its just the variance of the random intercept over
+variance is 0, so it's just the variance of the random intercept over
 the total variance, which is the equation for the ICC.
 
 Now let's look at a more complex example. Here we use the model with a
@@ -788,7 +788,7 @@ $$
 f^2_{LMM(c)} = \frac{R^2_{LMM(c)}}{1 - R^2_{LMM(c)}}
 $$
 
-which are a Marginal and Cnditional F2 effect size. We can get all of
+which are a Marginal and Conditional F2 effect size. We can get all of
 these and other model performance measures, like AIC and BIC using the 
 `modelPerformance()` function.
 
@@ -1006,145 +1006,6 @@ the AIC and BIC favor the unadjusted model and that the fixed effect
 coefficient and standard deviation for the random stress slope are
 basically unchanged with or without anx in the model.
 
-## Between Only Variables
-
-So far for effect sizes, we were focused primarily on variables that
-differed both between and within person (stress). However, although
-the same strategy and effect sizes can be used for variables that vary
-**only** between people or **only** within person, what results we
-expect are a little different.
-
-Also, although `modelTest()` uses the Wald method by default for
-confidence intervals, just as for the `confint()` function the method
-can be specified to pick what you want, such as profile likelihood.
-
-Also note that in this case I am not comparing models so I will use
-the default REML estimation rather than pure ML.
-
-```{r}
-
-dm[, c("Bstress", "Wstress") := meanDeviations(dStress), by = ID]
-
-m.between <- lmer(dMood ~ Bstress + (1 | ID), data = dm)
-
-APAStyler(modelTest(m.between, method = "profile"),
-  pcontrol = list(digits = 3, stars = FALSE, includeP = TRUE,
-                  includeSign = TRUE, dropLeadingZero = TRUE))
-
-```
-
-In the output we can see that parameters and CIs were based on
-REML. However, the effect sizes are based on ML, because those are
-based off of model comparisons. First of all, we can see in the effect
-sizes for Bstress that the p-value is about the same from the
-p-value from the fixed effects - but sometimes it differs very slightly.
-This may be due either to minor
-differences between REML and ML estimation or due to one test being a
-t-test with approximate degrees of freedom. Here it is the same.
-
-The Marginal F2 for Bstress indicates that it has a medium effect
-size. The conditional F2 is basically zero. This
-is not surprising as the addition of Bstress is not likely to improve
-the fit of the conditional model over the random intercept
-model. Individual differences in mean level of mood are already
-captured in the random intercept model, so for the conditional model,
-it will be very difficult for Bstress to actually improve the overall
-variance explained. Instead, Bstress is able to shift what was
-previously variance due to the random intercept to variance 
-attributable to the fixed effects portion of the
-model. In terms of the equations:
-
-$$
-R^{2}_{LMM(m)} = \frac{\sigma^{2}_{fixed}}{\sigma^{2}_{fixed} +
-\sigma^{2}_{u_{0}} + \sigma^{2}_{\varepsilon}}
-$$
-
-and 
-
-$$
-R^{2}_{LMM(c)} = \frac{\sigma^{2}_{fixed} + \sigma^{2}_{u_{0}}}{\sigma^{2}_{fixed} +
-\sigma^{2}_{u_{0}} + \sigma^{2}_{\varepsilon}}
-$$
-
-any gains in $\sigma^{2}_{fixed}$ will basically be matched by a
-decrease in $\sigma^{2}_{u_{0}}$, thus while the marginal variance
-explained increases, the conditional variance explained is more or
-less constant, so no change (0 effect size).
-
-
-In summary, we can say that there is a significant, negative
-association between average stress and average mood (b [95% CI] = 
--0.53 [-0.66, -0.39], p < .001), with a medium effect size for the
-fixed effects, $f^2$ = .27. The pattern of results is that higher
-average stress was associated with lower average mood. 
-
-Because we do not expect a meaningful impact on the Conditional F2, I
-did not even mention it in the interpretation for a between only fixed
-effect predictor.
-
-## Within Only Variables
-
-Here we have an example of a variable that **only** varies within, not
-between individuals. This is interpreted basically the same was as a
-variable that varies both between and within (like overall stress).
-
-```{r}
-
-m.within <- lmer(dMood ~ Wstress + (1 | ID), data = dm)
-summary(lmer(dMood ~ 1 + (1 | ID), data = dm))
-
-APAStyler(modelTest(m.within, method = "profile"),
-  pcontrol = list(digits = 3, stars = FALSE, includeP = TRUE,
-                  includeSign = TRUE, dropLeadingZero = TRUE))
-
-```
-
-In the output we can see both the Marginal and Conditional F2 are non
-zero. Wstress varies within individuals so even though it is being
-compared against a random intercept model, it can explain variance in
-the residuals that the random intercept alone cannot explain.
-In terms of the equations:
-
-$$
-R^{2}_{LMM(m)} = \frac{\sigma^{2}_{fixed}}{\sigma^{2}_{fixed} +
-\sigma^{2}_{u_{0}} + \sigma^{2}_{\varepsilon}}
-$$
-
-and 
-
-$$
-R^{2}_{LMM(c)} = \frac{\sigma^{2}_{fixed} + \sigma^{2}_{u_{0}}}{\sigma^{2}_{fixed} +
-\sigma^{2}_{u_{0}} + \sigma^{2}_{\varepsilon}}
-$$
-
-any gains in $\sigma^{2}_{fixed}$ will come from a decrease in
-$\sigma^{2}_{\varepsilon}$. At the same time, 
-$\sigma^{2}_{u_{0}}$, the variance of the random intercept will
-basically not change as Wstress does not vary between people at all.
-If the residual variance decreases, both the Marginal and Conditional
-F2 will increase. Thus, we reasonably expect Wstress to increase both
-the Marginal and Conditional F2. The Conditional F2 is larger in part
-because of the formula for Cohen's $f^2$ which includes division by
-the unexplained variance, which is much less from the conditional than
-the marginal model (We can see that the Marginal R2 for the whole
-model is 8% whereas the Conditional R2 for the whole model is 42%).
-
-Note that for variables that vary both between and within person, they
-may shift some variance from the random effect variance to the fixed
-effect variance **and** from the residual variance to the fixed effect
-variance. Of course if a variable is included as a random slope as
-well, then it would also shift variance from the residuals to the
-random effects, if the random slope does differ between people quite a
-bit.
-
-In summary, we can say that there is a significant, negative
-association within stress and same day mood (b [95% CI] = -0.37 [-0.49, -0.25]
-p < .001), with a small effect size for the
-fixed effects, $f^2$ = .08, and a medium effect size for the overall
-conditional model, $f^2$ = .19. The pattern of results is that higher
-within stress was associated with lower same day mood. 
-
-
 
 # Summary
 
@@ -1157,17 +1018,14 @@ Key points to take away conceptually are:
 - The differences between nested and non nested models, as well as
   what sorts of comparisons are valid for each
 - What they are and how to interpret LRT, AIC, BIC
+- How polynomials can be used to model non-linear trends and how to
+  select the "best" empirically using model comparison techniques.
 - What the Marginal R2 and Conditional R2 are for a LMM, including
   what sources of variance are incorporated into each.
 - What the Marginal F2 and Conditional F2 effect sizes are for a LMM,
   including what sources of variance are incorporated into each.
-- How polynomials can be used to model non-linear trends and how to
-  select the "best" empirically using model comparison techniques.
-- How to select the best model based on criteria and tools learned in
-  this lecture.
-- How to interpret Marginal and Conditional F2, and what types of
-  variables (e.g., between and within, between only, within only)
-  should use what types of effect sizes.
+
+
 
 ## Code
 
