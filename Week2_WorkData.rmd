@@ -49,7 +49,7 @@ of an object by referring to it by name.
 ```{r vectors}
 c(1, 5, 4) ## create a vector
 
-x <- c(1, 3, 5) ## asign vector to x
+x <- c(1, 3, 5) ## assign vector to x
 
 x ## view x
 
