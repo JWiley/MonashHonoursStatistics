@@ -38,17 +38,17 @@ db <- as.data.table(read_sav("[2021] PSY4210 BL.sav")) # baseline
 ## to the files tab on the bottom right corner of your window and
 ## click on it to load your saved db datafile here
 
-## compute a stress variable if you haven't already done so
+## compute a stress variable if you haven't already 
 db [, PSS2 := 6- PSS2r]
 db [, PSS3 := 6- PSS3r] 
 db[, stress := rowMeans(.SD, na.rm = TRUE),
    .SDcols = c("PSS1", "PSS2", "PSS3", "PSS4")]
 
-## compute a self-esteem variable if you haven't already done so
+## compute a self-esteem variable if you haven't already 
 db[, selfesteem:= rowMeans(.SD, na.rm = TRUE),
 .SDcols = c("LSE1", "LSE2", "LSE3", "LSE4")]
 
-## compute a neuroticism variable if you haven't already done so
+## compute a neuroticism variable if you haven't already 
 db [, N1 := 6- BFI_N1r]
 db[, neuroticism:= rowMeans(.SD, na.rm = TRUE),
 .SDcols = c("N1", "BFI_N2")]
