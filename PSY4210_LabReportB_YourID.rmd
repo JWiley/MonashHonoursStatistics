@@ -1,0 +1,44 @@
+---
+title: "PSY4210 Lab Report - 2023 - Part 2"
+author: "Your Monash ID Number -- Your Full Name"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: 
+    toc: true
+---
+
+# Set up
+
+
+```{r}
+
+library(haven)
+library(data.table)
+library(JWileymisc)
+library(ggplot2)
+library(ggpubr)
+library(visreg)
+
+# Add other packages you need here
+```
+
+
+
+
+# 3. Missing Data
+
+
+
+# 4. Linear Mixed Models 1
+
+
+
+# 5. Linear Mixed Models 2
+
+
+
+# 6. Interactions and Moderation for LMMs
+
+
+
+
