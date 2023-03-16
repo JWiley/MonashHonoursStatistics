@@ -52,18 +52,18 @@ visreg(???, xvar = "???", ???,
 
 # A poisson regression predicting the number of awards each student
 # received based on their progress in the class showed that students
-# who had 0 progress were expected to have -0.46 log awards, p = .098. 
-# Each one unit higher of progress was associated with -0.00 lower log
-# awards, p = .985
+# who had ____ progress were expected to have ____log awards, p = ____. 
+# Each one unit higher of progress was associated with ____ lower log
+# awards, p = ____
 
 # Now write it up for the more interpret-able IRRs:
 
 # A poisson regression predicting the number of awards each student 
 # received based on their progress in the class showed that students 
-# who had a 0 progress were expected to have 0.633 awards, 
-# [95% CI 0.36 - 1.07]. Each one unit higher progress was associated 
-# with having 0.997 times the number of awards, [95% CI 0.77 - 1.29], 
-# p = .985. 
+# who had a 0 progress were expected to have ?? awards, 
+# [95% CI ____]. Each one unit higher progress was associated 
+# with having ____ times the number of awards, [95% CI ____], 
+# p = ____. 
 
 ### 2. Binary logistic ### 
 
