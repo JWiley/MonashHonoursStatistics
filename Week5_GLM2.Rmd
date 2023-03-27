@@ -638,8 +638,8 @@ egltable(
 
 Now let's look at a cross tabulation of high stress and high self
 esteem, which we do by specifying a grouping variable as
-`StressHigh`. The columns of the table are now levels of self
-esteem. We get frequencies and percentages for `SelfesteemHigh` and means
+`StressHigh`. The columns of the table are now levels of Stress. 
+We get frequencies and percentages for `SelfesteemHigh` and means
 and standard deviations for `stress` and `selfesteem` along with a
 chi-squared test and t-test and effect sizes. The chi-square test is
 significant, p < .001 indicating that high/low self esteem and
