@@ -70,6 +70,7 @@ visreg(???, xvar = "???", ???,
 # Run the below code to make a new variable in dcount called 'unicorn'
 # which fills it in with binary values to say whether or not someone
 # is a unicorn. Note: this will be different for everyone
+set.seed(666)
 dcount$unicorn <- sample(0:1, size = nrow(dcount), replace = TRUE)
 
 # Now use math scores to predict if someone is a unicorn.
