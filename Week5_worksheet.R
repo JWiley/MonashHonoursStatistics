@@ -104,7 +104,7 @@ visreg(???, xvar = "???", ???,
 ## make the original dataset
 originaldata <- dcount[, .(math)]
 
-## make the increased self esteem dataset (selfesteem + h)
+## make the increased math dataset (math + h)
 increaseddata <- dcount[, .(math = ???)]
 
 ## calculate original predicted probabilities
