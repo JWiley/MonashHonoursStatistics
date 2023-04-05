@@ -9,7 +9,7 @@ library(ggplot2)
 # Load in the daily diary dataset (multiple surveys per person)
 dd <- as.data.table(???("???"))
 
-# When you have a lots of variables, it's hard to get the pattern plots
+# When you have lots of variables, it's hard to get the pattern plots
 # to look useful. 
 
 # Make a subset of dd called dd_sub that has these variables: 
