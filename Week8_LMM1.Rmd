@@ -89,7 +89,7 @@ egltable(c("loneliness", "sex"), data = dm)
 Now we can see the mean and standard deviation for loneliness and the
 frequencies and percentages of female and male participants in the study. However,
 this reveals a problem/error. There were not 43 male and 240 female participants in
-the study. What this actually is shown is the average loneliness, weighted by
+the study. What this actually shows is the average loneliness, weighted by
 the number of days of data available for each participant, and the
 total number of daily surveys completed by male and female participants. That happens
 because the between person variables are repeated in long format.
@@ -108,11 +108,11 @@ This is how between person variables are typically stored when in a
 dataset combined with repeated measures data in long format. However,
 it renders descriptive statistics on them probably not what we really
 wanted. The means are essentially weighted means, participants who
-complete more days of data get a higher weighting because their loneliness
+complete more days of data get a higher weighting because their loneliness values
 are repeated more times. For categorical/discrete variables, what we
 get is the number of assessments / observations for each level of the
 categorical variable, in this case number of observations belonging to
-male and female participants In this case, when using data tables, the solution is
+male and female participants. In this case, when using data tables, the solution is
 easy: drop duplicated rows and only keep one row of data per ID and
 then remake the table. The following code shows how to do this.
 The difference is in using `data = dm[!duplicated(ID)]`
