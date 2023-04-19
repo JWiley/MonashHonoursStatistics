@@ -349,7 +349,9 @@ m <- lmer(dEnergy ~ neuroticism * dStress + (1 | ID), data = dm)
 A quick check of the model diagnostics suggests that the
 data look fairly good. The intercepts do not appear to 
 follow a normal distribution that closely, partly due to 
-the long left tail.
+the long left tail, but for now we will leave it. If you're interested
+in how to fix left skews, please see the bonus material at the end of 
+this markdown (optional).
 
 ```{r}
 
@@ -357,56 +359,7 @@ plot(modelDiagnostics(m), nrow = 2, ncol = 2, ask = FALSE)
 
 ```
 
-## Extra (in case you ever want to fix left skews)
-
-Applying transformations to left skewed data is more difficult as
-generally transformations work on long right tails. A solution is to
-reverse the variable, apply the transformation and then again reverse
-it so that the direction is the same as it originally was. We could
-try a square root transformations which is milder than a log
-transformation. To reverse it, we subtract the variable from the sum
-of its minimum and maximum. Next we take its square root, then we
-reverse by again subtracting from the sum of its minimum and maximum,
-but square root transformed.
-
-Let's sidetrack a little and try this out with an example using a 
-more skewed outcome variable, dMood.
-
-```{r}
-
-## First let's see how the model looks like with original dMood scores
-
-mtest1 <- lmer(dMood ~ neuroticism * dStress + (1 | ID), data = dm)
-
-mt1 <- modelDiagnostics(mtest1) 
-plot(mt1, nrow = 2, ncol = 2, ask = FALSE)
-
-## Now let's try to fix the very mild left skew just for the sake
-## of demonstration
-
-max(dm$dMood) + min(dm$dMood)
-
-## transform
-dm[, moodtrans := sqrt(8) - sqrt(8 - dMood)]
-
-mtest <- lmer(moodtrans ~ neuroticism * dStress + (1 | ID), data = dm)
-
-mt <- modelDiagnostics(mtest) 
-plot(mt, nrow = 2, ncol = 2, ask = FALSE)
-
-``` 
-
-The transformation appears to have modestly helped the distribution of
-residuals. Its not that clear whether it was bad enough to begin with
-and whether the transformation improved it enough that it is worth the
-difficulty in interpretation (dMood is now square root transformed and
-that must be incorporated into its interpretation). For the lecture,
-we did this for demonstration purposes, but in practice, consider
-whether this is worth it or only adds difficulty in understanding
-without improving / changing results much.
-
-Enough sidetracking, let's go back to our original model, *m*.
-No extreme value are present. If there were any, we can remove that, 
+No extreme values are present. If there were any, we can remove that, 
 as we have discussed in depth in previous lectures, update the model,
 and re-run diagnostics. In practice it could take a few rounds of 
 extreme value removal or you may decide to stop at one round.
@@ -445,7 +398,10 @@ with different outcomes.
 
 ```{r}
 # Remember: m <- lmer(dEnergy ~ neuroticism * dStress + (1 | ID), data = dm)
-# mtest1 <- lmer(dMood ~ neuroticism * dStress + (1 | ID), data = dm)
+
+# Here's a new model with mood as the outcome to compare:
+
+mtest1 <- lmer(dMood ~ neuroticism * dStress + (1 | ID), data = dm)
 
 APAStyler(list(
   Energy = modelTest(m),
@@ -1439,8 +1395,7 @@ Key points to take away conceptually are:
 - The differences between nested and non nested models, as well as
   what sorts of comparisons are valid for each
 - What they are and how to interpret LRT, AIC, BIC
-- How polynomials can be used to model non-linear trends and how to
-  select the "best" empirically using model comparison techniques.
+- How to select the "best" model empirically using model comparison techniques.
 
 ## Code
 
@@ -1462,3 +1417,50 @@ Key points to take away conceptually are:
 | `poly()` | Fit a polynomial of specified degree for a predictor in a LMM. | 
  
 
+## Extra (in case you ever want to fix left skews - optional material)
+
+Applying transformations to left skewed data is more difficult as
+generally transformations work on long right tails. A solution is to
+reverse the variable, apply the transformation and then again reverse
+it so that the direction is the same as it originally was. We could
+try a square root transformations which is milder than a log
+transformation. To reverse it, we subtract the variable from the sum
+of its minimum and maximum. Next we take its square root, then we
+reverse by again subtracting from the sum of its minimum and maximum,
+but square root transformed.
+
+Let's sidetrack a little and try this out with an example using a 
+slightly skewed outcome variable, dMood.
+
+```{r}
+
+## First let's see how the model looks like with original dMood scores
+
+mtest1 <- lmer(dMood ~ neuroticism * dStress + (1 | ID), data = dm)
+
+mt1 <- modelDiagnostics(mtest1) 
+plot(mt1, nrow = 2, ncol = 2, ask = FALSE)
+
+## Now let's try to fix the very mild left skew just for the sake
+## of demonstration
+
+max(dm$dMood) + min(dm$dMood)
+
+## transform
+dm[, moodtrans := sqrt(8) - sqrt(8 - dMood)]
+
+mtest <- lmer(moodtrans ~ neuroticism * dStress + (1 | ID), data = dm)
+
+mt <- modelDiagnostics(mtest) 
+plot(mt, nrow = 2, ncol = 2, ask = FALSE)
+
+``` 
+
+The transformation appears to have modestly helped the distribution of
+residuals. Its not that clear whether it was bad enough to begin with
+and whether the transformation improved it enough that it is worth the
+difficulty in interpretation (dMood is now square root transformed and
+that must be incorporated into its interpretation). For the lecture,
+we did this for demonstration purposes, but in practice, consider
+whether this is worth it or only adds difficulty in understanding
+without improving / changing results much.
