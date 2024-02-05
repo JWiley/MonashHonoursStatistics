@@ -122,39 +122,8 @@ d <- read.csv("IntroR_sample.csv")
 ## YOU TRY IT: get a summary of the data
 ???
 
-## load package to read Excel files (.xls or .xlsx)
-## if not installed please uncomment and run code below
- install.packages("xlsx", dependencies = TRUE)
-library("xlsx")
-
-## read in the "Sleep" sheet
-d.acti <- read.xlsx2("actigraph_scored_31.xlsx", sheetName = "Sleep")
-
-## view the variable names in the dataset
-names(d.acti)
-
-#### 4b. You Try It ####
-## calculate the mean sleep duration (total sleep time; TST)
-???
-# what error did you get?
-
-# Search the following functions
-?str
-?as.numeric
-#and see if you can figure out how to fix it
-???
-???
-???
-
-
-## view the Sleep Efficiency (se) variable in d.acti
-## what is the second value?
-???
   
-## what are the variable names in the "Summary" sheet?
-???
-
-
+  
 #### 5. Logical Operators ####
 
 ## "==" : logical test if Depressed is equal to 1
