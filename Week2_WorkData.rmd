@@ -197,7 +197,7 @@ Suppose we decide that under 20y or above 25y are extreme ages for our
 data. We might want to run analyses in data excluding people outside
 that range. We could create a copy of the dataset, `d.noout`, with
 "outliers" removed where we only include cases that are between
-20-50y. Here we use `%gele%` to capture people greater than or equal
+20-25y. Here we use `%gele%` to capture people greater than or equal
 to 20y and less than or equal to 25.
 
 ```{r}
