@@ -100,7 +100,7 @@ table(db$StrCat)
   
 
 ## Make a dotplot for: `openness` *separated* (e.g., by colour and/or fill)
-## by `sex`:
+## by `relsta`:
 ???
 ???
   
@@ -160,7 +160,7 @@ ggMarginal(???)
 ## Epic Bonus:
 ## Now find a way to show the same scatterplot above, but represent 
 ## differences by sex
-## Hint: First find a way to get the stats separately by sex
+## Hint: First find a way to get the stats separately by relsta
 cor.test(???)
 cor.test(???)
 
