@@ -8,7 +8,7 @@ library(visreg)
 setwd("~/git_repos/MonashHonoursStatistics")
 db <- as.data.table(read_sav("[2021] PSY4210 BL.sav")) # baseline
 
-# First create the SE and Stress scale totals like we did last week
+# First create the SE and Stress scale totals for sum totals
 
 ???
   
