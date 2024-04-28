@@ -33,7 +33,7 @@ dm <- as.data.table(read_sav("[2021] PSY4210 merged.sav"))
 # 4. Check model diagnostics and where appropriate remove extreme
 # values.
 # 5. Make a summary of the final model.
-# 6. Use `visreg()` to make a conditional plot.
+# 6. Use `visreg()` to make a marginal plot.
 
 
 ## 1. Create a between and within person stress variable
@@ -82,17 +82,12 @@ dm.noev3 <- dm[-unique(yourdiag$extremeValues[EffectType == "???"]$Index)]
 yourmodel2 <- lmer(dEnergy ~  ???, ??? )
 ???(yourmodel2)
 
-## 6. Use `visreg()` to make a conditional plot.
+## 6. Use `visreg()` to make a marginal plot of energy on between stress.
 
-#### don't forget, if you drop some IDs, need to drop them here too
-#### by changing the dataset in the unique() call
-visreg(???, xvar = "???", by = "???",
-       breaks = unique(???$ID),
-       re.form = ~ (???),
+visreg(???, xvar = "???",
        partial = FALSE, rug = FALSE,
        gg = TRUE,
-       xlab = "Within ???\n(deviations from own average)",
-       ylab = "Predicted ???",
-       overlay = TRUE) + 
-  theme_pubr() +
-  theme(legend.position = "none")
+       xlab = "???",
+       ylab = "???",
+       line = list(col = "black", size = 1)) + 
+  theme_pubr()

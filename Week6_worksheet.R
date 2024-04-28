@@ -5,6 +5,7 @@ library(JWileymisc)
 library(mice)
 library(VIM)
 library(ggplot2)
+library(haven)
 
 # Load in the daily diary dataset (multiple surveys per person)
 dd <- as.data.table(???("???"))
