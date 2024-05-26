@@ -1,0 +1,281 @@
+---
+title: "Longitudinal Primer Codebook"
+author: "Michelle Byrne"
+date: '2022-08-31'
+output: html_document
+---
+
+https://e-m-mccormick.github.io/static/longitudinal-primer/index.html
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Install required packages
+install.packages(c("nlme", "lme4", "lmerTest", "tidyr", "dplyr", "sjPlot", "ggplot2", "visreg", "lavaan","semPlots","broom","kableExtra"))
+
+# Indicate where the data live
+
+workdir='C:/Users/miche/Dropbox/academic/teaching/2023/Monash PSY 4215 2023/codebook-datasets'
+
+```
+
+## Canonical Models - Multilevel Models
+
+https://e-m-mccormick.github.io/static/longitudinal-primer/02-canonical.html#multilevel-model
+
+We will fit a very simple linear model with a random intercept and slope for the dlPFC activation data 
+
+```{r}
+workdir='C:/Users/miche/Dropbox/academic/teaching/2023/Monash PSY 4215 2023/codebook-datasets'
+# Load data
+library(tidyr)
+library(dplyr)
+executive.function <- utils::read.csv(file.path(workdir,"executive-function.csv"), header = TRUE) %>%
+  select(id, dlpfc1:dlpfc4)
+
+executive.function.long <- executive.function %>% 
+  tidyr::pivot_longer(cols = starts_with("dlpfc"), 
+                      names_to = c(".value", "wave"), 
+                      names_pattern = "(.+)(.)") %>%
+  dplyr::mutate(wave = as.numeric(wave) - 1)
+
+
+# The repeated measures of interest are 
+# - DLPFC activation during an executive function task (dlpfc*)
+# - behavioral scores on that task (ef*)
+# - time-invariant covariates, self-identified sex (sex) and assigned treatment group (tx)
+# - age at observation (age*) 
+
+
+# We will fit a very simple linear model with a random intercept and slope for the DLPFC activation data
+
+# nlme: random intercept (1) and random slope (wave) are nested within id
+# rows with missing data will be omitted using na.action = na.omit
+# estimator = REstricted Maximum Likelihood (REML)
+
+mlm.nlme <- nlme::lme(dlpfc ~ 1 + wave,
+                      random = ~ 1 + wave | id,
+                      na.action = na.omit,
+                      method = "REML",
+                      data = executive.function.long)
+
+summary(mlm.nlme, correlation = FALSE)
+
+# lmer() gives the variance of the random effects in addition to the standard deviations, and there are no longer p-values associated with the fixed effects.
+
+mlm.lme4 <- lme4::lmer(dlpfc ~ 1 + wave + (1 + wave | id), 
+                       na.action = na.omit,
+                       REML = TRUE,
+                       data = executive.function.long)
+
+summary(mlm.lme4, correlation = FALSE)
+confint(mlm.lme4)
+
+# to retain p-values
+library(lmerTest)
+mlm.lmerTest <- lmerTest::lmer(dlpfc ~ 1 + wave + (1 + wave | id),
+                               na.action = na.omit,
+                               REML = TRUE,
+                               data = executive.function.long)
+
+summary(mlm.lmerTest, correlation = FALSE)
+
+# tab_model() to generate publication-quality tables from the MLM output: merge the results from the nlme and lmerTest packages.
+sjPlot::tab_model(mlm.nlme, mlm.lmerTest,
+                  show.se = TRUE,
+                  show.df = FALSE,
+                  show.ci = FALSE,
+                  digits = 3,
+                  pred.labels = c("Intercept", "Wave"),
+                  dv.labels = c("nlme", "lme4"),
+                  string.se = "SE",
+                  string.p = "P-Value")
+
+# Plotting trajectories: plot predicted values generated from the predict() function
+
+# Conditional dlPFC
+library(ggplot2)
+ggplot2::ggplot(tidyr::drop_na(executive.function.long), 
+                aes(x = wave + 1, 
+                    y = predict(mlm.lmerTest), 
+                    group = id, 
+                    color = factor(id))) +
+  geom_line() + 
+  labs(title = "Canonical MLM Trajectories",
+       x = "Wave",
+       y = "Predicted DLPFC Activation") +
+  theme(legend.position = "none") # this suppresses the ID labels!
+
+# Marginal dlPFC
+library(sjPlot)
+plot_model(mlm.lmerTest, type = "pred", terms = "wave") # this will include confidence bands
+
+ 
+
+# Try with another outcome (executive function; At each wave, adolescents played an executive function task while in an fMRI scanner):
+library(tidyr)
+library(dplyr)
+executive.function.ef <- utils::read.csv(file.path(workdir,"/executive-function.csv"), header = TRUE) %>%
+  select(id, ef1:ef4)
+
+executive.function.ef.long <- executive.function.ef %>% 
+  tidyr::pivot_longer(cols = starts_with("ef"), 
+                      names_to = c(".value", "wave"), 
+                      names_pattern = "(.+)(.)") %>%
+  dplyr::mutate(wave = as.numeric(wave) - 1)
+
+mlm.ef.lmerTest <- lmerTest::lmer(ef ~ 1 + wave + (1 + wave | id),
+                               na.action = na.omit,
+                               REML = TRUE,
+                               data = executive.function.ef.long)
+
+summary(mlm.ef.lmerTest, correlation = FALSE)
+
+# Conditional EF
+ggplot2::ggplot(tidyr::drop_na(executive.function.ef.long), 
+                aes(x = wave + 1, 
+                    y = predict(mlm.ef.lmerTest), 
+                    group = id, 
+                    color = factor(id))) +
+  geom_line() + 
+  labs(title = "Canonical MLM Trajectories",
+       x = "Wave",
+       y = "Predicted executive functioning performance") +
+  theme(legend.position = "none") # this suppresses the ID labels!
+
+# Marginal EF
+
+plot_model(mlm.ef.lmerTest, type = "pred", terms = "wave") # this will include confidence bands
+
+library(visreg)
+visreg(mlm.lmerTest, xvar = "wave",
+       partial = FALSE, rug = FALSE, band = TRUE,
+       gg = TRUE,
+       xlab = "Wave",
+       ylab = "Predicted executive functioning performance",
+       line = list(col = "black", size = 1)) 
+
+```
+
+
+## Canonical Models - Latent Curve Model
+
+https://e-m-mccormick.github.io/static/longitudinal-primer/02-canonical.html#latent-curve-model
+
+```{r}
+
+# Unlike with the MLM, time will not appear as a specific variable in the model; rather we code time measurements directly into the factor loadings
+# (Because of defaults built into the lavaan function growth(), we could estimate the full linear LCM with just these first two lines of code)
+
+linear.lcm <- "
+              # Define the Latent Variables
+              int =~ 1*dlpfc1 + 1*dlpfc2 + 1*dlpfc3 + 1*dlpfc4
+              slp =~ 0*dlpfc1 + 1*dlpfc2 + 2*dlpfc3 + 3*dlpfc4
+              
+              # Define Factor Means
+              int ~ 1
+              slp ~ 1
+              
+              # Define Factor (Co)Variances
+              int ~~ int
+              int ~~ slp
+              slp ~~ slp
+              
+              # Define Indicator Residual Variances
+              dlpfc1 ~~ dlpfc1
+              dlpfc2 ~~ dlpfc2
+              dlpfc3 ~~ dlpfc3
+              dlpfc4 ~~ dlpfc4
+"
+
+# Next fit the syntax we wrote to the executive.function data. Here we will estimate the model with Maximum Likelihood (estimator = "ML") and we will allow for missing data using the missing = "FIML" argument. Standard alternatives might include estimator = "MLR" for Robust Maximum Likelihood if we have non-normal continuous data, or estimator = WLSMV if we have discrete data. Could change to missing = "listwise" if we wanted to do only complete-case analysis. This option is actually the lavaan default
+
+lcm <- lavaan::growth(linear.lcm, 
+                      data = executive.function,
+                      estimator = "MLR",
+                      missing = "FIML")
+
+semPlot::semPaths(lcm,
+                  what = "est",
+                  intercepts = TRUE, 
+                  edge.color = "black")
+
+summary(lcm, fit.measures = TRUE, estimates = TRUE, 
+        standardize = TRUE, rsquare = TRUE)
+# we are looking to see if our Model Test User Model: test statistic is non-significant. However, be aware that this test is over-powered and will often be significant in large samples, even in a well fitting model. We also tend to look for CFI/TLI > 0.95, RMSEA  < 0.05, and SRMR < 0.08 to indicate an excellent model fit.
+
+# The Covariances: section shows us the covariance (and correlation if we asked for standardized results) between the intercept and slope. Here we can see that the correlation is strong and negative (r=−0.499) suggesting that those with the lowest initial levels of DLPFC activation tend to show the strongest increases in activation over time.
+
+# The Intercepts: section shows us the means of the latent factors. the average activation at the initial timepoint is  0.543 and the average rate of change is 0.121 units per wave, both of which are significant.
+
+# Variances: section. The variances of the intercept and slope are significant suggesting there are meaningful individual differences in initial level and rate of change over time.
+
+library(lavaan)
+ggplot2::ggplot(data.frame(id=lcm@Data@case.idx[[1]], 
+                           lavPredict(lcm,type="ov")) %>% 
+                  pivot_longer(cols = starts_with("dlpfc"), 
+                               names_to = c(".value", "wave"), 
+                               names_pattern = "(.+)(.)") %>%
+                  dplyr::mutate(wave = as.numeric(wave)), 
+                aes(x = wave, 
+                    y = dlpfc, 
+                    group = id, 
+                    color = factor(id))) +
+  geom_line() + 
+  labs(title = "Canonical LCM Trajectories",
+       x = "Wave",
+       y = "Predicted DLFPC Activation") +
+  theme(legend.position = "none") 
+
+
+# Try it with the executive functioning behavioural outcome
+linear.lcm.ef <- "
+              # Define the Latent Variables
+              int =~ 1*ef1 + 1*ef2 + 1*ef3 + 1*ef4
+              slp =~ 0*ef1 + 1*ef2 + 2*ef3 + 3*ef4
+              
+              # Define Factor Means
+              int ~ 1
+              slp ~ 1
+              
+              # Define Factor (Co)Variances
+              int ~~ int
+              int ~~ slp
+              slp ~~ slp
+              
+              # Define Indicator Residual Variances
+              ef1 ~~ ef1
+              ef2 ~~ ef2
+              ef3 ~~ ef3
+              ef4 ~~ ef4
+"
+lcm.ef <- lavaan::growth(linear.lcm.ef, 
+                      data = executive.function.ef,
+                      estimator = "MLR",
+                      missing = "FIML")
+
+semPlot::semPaths(lcm.ef,
+                  what = "est",
+                  intercepts = TRUE, 
+                  edge.color = "black")
+
+summary(lcm.ef, fit.measures = TRUE, estimates = TRUE, 
+        standardize = TRUE, rsquare = TRUE)
+
+ggplot2::ggplot(data.frame(id=lcm@Data@case.idx[[1]], 
+                           lavPredict(lcm.ef,type="ov")) %>% 
+                  pivot_longer(cols = starts_with("ef"), 
+                               names_to = c(".value", "wave"), 
+                               names_pattern = "(.+)(.)") %>%
+                  dplyr::mutate(wave = as.numeric(wave)), 
+                aes(x = wave, 
+                    y = ef, 
+                    group = id, 
+                    color = factor(id))) +
+  geom_line() + 
+  labs(title = "Canonical LCM Trajectories",
+       x = "Wave",
+       y = "Predicted executive functioning") +
+  theme(legend.position = "none") 
+```
+
