@@ -119,12 +119,12 @@ executive.function.ef <- utils::read.csv(file.path(workdir,"/executive-function.
   select(id, ef1:ef4)
 
 executive.function.ef.long <- executive.function.ef %>% 
-  tidyr::pivot_longer(cols = starts_with(???), 
+  tidyr::pivot_longer(cols = starts_with("ef"), 
                       names_to = c(".value", "wave"), 
                       names_pattern = "(.+)(.)") %>%
   dplyr::mutate(wave = as.numeric(wave) - 1)
 
-mlm.ef.lmerTest <- lmerTest::lmer(??? ~ ??? + ??? + (??? + ??? | ???),
+mlm.ef.lmerTest <- lmerTest::lmer(ef ~ 1 + wave + (1 + wave | id),
                                na.action = na.omit,
                                REML = TRUE,
                                data = executive.function.ef.long)
@@ -132,27 +132,27 @@ mlm.ef.lmerTest <- lmerTest::lmer(??? ~ ??? + ??? + (??? + ??? | ???),
 summary(mlm.ef.lmerTest, correlation = FALSE)
 
 # Conditional EF
-ggplot2::ggplot(tidyr::drop_na(???), 
-                aes(x = ??? + ???, 
-                    y = predict(???), 
-                    group = ???, 
-                    color = factor(???))) +
+ggplot2::ggplot(tidyr::drop_na(executive.function.ef.long), 
+                aes(x = wave + 1, 
+                    y = predict(mlm.ef.lmerTest), 
+                    group = id, 
+                    color = factor(id))) +
   geom_line() + 
   labs(title = "Canonical MLM Trajectories",
-       x = "???",
-       y = "Predicted ???") +
+       x = "Wave",
+       y = "Predicted executive functioning performance") +
   theme(legend.position = "none") # this suppresses the ID labels!
 
 # Marginal EF
 
-plot_model(???, type = "pred", terms = "wave") # this will include confidence bands
+plot_model(mlm.ef.lmerTest, type = "pred", terms = "wave") # this will include confidence bands
 
 library(visreg)
-visreg(???, xvar = "???",
+visreg(mlm.lmerTest, xvar = "wave",
        partial = FALSE, rug = FALSE, band = TRUE,
        gg = TRUE,
-       xlab = "??",
-       ylab = "Predicted ???",
+       xlab = "Wave",
+       ylab = "Predicted executive functioning performance",
        line = list(col = "black", size = 1)) 
 
 ```
@@ -235,35 +235,35 @@ ggplot2::ggplot(data.frame(id=lcm@Data@case.idx[[1]],
 # Try it with the executive functioning behavioural outcome
 linear.lcm.ef <- "
               # Define the Latent Variables
-              int =~ ?*ef1 + ?*ef2 + ?*ef3 + ?*ef4
-              slp =~ ?*ef1 + ?*ef2 + ?*ef3 + ?*ef4
+              int =~ 1*ef1 + 1*ef2 + 1*ef3 + 1*ef4
+              slp =~ 0*ef1 + 1*ef2 + 2*ef3 + 3*ef4
               
               # Define Factor Means
-              ??? ~ 1
-              ??? ~ 1
+              int ~ 1
+              slp ~ 1
               
               # Define Factor (Co)Variances
-              ??? ~~ ???
-              ??? ~~ ???
-              ??? ~~ ???
+              int ~~ int
+              int ~~ slp
+              slp ~~ slp
               
               # Define Indicator Residual Variances
-              ef? ~~ ef?
-              ef? ~~ ef?
-              ef? ~~ ef?
-              ef? ~~ ef?
+              ef1 ~~ ef1
+              ef2 ~~ ef2
+              ef3 ~~ ef3
+              ef4 ~~ ef4
 "
-lcm.ef <- lavaan::???(???, 
-                      data = ???,
+lcm.ef <- lavaan::growth(linear.lcm.ef, 
+                      data = executive.function.ef,
                       estimator = "MLR",
                       missing = "FIML")
 
-semPlot::semPaths(???,
+semPlot::semPaths(lcm.ef,
                   what = "est",
                   intercepts = TRUE, 
                   edge.color = "black")
 
-summary(???, fit.measures = TRUE, estimates = TRUE, 
+summary(lcm.ef, fit.measures = TRUE, estimates = TRUE, 
         standardize = TRUE, rsquare = TRUE)
 
 ggplot2::ggplot(data.frame(id=lcm@Data@case.idx[[1]], 
@@ -272,14 +272,14 @@ ggplot2::ggplot(data.frame(id=lcm@Data@case.idx[[1]],
                                names_to = c(".value", "wave"), 
                                names_pattern = "(.+)(.)") %>%
                   dplyr::mutate(wave = as.numeric(wave)), 
-                aes(x = ???, 
-                    y = ???, 
-                    group = ???, 
-                    color = factor(???))) +
+                aes(x = wave, 
+                    y = ef, 
+                    group = id, 
+                    color = factor(id))) +
   geom_line() + 
   labs(title = "Canonical LCM Trajectories",
-       x = "???",
-       y = "Predicted ???") +
+       x = "Wave",
+       y = "Predicted executive functioning") +
   theme(legend.position = "none") 
 ```
 
